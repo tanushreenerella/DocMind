@@ -7,13 +7,13 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from core.config import settings
+from core.config import ALLOWED_ORIGINS, IMAGES_PATH, CHROMA_PATH, STORAGE_PATH
 from routers import chat, documents, upload
 
 # Ensure storage directories exist at startup
-os.makedirs(settings.IMAGES_PATH, exist_ok=True)
-os.makedirs(settings.CHROMA_PATH, exist_ok=True)
-os.makedirs(os.path.join(settings.STORAGE_PATH, "temp"), exist_ok=True)
+os.makedirs(IMAGES_PATH, exist_ok=True)
+os.makedirs(CHROMA_PATH, exist_ok=True)
+os.makedirs(os.path.join(STORAGE_PATH, "temp"), exist_ok=True)
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["30/minute"])
 
@@ -29,7 +29,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],

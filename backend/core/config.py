@@ -1,25 +1,15 @@
-from pathlib import Path
-from pydantic_settings import BaseSettings
-from typing import Set
+import os
 
-# Absolute path: bfai-assessment/backend/core/config.py → ../  = backend/ → ../ = project root
-# .env lives in backend/, two levels up from this file
-_ENV_FILE = Path(__file__).parent.parent / ".env"
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+MAX_FILE_SIZE_MB = int(os.environ.get("MAX_FILE_SIZE_MB", "20"))
+ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".tiff"}
+STORAGE_PATH = os.environ.get("STORAGE_PATH", "./storage")
+CHROMA_PATH = os.environ.get("CHROMA_PATH", "./storage/chroma_db")
+IMAGES_PATH = os.environ.get("IMAGES_PATH", "./storage/page_images")
+RATE_LIMIT_PER_MINUTE = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "30"))
 
-
-class Settings(BaseSettings):
-    GROQ_API_KEY: str = ""
-    ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "https://doc-mind-three.vercel.app"]
-    MAX_FILE_SIZE_MB: int = 20
-    ALLOWED_EXTENSIONS: Set[str] = {".pdf", ".png", ".jpg", ".jpeg", ".tiff"}
-    STORAGE_PATH: str = "./storage"
-    CHROMA_PATH: str = "./storage/chroma_db"
-    IMAGES_PATH: str = "./storage/page_images"
-    RATE_LIMIT_PER_MINUTE: int = 30
-
-    class Config:
-        env_file = str(_ENV_FILE)
-        env_file_encoding = "utf-8"
-
-
-settings = Settings()
+_origins_env = os.environ.get("ALLOWED_ORIGINS", "")
+if _origins_env:
+    ALLOWED_ORIGINS = [o.strip() for o in _origins_env.split(",")]
+else:
+    ALLOWED_ORIGINS = ["http://localhost:3000", "https://doc-mind-three.vercel.app"]
