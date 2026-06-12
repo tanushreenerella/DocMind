@@ -3,7 +3,7 @@ Chunks document pages and indexes into ChromaDB.
 Uses sentence-transformers (all-MiniLM-L6-v2) for local, free embeddings.
 """
 import chromadb
-from chromadb.utils import embedding_functions
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
 from core.config import CHROMA_PATH
 
@@ -12,11 +12,7 @@ CHUNK_OVERLAP = 50
 
 # Module-level singletons — importable directly by other modules
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
-
-embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-    model_name="all-MiniLM-L6-v2"
-)
-
+embedding_fn = DefaultEmbeddingFunction()
 collection = chroma_client.get_or_create_collection(
     name="documents",
     embedding_function=embedding_fn,
