@@ -2,7 +2,7 @@ import re
 import os
 from pathlib import Path
 from fastapi import UploadFile
-from core.config import settings
+from core.config import ALLOWED_EXTENSIONS, MAX_FILE_SIZE_MB
 
 # Magic bytes for supported file types
 MAGIC_BYTES: dict[str, list[bytes]] = {
@@ -57,7 +57,7 @@ async def validate_file(file: UploadFile) -> bool:
         return False
 
     ext = Path(file.filename).suffix.lower()
-    if ext not in settings.ALLOWED_EXTENSIONS:
+    if ext not in ALLOWED_EXTENSIONS:
         return False
 
     # Content-type check (browsers send this; don't rely solely on it)
@@ -72,7 +72,7 @@ async def validate_file(file: UploadFile) -> bool:
     content = await file.read()
 
     # Size check
-    max_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
+    max_bytes = MAX_FILE_SIZE_MB * 1024 * 1024
     if len(content) > max_bytes:
         await file.seek(0)
         return False

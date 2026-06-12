@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from groq import Groq
 from pydantic import BaseModel, field_validator
 
-from core.config import settings
+from core.config import GROQ_API_KEY
 from services.rag import answer_query
 
 router = APIRouter()
@@ -15,7 +15,7 @@ _groq_client: Groq | None = None
 def _get_groq() -> Groq:
     global _groq_client
     if _groq_client is None:
-        _groq_client = Groq(api_key=settings.GROQ_API_KEY)
+        _groq_client = Groq(api_key=GROQ_API_KEY)
     return _groq_client
 
 

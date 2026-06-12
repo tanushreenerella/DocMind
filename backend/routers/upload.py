@@ -5,7 +5,7 @@ from typing import List
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
-from core.config import settings
+from core.config import STORAGE_PATH, IMAGES_PATH
 from core.security import sanitize_filename, validate_file
 from services.classifier import classify_document
 from services.embedder import index_document
@@ -31,7 +31,7 @@ async def upload_documents(
         doc_id = str(uuid.uuid4())
         safe_name = sanitize_filename(file.filename or "upload")
 
-        temp_dir = os.path.join(settings.STORAGE_PATH, "temp")
+        temp_dir = os.path.join(STORAGE_PATH, "temp")
         os.makedirs(temp_dir, exist_ok=True)
         temp_path = os.path.join(temp_dir, f"{doc_id}_{safe_name}")
 
@@ -104,11 +104,11 @@ async def get_page_image(image_filename: str):
     if not all(c.isalnum() or c in "-_." for c in image_filename):
         raise HTTPException(400, "Invalid filename")
 
-    img_path = os.path.join(settings.IMAGES_PATH, image_filename)
+    img_path = os.path.join(IMAGES_PATH, image_filename)
 
     # Resolve to absolute path and confirm it's inside IMAGES_PATH
     abs_img = os.path.realpath(img_path)
-    abs_dir = os.path.realpath(settings.IMAGES_PATH)
+    abs_dir = os.path.realpath(IMAGES_PATH)
     if not abs_img.startswith(abs_dir):
         raise HTTPException(400, "Invalid path")
 

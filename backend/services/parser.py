@@ -10,7 +10,7 @@ from pdf2image import convert_from_path
 import pytesseract
 from PIL import Image
 
-from core.config import settings
+from core.config import IMAGES_PATH
 
 
 async def parse_document(file_path: str, doc_id: str) -> list[dict]:
@@ -26,7 +26,7 @@ async def parse_document(file_path: str, doc_id: str) -> list[dict]:
     }
     """
     ext = Path(file_path).suffix.lower()
-    os.makedirs(settings.IMAGES_PATH, exist_ok=True)
+    os.makedirs(IMAGES_PATH, exist_ok=True)
 
     if ext == ".pdf":
         return await _parse_pdf(file_path, doc_id)
@@ -45,7 +45,7 @@ async def _parse_pdf(file_path: str, doc_id: str) -> list[dict]:
             page_num = i + 1
 
             img_filename = f"{doc_id}_page_{page_num}.jpg"
-            img_path = os.path.join(settings.IMAGES_PATH, img_filename)
+            img_path = os.path.join(IMAGES_PATH, img_filename)
             pil_image.save(img_path, "JPEG", quality=85)
 
             text = plumber_page.extract_text() or ""
@@ -90,7 +90,7 @@ async def _parse_image(file_path: str, doc_id: str) -> list[dict]:
     text = pytesseract.image_to_string(img)
 
     img_filename = f"{doc_id}_page_1.jpg"
-    img_path = os.path.join(settings.IMAGES_PATH, img_filename)
+    img_path = os.path.join(IMAGES_PATH, img_filename)
     img.save(img_path, "JPEG", quality=85)
 
     return [

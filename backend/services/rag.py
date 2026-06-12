@@ -3,7 +3,7 @@ Agentic RAG: retrieves relevant chunks, synthesizes grounded answers with citati
 """
 from groq import Groq
 
-from core.config import settings
+from core.config import GROQ_API_KEY
 from services.embedder import search
 
 _client: Groq | None = None
@@ -12,7 +12,7 @@ _client: Groq | None = None
 def _get_client() -> Groq:
     global _client
     if _client is None:
-        _client = Groq(api_key=settings.GROQ_API_KEY)
+        _client = Groq(api_key=GROQ_API_KEY)
     return _client
 
 _SYSTEM_PROMPT = """You are a helpful document assistant. Answer questions based ONLY on the provided document sources.
