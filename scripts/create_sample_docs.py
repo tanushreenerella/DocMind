@@ -252,57 +252,71 @@ def financial_summary():
     build("financial_summary.pdf", story)
 
 
-# ── 5. Technical manual ───────────────────────────────────────────────────────
-def technical_manual():
+# ── 5. Cover letter (plain text letter) ──────────────────────────────────────
+def cover_letter():
     story = [
-        Paragraph("DocMind API — Technical Integration Manual", H1),
-        Paragraph("Version 1.0 · Engineering Team · Internal Use Only", SMALL),
-        HRFlowable(width="100%", thickness=1, color=colors.lightgrey),
-        Spacer(1, 0.15 * inch),
-        Paragraph("1. Overview", H2),
+        Paragraph("Alexandra Chen", H1),
         Paragraph(
-            "DocMind exposes a RESTful API for document ingestion, semantic search, and "
-            "AI-powered question answering. The API is built on FastAPI and follows OpenAPI 3.1 "
-            "specifications. All endpoints require a valid API key passed in the X-API-Key header.",
+            "42 Maple Street, Seattle, WA 98101  ·  alex.chen@email.com  ·  +1 (206) 555-0192",
+            SMALL,
+        ),
+        Spacer(1, 0.25 * inch),
+        Paragraph("November 15, 2024", BODY),
+        Spacer(1, 0.15 * inch),
+        Paragraph("Dr. Marcus Webb", BODY),
+        Paragraph("Head of AI Research", BODY),
+        Paragraph("Meridian Technologies Inc.", BODY),
+        Paragraph("800 Innovation Drive, San Francisco, CA 94107", BODY),
+        Spacer(1, 0.2 * inch),
+        Paragraph("Dear Dr. Webb,", BODY),
+        Spacer(1, 0.1 * inch),
+        Paragraph(
+            "I am writing to express my enthusiastic interest in the Senior Machine Learning "
+            "Engineer position at Meridian Technologies, as advertised on your careers page. "
+            "With six years of industry experience building large-scale NLP systems and a "
+            "deep passion for applied AI research, I believe I am exceptionally well suited "
+            "to contribute to your team's mission of democratising access to enterprise intelligence.",
             BODY,
         ),
-        Paragraph("2. Authentication", H2),
-        Paragraph("Requests without a valid X-API-Key return HTTP 401. Keys are issued per "
-                  "workspace and rotated every 90 days. Store keys in environment variables — "
-                  "never hard-code them in source code.", BODY),
-        Paragraph("3. Endpoints", H2),
+        Paragraph(
+            "In my current role at DataPulse Inc., I led the design and deployment of a "
+            "Retrieval-Augmented Generation platform that serves over 2,000 enterprise users "
+            "daily. The system ingests heterogeneous document types — PDFs, spreadsheets, and "
+            "scanned images — and provides sub-second semantic search backed by a ChromaDB "
+            "vector store. I reduced hallucination rates by 38% by introducing citation-aware "
+            "prompting and a faithfulness reranker, and I decreased average query latency from "
+            "1.8 s to 340 ms through HNSW index tuning and async embedding pipelines.",
+            BODY,
+        ),
+        Paragraph(
+            "Prior to DataPulse, I spent three years at the University of Washington's NLP "
+            "Lab as a Research Engineer, where I co-authored two papers on dense passage "
+            "retrieval published at ACL 2022 and EMNLP 2023. My work on bi-encoder fine-tuning "
+            "with hard-negative mining is now integrated into the open-source DPR-Turbo library "
+            "with over 4,000 GitHub stars. I hold an M.S. in Computer Science (specialisation "
+            "in Machine Learning) from the University of Washington.",
+            BODY,
+        ),
+        Paragraph(
+            "I am particularly excited about Meridian's recently announced Agentic Search "
+            "initiative. Having built multi-step reasoning chains using LangGraph and "
+            "tool-calling LLMs in production, I have first-hand insight into the reliability "
+            "and latency challenges of agentic systems — and concrete strategies to address them. "
+            "I would welcome the opportunity to bring this experience to your team.",
+            BODY,
+        ),
+        Paragraph(
+            "Thank you for taking the time to consider my application. I have attached my "
+            "CV and three references. I would be delighted to discuss how my background aligns "
+            "with Meridian's goals at your earliest convenience.",
+            BODY,
+        ),
+        Spacer(1, 0.2 * inch),
+        Paragraph("Yours sincerely,", BODY),
+        Spacer(1, 0.4 * inch),
+        Paragraph("Alexandra Chen", BODY),
     ]
-
-    data = [
-        ["Method", "Endpoint", "Description"],
-        ["POST", "/api/upload", "Upload one or more documents (multipart/form-data)"],
-        ["GET", "/api/status/{doc_id}", "Poll processing status and classification result"],
-        ["POST", "/api/chat", "Submit a question with conversation history"],
-        ["POST", "/api/transcribe", "Transcribe base64-encoded audio via Whisper"],
-        ["GET", "/api/documents", "List all indexed documents with metadata"],
-        ["GET", "/api/page-image/{filename}", "Serve a rendered page image (JPEG)"],
-        ["GET", "/health", "Liveness check — returns {status: ok}"],
-    ]
-    t = Table(data, colWidths=[0.8 * inch, 2.4 * inch, 3.2 * inch])
-    t.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#374151")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 8),
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
-        ("FONTNAME", (0, 1), (1, -1), "Courier"),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F9FAFB")]),
-    ]))
-    story.extend([t, Spacer(1, 0.2 * inch),
-                  Paragraph("4. Rate Limits", H2),
-                  Paragraph("Default: 30 requests/minute per IP. Exceeded requests return "
-                             "HTTP 429 with a Retry-After header. Contact support to raise limits.", BODY),
-                  Paragraph("5. Error Codes", H2),
-                  Paragraph("400 Bad Request — invalid file type or input. "
-                             "404 Not Found — doc_id or image not found. "
-                             "429 Too Many Requests — rate limit exceeded. "
-                             "500 Internal Server Error — processing failure (retry safe).", BODY)])
-    build("technical_manual.pdf", story)
+    build("cover_letter.pdf", story)
 
 
 if __name__ == "__main__":
@@ -311,5 +325,5 @@ if __name__ == "__main__":
     research_paper()
     medical_report()
     financial_summary()
-    technical_manual()
+    cover_letter()
     print("Done! All files written to sample_docs/")
