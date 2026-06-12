@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from backend.services.embedder import collection
-from backend.services.embedder import get_document_count, list_indexed_documents
+from services.embedder import collection
+from services.embedder import get_document_count
 
 router = APIRouter()
 

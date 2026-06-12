@@ -5,8 +5,8 @@ from fastapi import APIRouter, HTTPException
 from groq import Groq
 from pydantic import BaseModel, field_validator
 
-from backend.core.config import settings
-from backend.services.rag import answer_query
+from core.config import settings
+from services.rag import answer_query
 
 router = APIRouter()
 _groq_client: Groq | None = None

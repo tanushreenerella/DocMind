@@ -6,7 +6,7 @@ import json
 
 from groq import Groq
 
-from backend.core.config import settings
+from core.config import settings
 
 _client: Groq | None = None
 

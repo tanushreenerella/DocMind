@@ -2,7 +2,7 @@ import re
 import os
 from pathlib import Path
 from fastapi import UploadFile
-from backend.core.config import settings
+from core.config import settings
 
 # Magic bytes for supported file types
 MAGIC_BYTES: dict[str, list[bytes]] = {

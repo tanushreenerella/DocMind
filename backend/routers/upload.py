@@ -5,11 +5,11 @@ from typing import List
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
-from backend.core.config import settings
-from backend.core.security import sanitize_filename, validate_file
-from backend.services.classifier import classify_document
-from backend.services.embedder import index_document
-from backend.services.parser import parse_document
+from core.config import settings
+from core.security import sanitize_filename, validate_file
+from services.classifier import classify_document
+from services.embedder import index_document
+from services.parser import parse_document
 
 router = APIRouter()
 

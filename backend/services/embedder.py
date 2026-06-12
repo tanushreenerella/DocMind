@@ -5,7 +5,7 @@ Uses sentence-transformers (all-MiniLM-L6-v2) for local, free embeddings.
 import chromadb
 from chromadb.utils import embedding_functions
 
-from backend.core.config import settings
+from core.config import settings
 
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 50

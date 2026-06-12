@@ -10,7 +10,7 @@ from pdf2image import convert_from_path
 import pytesseract
 from PIL import Image
 
-from backend.core.config import settings
+from core.config import settings
 
 
 async def parse_document(file_path: str, doc_id: str) -> list[dict]:

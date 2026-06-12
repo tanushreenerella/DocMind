@@ -3,8 +3,8 @@ Agentic RAG: retrieves relevant chunks, synthesizes grounded answers with citati
 """
 from groq import Groq
 
-from backend.core.config import settings
-from backend.services.embedder import search
+from core.config import settings
+from services.embedder import search
 
 _client: Groq | None = None
 

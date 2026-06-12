@@ -7,8 +7,8 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from backend.core.config import settings
-from backend.routers import chat, documents, upload
+from core.config import settings
+from routers import chat, documents, upload
 
 # Ensure storage directories exist at startup
 os.makedirs(settings.IMAGES_PATH, exist_ok=True)
