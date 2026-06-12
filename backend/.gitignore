@@ -1,0 +1,20 @@
+# Environment
+.env
+.env.local
+.env.example
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+*.egg-info/
+
+# Storage (don't commit uploaded files or DB)
+storage/
+chroma_db/
+
+# OS
+.DS_Store
+Thumbs.db
