@@ -78,12 +78,33 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// Retries on network-level failures (net::ERR_FAILED / TypeError: Failed to fetch)
+// which happen when Render's free tier is cold-starting (up to 50 s delay).
+async function fetchWithRetry(
+  input: RequestInfo,
+  init?: RequestInit,
+  maxAttempts = 4
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, 2 ** attempt * 1500)); // 3 s, 6 s, 12 s
+    }
+    try {
+      return await fetch(input, init);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError;
+}
+
 export async function sendMessage(
   question: string,
   history: Message[],
   docId?: string
 ): Promise<ChatResponse> {
-  const res = await fetch(`${API_BASE}/api/chat`, {
+  const res = await fetchWithRetry(`${API_BASE}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -98,7 +119,7 @@ export async function sendMessage(
 export async function uploadFiles(files: File[]): Promise<UploadResponse> {
   const form = new FormData();
   files.forEach((f) => form.append("files", f));
-  const res = await fetch(`${API_BASE}/api/upload`, {
+  const res = await fetchWithRetry(`${API_BASE}/api/upload`, {
     method: "POST",
     body: form,
   });
@@ -106,14 +127,14 @@ export async function uploadFiles(files: File[]): Promise<UploadResponse> {
 }
 
 export async function getStatus(docId: string): Promise<JobStatus> {
-  const res = await fetch(`${API_BASE}/api/status/${encodeURIComponent(docId)}`);
+  const res = await fetchWithRetry(`${API_BASE}/api/status/${encodeURIComponent(docId)}`);
   return handleResponse<JobStatus>(res);
 }
 
 export async function transcribeAudio(
   base64Audio: string
 ): Promise<{ transcript: string }> {
-  const res = await fetch(`${API_BASE}/api/transcribe`, {
+  const res = await fetchWithRetry(`${API_BASE}/api/transcribe`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ audio_base64: base64Audio }),
@@ -122,7 +143,7 @@ export async function transcribeAudio(
 }
 
 export async function listDocuments(): Promise<DocumentsResponse> {
-  const res = await fetch(`${API_BASE}/api/documents`);
+  const res = await fetchWithRetry(`${API_BASE}/api/documents`);
   return handleResponse<DocumentsResponse>(res);
 }
 
