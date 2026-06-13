@@ -19,6 +19,15 @@ collection = chroma_client.get_or_create_collection(
     metadata={"hnsw:space": "cosine"},
 )
 
+# Force the ONNX model to download and load NOW (at import / server startup)
+# rather than lazily on the first upload. Without this, the model loads during
+# a background task which spikes memory and causes OOM on Render's 512 MB tier.
+try:
+    embedding_fn(["warmup"])
+    print("[embedder] ONNX model loaded and ready")
+except Exception as _warmup_exc:
+    print(f"[embedder] model warmup failed (will retry on first use): {_warmup_exc}")
+
 
 def chunk_text(text: str) -> list[str]:
     chunks: list[str] = []
