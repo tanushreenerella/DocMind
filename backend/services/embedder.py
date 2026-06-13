@@ -62,34 +62,45 @@ async def index_document(
 
 
 async def search(query: str, n_results: int = 5, doc_id: str | None = None) -> list[dict]:
-    where_filter = {"doc_id": {"$eq": doc_id}} if doc_id else None
-    query_kwargs: dict = {
-        "query_texts": [query],
-        "n_results": n_results,
-        "include": ["documents", "metadatas", "distances"],
-    }
-    if where_filter:
-        query_kwargs["where"] = where_filter
-    results = collection.query(**query_kwargs)
+    try:
+        total = collection.count()
+        if total == 0:
+            return []
+        # ChromaDB raises if n_results > number of indexed chunks
+        safe_n = min(n_results, total)
 
-    hits: list[dict] = []
-    if results["documents"] and results["documents"][0]:
-        for doc, meta, dist in zip(
-            results["documents"][0],
-            results["metadatas"][0],
-            results["distances"][0],
-        ):
-            hits.append(
-                {
-                    "chunk_text": doc,
-                    "doc_name": meta["doc_name"],
-                    "page_number": meta["page_number"],
-                    "image_filename": meta["image_filename"],
-                    "relevance_score": 1 - dist,
-                    "doc_id": meta["doc_id"],
-                }
-            )
-    return hits
+        where_filter = {"doc_id": {"$eq": doc_id}} if doc_id else None
+        query_kwargs: dict = {
+            "query_texts": [query],
+            "n_results": safe_n,
+            "include": ["documents", "metadatas", "distances"],
+        }
+        if where_filter:
+            query_kwargs["where"] = where_filter
+
+        results = collection.query(**query_kwargs)
+
+        hits: list[dict] = []
+        if results["documents"] and results["documents"][0]:
+            for doc, meta, dist in zip(
+                results["documents"][0],
+                results["metadatas"][0],
+                results["distances"][0],
+            ):
+                hits.append(
+                    {
+                        "chunk_text": doc,
+                        "doc_name": meta["doc_name"],
+                        "page_number": meta["page_number"],
+                        "image_filename": meta["image_filename"],
+                        "relevance_score": 1 - dist,
+                        "doc_id": meta["doc_id"],
+                    }
+                )
+        return hits
+    except Exception as exc:
+        print(f"[search error] {exc}")
+        return []
 
 
 async def get_document_count() -> int:

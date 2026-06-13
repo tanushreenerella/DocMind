@@ -47,5 +47,9 @@ async def health() -> dict:
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    # Never leak stack traces to clients
-    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+    print(f"[ERROR] {request.method} {request.url.path}: {exc}")
+    response = JSONResponse(status_code=500, content={"detail": "Internal server error"})
+    # CORSMiddleware doesn't wrap exception handler responses in all FastAPI versions;
+    # add the header manually so browsers can read the 500 body.
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response

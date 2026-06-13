@@ -75,14 +75,21 @@ async def answer_query(
         }
     )
 
-    response = _get_client().chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=messages,
-        temperature=0.2,
-        max_tokens=1000,
-    )
-
-    answer: str = response.choices[0].message.content.strip()
+    try:
+        response = _get_client().chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            temperature=0.2,
+            max_tokens=1000,
+        )
+        answer: str = response.choices[0].message.content.strip()
+    except Exception as exc:
+        print(f"[rag error] Groq call failed: {exc}")
+        return {
+            "answer": "The AI service is temporarily unavailable. Please try again in a moment.",
+            "citations": [],
+            "has_answer": False,
+        }
 
     # Collect citations for sources actually referenced in the answer
     citations: list[dict] = []
