@@ -82,12 +82,13 @@ export default function HomePage() {
     warmupBackend().then((ok) => setServerReady(ok));
   }, []);
 
-  // Fetch document list on mount
+  // Fetch document list only after server is confirmed awake
   useEffect(() => {
+    if (!serverReady) return;
     listDocuments()
       .then((r) => setDocs(r.documents))
       .catch(() => {});
-  }, []);
+  }, [serverReady]);
 
   // Auto-scroll on new messages
   useEffect(() => {
