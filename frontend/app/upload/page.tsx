@@ -238,10 +238,15 @@ export default function UploadPage() {
 
           <button
             onClick={handleUpload}
-            disabled={files.length === 0 || uploading}
+            disabled={!serverReady || files.length === 0 || uploading}
             className="mt-5 w-full py-3 bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold rounded-xl transition-all duration-200 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {uploading ? (
+            {!serverReady ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Waiting for server…
+              </>
+            ) : uploading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Uploading…

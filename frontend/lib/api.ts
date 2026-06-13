@@ -82,7 +82,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 // Call on page mount so Render's free-tier instance wakes up before
 // the user tries to upload or chat. Resolves when ready, gives up after ~60 s.
 export async function warmupBackend(): Promise<boolean> {
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 30; i++) {
     try {
       const res = await fetch(`${API_BASE}/health`);
       if (res.ok) return true;
