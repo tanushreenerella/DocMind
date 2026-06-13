@@ -7,7 +7,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from core.config import ALLOWED_ORIGINS, IMAGES_PATH, CHROMA_PATH, STORAGE_PATH
+from core.config import IMAGES_PATH, CHROMA_PATH, STORAGE_PATH
 from routers import chat, documents, upload
 
 # Ensure storage directories exist at startup
