@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, Brain, CheckCircle2, AlertCircle, Loader2, MessageSquare } from "lucide-react";
 import UploadZone from "@/components/UploadZone";
-import { uploadFiles, getStatus } from "@/lib/api";
+import { uploadFiles, getStatus, warmupBackend } from "@/lib/api";
 import type { UploadJob, JobStatus, Classification } from "@/lib/api";
 
 interface TrackedJob extends UploadJob {
@@ -130,6 +130,13 @@ export default function UploadPage() {
   const [jobs, setJobs] = useState<TrackedJob[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [serverReady, setServerReady] = useState(false);
+
+  // Ping /health on mount so Render's free-tier instance wakes up
+  // before the user tries to upload (cold start can take ~50 s).
+  useEffect(() => {
+    warmupBackend().then((ok) => setServerReady(ok));
+  }, []);
 
   // Poll active jobs — use a ref so the interval never goes stale
   const jobsRef = useRef<TrackedJob[]>([]);
@@ -207,6 +214,14 @@ export default function UploadPage() {
           </div>
         </div>
       </header>
+
+      {/* Cold-start banner — disappears once /health responds OK */}
+      {!serverReady && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-center gap-2 text-sm text-amber-700">
+          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+          <span>Server starting up (free tier) — please wait ~30 s before uploading.</span>
+        </div>
+      )}
 
       <main className="max-w-2xl mx-auto px-5 py-8 space-y-6">
         {/* Drop zone */}

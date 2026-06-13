@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Upload, Brain, Menu, X, Bot, User, Loader2, Send, FileText } from "lucide-react";
 import MessageBubble from "@/components/MessageBubble";
 import VoiceInput from "@/components/VoiceInput";
-import { listDocuments, sendMessage, getPageImageUrl } from "@/lib/api";
+import { listDocuments, sendMessage, getPageImageUrl, warmupBackend } from "@/lib/api";
 import type { IndexedDocument, Citation } from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -72,9 +72,15 @@ export default function HomePage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [serverReady, setServerReady] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Wake up Render free-tier instance on mount
+  useEffect(() => {
+    warmupBackend().then((ok) => setServerReady(ok));
+  }, []);
 
   // Fetch document list on mount
   useEffect(() => {
@@ -344,6 +350,14 @@ export default function HomePage() {
             <span className="hidden sm:inline">Upload</span>
           </Link>
         </header>
+
+        {/* Cold-start banner — disappears once /health responds OK */}
+        {!serverReady && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-center gap-2 text-sm text-amber-700 shrink-0">
+            <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+            <span>Server starting up (free tier) — please wait ~30 s before chatting.</span>
+          </div>
+        )}
 
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">

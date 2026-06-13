@@ -78,17 +78,35 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// Retries on network-level failures (net::ERR_FAILED / TypeError: Failed to fetch)
+// Silently pings /health until the server responds OK.
+// Call on page mount so Render's free-tier instance wakes up before
+// the user tries to upload or chat. Resolves when ready, gives up after ~60 s.
+export async function warmupBackend(): Promise<boolean> {
+  for (let i = 0; i < 20; i++) {
+    try {
+      const res = await fetch(`${API_BASE}/health`);
+      if (res.ok) return true;
+    } catch {
+      // still waking up
+    }
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+  return false;
+}
+
+// Retries on network-level failures (TypeError: Failed to fetch / net::ERR_FAILED)
 // which happen when Render's free tier is cold-starting (up to 50 s delay).
+// Delays: 2 s, 4 s, 8 s, 10 s, 10 s → ~34 s total before giving up.
 async function fetchWithRetry(
   input: RequestInfo,
   init?: RequestInit,
-  maxAttempts = 4
+  maxAttempts = 6
 ): Promise<Response> {
   let lastError: unknown;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     if (attempt > 0) {
-      await new Promise((r) => setTimeout(r, 2 ** attempt * 1500)); // 3 s, 6 s, 12 s
+      const delay = Math.min(2 ** attempt * 1000, 10000); // cap at 10 s
+      await new Promise((r) => setTimeout(r, delay));
     }
     try {
       return await fetch(input, init);
