@@ -1,32 +1,17 @@
-"""
-Chunks document pages and indexes into ChromaDB.
-Uses sentence-transformers (all-MiniLM-L6-v2) for local, free embeddings.
-"""
 import chromadb
-from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
-
 from core.config import CHROMA_PATH
+from services.embeddings import get_embedding, get_embeddings
 
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 50
 
-# Module-level singletons — importable directly by other modules
+# Collection has no embedding_function — we supply embeddings explicitly
+# so no local model is loaded and no ONNX runtime is needed.
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
-embedding_fn = DefaultEmbeddingFunction()
 collection = chroma_client.get_or_create_collection(
     name="documents",
-    embedding_function=embedding_fn,
     metadata={"hnsw:space": "cosine"},
 )
-
-# Force the ONNX model to download and load NOW (at import / server startup)
-# rather than lazily on the first upload. Without this, the model loads during
-# a background task which spikes memory and causes OOM on Render's 512 MB tier.
-try:
-    embedding_fn(["warmup"])
-    print("[embedder] ONNX model loaded and ready")
-except Exception as _warmup_exc:
-    print(f"[embedder] model warmup failed (will retry on first use): {_warmup_exc}")
 
 
 def chunk_text(text: str) -> list[str]:
@@ -51,8 +36,7 @@ async def index_document(
             continue
         chunks = chunk_text(page["text"])
         for i, chunk in enumerate(chunks):
-            chunk_id = f"{doc_id}_p{page['page_number']}_c{i}"
-            ids.append(chunk_id)
+            ids.append(f"{doc_id}_p{page['page_number']}_c{i}")
             documents.append(chunk)
             metadatas.append(
                 {
@@ -66,8 +50,19 @@ async def index_document(
                 }
             )
 
-    if ids:
-        collection.add(ids=ids, documents=documents, metadatas=metadatas)
+    if not ids:
+        return
+
+    BATCH_SIZE = 20
+    for i in range(0, len(ids), BATCH_SIZE):
+        batch_docs = documents[i : i + BATCH_SIZE]
+        batch_embeddings = await get_embeddings(batch_docs)
+        collection.add(
+            ids=ids[i : i + BATCH_SIZE],
+            documents=batch_docs,
+            embeddings=batch_embeddings,
+            metadatas=metadatas[i : i + BATCH_SIZE],
+        )
 
 
 async def search(query: str, n_results: int = 5, doc_id: str | None = None) -> list[dict]:
@@ -75,12 +70,13 @@ async def search(query: str, n_results: int = 5, doc_id: str | None = None) -> l
         total = collection.count()
         if total == 0:
             return []
-        # ChromaDB raises if n_results > number of indexed chunks
         safe_n = min(n_results, total)
+
+        query_embedding = await get_embedding(query)
 
         where_filter = {"doc_id": {"$eq": doc_id}} if doc_id else None
         query_kwargs: dict = {
-            "query_texts": [query],
+            "query_embeddings": [query_embedding],
             "n_results": safe_n,
             "include": ["documents", "metadatas", "distances"],
         }
@@ -120,7 +116,6 @@ async def get_document_count() -> int:
 
 
 async def list_indexed_documents() -> list[dict]:
-    """Return unique documents stored in ChromaDB."""
     try:
         all_meta = collection.get(include=["metadatas"])["metadatas"]
         seen: dict[str, dict] = {}
