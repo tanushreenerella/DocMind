@@ -71,16 +71,23 @@ export default function PageViewer({
           </button>
         </div>
 
-        {/* Image */}
-        <div className="relative flex items-center justify-center bg-gray-100 max-h-[80vh] overflow-auto">
-          <Image
-            src={imageUrl}
-            alt={`${docName} page ${pageNumber}`}
-            width={900}
-            height={1200}
-            className="object-contain max-h-[80vh] w-auto"
-            unoptimized
-          />
+        {/* Image or placeholder */}
+        <div className="relative flex items-center justify-center bg-gray-100 max-h-[80vh] overflow-auto min-h-[200px]">
+          {imageUrl ? (
+            <Image
+              src={imageUrl}
+              alt={`${docName} page ${pageNumber}`}
+              width={900}
+              height={1200}
+              className="object-contain max-h-[80vh] w-auto"
+              unoptimized
+            />
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-16 text-gray-400">
+              <FileText className="w-12 h-12" />
+              <p className="text-sm">No page preview available</p>
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
