@@ -104,6 +104,7 @@ async def answer_query(
                         "doc_name": hit["doc_name"],
                         "page_number": hit["page_number"],
                         "image_filename": hit["image_filename"],
+                        "doc_id": hit["doc_id"],
                         "excerpt": hit["chunk_text"][:200] + "...",
                     }
                 )

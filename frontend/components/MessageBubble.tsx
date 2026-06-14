@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Bot, User } from "lucide-react";
 import CitationCard from "@/components/CitationCard";
 import PageViewer from "@/components/PageViewer";
-import { getPageImageUrl } from "@/lib/api";
+import { getPdfUrl } from "@/lib/api";
 import type { Citation, Message } from "@/lib/api";
 
 interface AIMessage extends Message {
@@ -16,7 +16,7 @@ interface MessageBubbleProps {
 }
 
 interface ViewerState {
-  imageUrl: string;
+  pdfUrl: string;
   docName: string;
   pageNumber: number;
   index: number;
@@ -26,11 +26,11 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   const [viewer, setViewer] = useState<ViewerState | null>(null);
   const isUser = message.role === "user";
 
-  const handleExpand = (imageUrl: string, docName: string, pageNumber: number) => {
+  const handleExpand = (pdfUrl: string, docName: string, pageNumber: number) => {
     const idx = message.citations?.findIndex(
       (c) => c.doc_name === docName && c.page_number === pageNumber
     ) ?? 0;
-    setViewer({ imageUrl, docName, pageNumber, index: idx });
+    setViewer({ pdfUrl, docName, pageNumber, index: idx });
   };
 
   const handlePrev = () => {
@@ -38,7 +38,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     if (viewer.index > 0) {
       const c = message.citations[viewer.index - 1];
       setViewer({
-        imageUrl: getPageImageUrl(c.image_filename),
+        pdfUrl: getPdfUrl(c.doc_id),
         docName: c.doc_name,
         pageNumber: c.page_number,
         index: viewer.index - 1,
@@ -51,7 +51,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     if (viewer.index < message.citations.length - 1) {
       const c = message.citations[viewer.index + 1];
       setViewer({
-        imageUrl: getPageImageUrl(c.image_filename),
+        pdfUrl: getPdfUrl(c.doc_id),
         docName: c.doc_name,
         pageNumber: c.page_number,
         index: viewer.index + 1,
@@ -83,7 +83,6 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
               }
             `}
           >
-            {/* Inline citation markers are styled */}
             {isUser ? (
               message.content
             ) : (
@@ -110,7 +109,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                     key={`${c.doc_name}-${c.page_number}-${i}`}
                     docName={c.doc_name}
                     pageNumber={c.page_number}
-                    imageFilename={c.image_filename}
+                    docId={c.doc_id}
                     excerpt={c.excerpt}
                     onExpand={handleExpand}
                   />
@@ -123,7 +122,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
 
       {viewer && (
         <PageViewer
-          imageUrl={viewer.imageUrl}
+          pdfUrl={viewer.pdfUrl}
           docName={viewer.docName}
           pageNumber={viewer.pageNumber}
           onClose={() => setViewer(null)}

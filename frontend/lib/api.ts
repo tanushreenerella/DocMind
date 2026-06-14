@@ -11,6 +11,7 @@ export interface Citation {
   doc_name: string;
   page_number: number;
   image_filename: string;
+  doc_id: string;
   excerpt: string;
 }
 
@@ -167,4 +168,8 @@ export async function listDocuments(): Promise<DocumentsResponse> {
 
 export function getPageImageUrl(imageFilename: string): string {
   return `${API_BASE}/api/page-image/${encodeURIComponent(imageFilename)}`;
+}
+
+export function getPdfUrl(docId: string): string {
+  return `${API_BASE}/api/pdf/${encodeURIComponent(docId)}`;
 }

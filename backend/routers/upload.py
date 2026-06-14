@@ -1,5 +1,7 @@
 import os
+import re
 import uuid
+from pathlib import Path
 from typing import List
 
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
@@ -111,7 +113,13 @@ async def _process_document(doc_id: str, file_path: str, filename: str) -> None:
         job_status[doc_id]["error"] = str(exc)
 
     finally:
-        if os.path.exists(file_path):
+        # Keep PDFs for the page-preview endpoint; delete everything else
+        if Path(file_path).suffix.lower() == ".pdf" and os.path.exists(file_path):
+            pdf_dir = os.path.join(STORAGE_PATH, "pdfs")
+            os.makedirs(pdf_dir, exist_ok=True)
+            dest = os.path.join(pdf_dir, f"{doc_id}.pdf")
+            os.replace(file_path, dest)
+        elif os.path.exists(file_path):
             os.remove(file_path)
 
 @router.get("/status/{doc_id}")
@@ -119,6 +127,21 @@ async def get_status(doc_id: str) -> dict:
     if doc_id not in job_status:
         raise HTTPException(404, "Job not found")
     return job_status[doc_id]
+
+
+@router.get("/pdf/{doc_id}")
+async def get_pdf(doc_id: str):
+    """Serve a stored PDF for browser-side page preview."""
+    if not re.match(r"^[0-9a-f-]+$", doc_id):
+        raise HTTPException(400, "Invalid doc_id")
+    pdf_path = os.path.join(STORAGE_PATH, "pdfs", f"{doc_id}.pdf")
+    if not os.path.exists(pdf_path):
+        raise HTTPException(404, "PDF not found")
+    return FileResponse(
+        pdf_path,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "inline"},
+    )
 
 
 @router.get("/page-image/{image_filename}")

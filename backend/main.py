@@ -14,6 +14,7 @@ from routers import chat, documents, upload
 os.makedirs(IMAGES_PATH, exist_ok=True)
 os.makedirs(CHROMA_PATH, exist_ok=True)
 os.makedirs(os.path.join(STORAGE_PATH, "temp"), exist_ok=True)
+os.makedirs(os.path.join(STORAGE_PATH, "pdfs"), exist_ok=True)
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["30/minute"])
 

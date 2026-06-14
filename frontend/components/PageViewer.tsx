@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import Image from "next/image";
 import { X, ChevronLeft, ChevronRight, FileText } from "lucide-react";
 
 interface PageViewerProps {
-  imageUrl: string;
+  pdfUrl: string;
   docName: string;
   pageNumber: number;
   onClose: () => void;
@@ -16,7 +15,7 @@ interface PageViewerProps {
 }
 
 export default function PageViewer({
-  imageUrl,
+  pdfUrl,
   docName,
   pageNumber,
   onClose,
@@ -71,24 +70,13 @@ export default function PageViewer({
           </button>
         </div>
 
-        {/* Image or placeholder */}
-        <div className="relative flex items-center justify-center bg-gray-100 max-h-[80vh] overflow-auto min-h-[200px]">
-          {imageUrl ? (
-            <Image
-              src={imageUrl}
-              alt={`${docName} page ${pageNumber}`}
-              width={900}
-              height={1200}
-              className="object-contain max-h-[80vh] w-auto"
-              unoptimized
-            />
-          ) : (
-            <div className="flex flex-col items-center gap-3 py-16 text-gray-400">
-              <FileText className="w-12 h-12" />
-              <p className="text-sm">No page preview available</p>
-            </div>
-          )}
-        </div>
+        {/* PDF rendered in browser's native viewer, opened at the cited page */}
+        <iframe
+          src={`${pdfUrl}#page=${pageNumber}`}
+          className="w-full border-0"
+          style={{ height: "75vh" }}
+          title={`${docName} page ${pageNumber}`}
+        />
 
         {/* Navigation */}
         {(hasPrev || hasNext) && (
