@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pdfplumber
 
-
 async def parse_document(file_path: str, _doc_id: str) -> list[dict]:
     ext = Path(file_path).suffix.lower()
     if ext == ".pdf":

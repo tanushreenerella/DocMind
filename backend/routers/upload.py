@@ -16,7 +16,6 @@ router = APIRouter()
 # In-memory job store — swap for Redis in production
 job_status: dict[str, dict] = {}
 
-
 @router.post("/upload")
 async def upload_documents(
     background_tasks: BackgroundTasks,
@@ -54,41 +53,66 @@ async def upload_documents(
 
     return {"jobs": job_ids}
 
-
 async def _process_document(doc_id: str, file_path: str, filename: str) -> None:
     try:
+        print(f"[{doc_id}] STEP 1: Parsing started")
+
         job_status[doc_id]["stage"] = "parsing"
         job_status[doc_id]["status"] = "processing"
         job_status[doc_id]["progress"] = 10
 
         pages = await parse_document(file_path, doc_id)
+
+        print(f"[{doc_id}] STEP 2: Parsed {len(pages)} pages")
+
         job_status[doc_id]["page_count"] = len(pages)
         job_status[doc_id]["progress"] = 50
 
         job_status[doc_id]["stage"] = "classifying"
-        combined_text = " ".join(p["text"] for p in pages)
-        classification = await classify_document(combined_text, filename)
+
+        combined_text = " ".join(
+            p["text"][:1000]
+            for p in pages[:5]
+        )
+        print(f"[{doc_id}] STEP 3: Classification started")
+
+        classification = await classify_document(
+            combined_text,
+            filename
+        )
+
+        print(f"[{doc_id}] STEP 4: Classification complete")
+
         job_status[doc_id]["classification"] = classification
         job_status[doc_id]["progress"] = 75
 
         job_status[doc_id]["stage"] = "indexing"
-        await index_document(doc_id, filename, pages, classification)
+
+        print(f"[{doc_id}] STEP 5: Indexing started")
+
+        await index_document(
+            doc_id,
+            filename,
+            pages,
+            classification
+        )
+
+        print(f"[{doc_id}] STEP 6: Indexing complete")
 
         job_status[doc_id]["stage"] = "complete"
         job_status[doc_id]["status"] = "complete"
         job_status[doc_id]["progress"] = 100
 
     except Exception as exc:
+        print(f"[{doc_id}] ERROR: {exc}")
+
         job_status[doc_id]["status"] = "error"
         job_status[doc_id]["stage"] = "error"
-        # Return generic message; log full error server-side only
-        job_status[doc_id]["error"] = "Processing failed. Please try again."
-        print(f"[ERROR] doc_id={doc_id}: {exc}")
+        job_status[doc_id]["error"] = str(exc)
 
     finally:
         if os.path.exists(file_path):
             os.remove(file_path)
-
 
 @router.get("/status/{doc_id}")
 async def get_status(doc_id: str) -> dict:
