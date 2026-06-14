@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText } from "lucide-react";
+import PdfPage from "@/components/PdfPage";
 import { getPdfUrl } from "@/lib/api";
 
 interface CitationCardProps {
@@ -22,13 +22,13 @@ export default function CitationCard({
 
   return (
     <div className="flex gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl hover:border-indigo-200 hover:bg-indigo-50/30 transition-all duration-200">
-      {/* Thumbnail — clicks open the PDF at the correct page */}
+      {/* Thumbnail — renders the actual PDF page */}
       <button
         onClick={() => onExpand(pdfUrl, docName, pageNumber)}
-        className="shrink-0 w-16 h-20 rounded-lg overflow-hidden border border-gray-200 hover:scale-105 hover:shadow-md transition-all duration-200 cursor-pointer bg-gray-100 flex items-center justify-center"
+        className="shrink-0 w-16 h-20 rounded-lg overflow-hidden border border-gray-200 hover:scale-105 hover:shadow-md transition-all duration-200 cursor-pointer"
         title="View page"
       >
-        <FileText className="w-6 h-6 text-indigo-400" />
+        <PdfPage pdfUrl={pdfUrl} pageNumber={pageNumber} scale={0.15} className="w-full h-full" />
       </button>
 
       {/* Info */}

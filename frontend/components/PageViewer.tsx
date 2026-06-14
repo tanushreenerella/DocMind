@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback } from "react";
 import { X, ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import PdfPage from "@/components/PdfPage";
 
 interface PageViewerProps {
   pdfUrl: string;
@@ -48,7 +49,7 @@ export default function PageViewer({
       onClick={onClose}
     >
       <div
-        className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden"
+        className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -70,13 +71,10 @@ export default function PageViewer({
           </button>
         </div>
 
-        {/* PDF rendered in browser's native viewer, opened at the cited page */}
-        <iframe
-          src={`${pdfUrl}#page=${pageNumber}`}
-          className="w-full border-0"
-          style={{ height: "75vh" }}
-          title={`${docName} page ${pageNumber}`}
-        />
+        {/* Rendered page image */}
+        <div className="overflow-y-auto max-h-[75vh]">
+          <PdfPage pdfUrl={pdfUrl} pageNumber={pageNumber} scale={1.5} className="w-full" />
+        </div>
 
         {/* Navigation */}
         {(hasPrev || hasNext) && (
