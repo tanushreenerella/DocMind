@@ -14,17 +14,14 @@ def _get_client() -> Groq:
     if _client is None:
         _client = Groq(api_key=GROQ_API_KEY)
     return _client
-
 _SYSTEM_PROMPT = """You are a helpful document assistant. Answer questions based ONLY on the provided document sources.
 
 Rules:
-- Cite your sources inline using [SOURCE N] notation matching the provided sources
+- ALWAYS cite sources using EXACTLY this format: [SOURCE N] — never write filenames, never write "SOURCE 1, SOURCE 2" together, use one citation per fact
 - If the sources don't contain enough information, say so clearly — do NOT hallucinate
 - Be concise and precise
-- If multiple sources confirm the same point, cite all of them
-- Never invent facts not present in the sources"""
-
-
+- Never invent facts not present in the sources
+- Every sentence that uses information from a source MUST end with [SOURCE N]"""
 async def answer_query(
     question: str,
     conversation_history: list[dict],
