@@ -1,3 +1,5 @@
+import { getToken, saveAuth, type AuthUser } from "./auth";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -69,7 +71,20 @@ export interface DocumentsResponse {
   count: number;
 }
 
-// ─── API helpers ──────────────────────────────────────────────────────────────
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user_id: string;
+  email: string;
+  full_name: string;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function authHeaders(): Record<string, string> {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -79,9 +94,26 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// Silently pings /health until the server responds OK.
-// Call on page mount so Render's free-tier instance wakes up before
-// the user tries to upload or chat. Resolves when ready, gives up after ~60 s.
+async function fetchWithRetry(
+  input: RequestInfo,
+  init?: RequestInit,
+  maxAttempts = 6
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) {
+      const delay = Math.min(2 ** attempt * 1000, 10000);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+    try {
+      return await fetch(input, init);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError;
+}
+
 export async function warmupBackend(): Promise<boolean> {
   for (let i = 0; i < 30; i++) {
     try {
@@ -95,28 +127,37 @@ export async function warmupBackend(): Promise<boolean> {
   return false;
 }
 
-// Retries on network-level failures (TypeError: Failed to fetch / net::ERR_FAILED)
-// which happen when Render's free tier is cold-starting (up to 50 s delay).
-// Delays: 2 s, 4 s, 8 s, 10 s, 10 s → ~34 s total before giving up.
-async function fetchWithRetry(
-  input: RequestInfo,
-  init?: RequestInit,
-  maxAttempts = 6
-): Promise<Response> {
-  let lastError: unknown;
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    if (attempt > 0) {
-      const delay = Math.min(2 ** attempt * 1000, 10000); // cap at 10 s
-      await new Promise((r) => setTimeout(r, delay));
-    }
-    try {
-      return await fetch(input, init);
-    } catch (err) {
-      lastError = err;
-    }
-  }
-  throw lastError;
+// ─── Auth API ─────────────────────────────────────────────────────────────────
+
+export async function signup(
+  email: string,
+  password: string,
+  fullName: string
+): Promise<AuthUser> {
+  const res = await fetchWithRetry(`${API_BASE}/auth/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, full_name: fullName }),
+  });
+  const data = await handleResponse<AuthResponse>(res);
+  const user: AuthUser = { user_id: data.user_id, email: data.email, full_name: data.full_name };
+  saveAuth(data.access_token, user);
+  return user;
 }
+
+export async function login(email: string, password: string): Promise<AuthUser> {
+  const res = await fetchWithRetry(`${API_BASE}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await handleResponse<AuthResponse>(res);
+  const user: AuthUser = { user_id: data.user_id, email: data.email, full_name: data.full_name };
+  saveAuth(data.access_token, user);
+  return user;
+}
+
+// ─── Protected API ────────────────────────────────────────────────────────────
 
 export async function sendMessage(
   question: string,
@@ -125,7 +166,7 @@ export async function sendMessage(
 ): Promise<ChatResponse> {
   const res = await fetchWithRetry(`${API_BASE}/api/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({
       question,
       conversation_history: history,
@@ -140,13 +181,17 @@ export async function uploadFiles(files: File[]): Promise<UploadResponse> {
   files.forEach((f) => form.append("files", f));
   const res = await fetchWithRetry(`${API_BASE}/api/upload`, {
     method: "POST",
+    headers: { ...authHeaders() },
     body: form,
   });
   return handleResponse<UploadResponse>(res);
 }
 
 export async function getStatus(docId: string): Promise<JobStatus> {
-  const res = await fetchWithRetry(`${API_BASE}/api/status/${encodeURIComponent(docId)}`);
+  const res = await fetchWithRetry(
+    `${API_BASE}/api/status/${encodeURIComponent(docId)}`,
+    { headers: { ...authHeaders() } }
+  );
   return handleResponse<JobStatus>(res);
 }
 
@@ -155,14 +200,16 @@ export async function transcribeAudio(
 ): Promise<{ transcript: string }> {
   const res = await fetchWithRetry(`${API_BASE}/api/transcribe`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({ audio_base64: base64Audio }),
   });
   return handleResponse<{ transcript: string }>(res);
 }
 
 export async function listDocuments(): Promise<DocumentsResponse> {
-  const res = await fetchWithRetry(`${API_BASE}/api/documents`);
+  const res = await fetchWithRetry(`${API_BASE}/api/documents`, {
+    headers: { ...authHeaders() },
+  });
   return handleResponse<DocumentsResponse>(res);
 }
 

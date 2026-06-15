@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, Brain, CheckCircle2, AlertCircle, Loader2, MessageSquare } from "lucide-react";
 import UploadZone from "@/components/UploadZone";
+import AuthGuard from "@/components/AuthGuard";
 import { uploadFiles, getStatus, warmupBackend } from "@/lib/api";
 import type { UploadJob, JobStatus, Classification } from "@/lib/api";
 
@@ -126,6 +127,14 @@ function JobRow({ job }: { job: TrackedJob }) {
 }
 
 export default function UploadPage() {
+  return (
+    <AuthGuard>
+      <UploadContent />
+    </AuthGuard>
+  );
+}
+
+function UploadContent() {
   const [files, setFiles] = useState<File[]>([]);
   const [jobs, setJobs] = useState<TrackedJob[]>([]);
   const [uploading, setUploading] = useState(false);

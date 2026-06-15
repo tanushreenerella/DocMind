@@ -2,10 +2,13 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Upload, Brain, Menu, X, Bot, User, Loader2, Send, FileText } from "lucide-react";
+import { Upload, Brain, Menu, X, Loader2, Send, FileText, LogOut } from "lucide-react";
 import MessageBubble from "@/components/MessageBubble";
 import VoiceInput from "@/components/VoiceInput";
-import { listDocuments, sendMessage, getPageImageUrl, warmupBackend } from "@/lib/api";
+import AuthGuard from "@/components/AuthGuard";
+import { listDocuments, sendMessage, warmupBackend } from "@/lib/api";
+import { getUser, logout } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 import type { IndexedDocument, Citation } from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -66,6 +69,16 @@ function saveHistory(docId: string, messages: StoredMessage[]) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
+  return (
+    <AuthGuard>
+      <HomeContent />
+    </AuthGuard>
+  );
+}
+
+function HomeContent() {
+  const router = useRouter();
+  const user = getUser();
   const [docs, setDocs] = useState<IndexedDocument[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<IndexedDocument | null>(null);
   const [messages, setMessages] = useState<StoredMessage[]>([]);
@@ -77,18 +90,34 @@ export default function HomePage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const refreshDocs = useCallback(() => {
+    listDocuments()
+      .then((r) => setDocs(r.documents))
+      .catch(() => {});
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
+
   // Wake up Render free-tier instance on mount
   useEffect(() => {
     warmupBackend().then((ok) => setServerReady(ok));
   }, []);
 
-  // Fetch document list only after server is confirmed awake
+  // Fetch document list after server is ready, and on tab focus
   useEffect(() => {
     if (!serverReady) return;
-    listDocuments()
-      .then((r) => setDocs(r.documents))
-      .catch(() => {});
-  }, [serverReady]);
+    refreshDocs();
+    const onVisible = () => { if (!document.hidden) refreshDocs(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [serverReady, refreshDocs]);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -343,13 +372,27 @@ export default function HomePage() {
             )}
           </div>
 
-          <Link
-            href="/upload"
-            className="flex items-center gap-1.5 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-xl transition-colors shrink-0"
-          >
-            <Upload className="w-4 h-4" />
-            <span className="hidden sm:inline">Upload</span>
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            {user && (
+              <span className="hidden sm:block text-xs text-gray-400 truncate max-w-32">
+                {user.email}
+              </span>
+            )}
+            <Link
+              href="/upload"
+              className="flex items-center gap-1.5 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-xl transition-colors"
+            >
+              <Upload className="w-4 h-4" />
+              <span className="hidden sm:inline">Upload</span>
+            </Link>
+            <button
+              onClick={handleLogout}
+              title="Sign out"
+              className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </header>
 
         {/* Cold-start banner — disappears once /health responds OK */}

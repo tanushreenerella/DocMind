@@ -1,11 +1,13 @@
 import base64
 from typing import List
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from groq import Groq
 from pydantic import BaseModel, field_validator
 
+from core.auth import get_current_user
 from core.config import GROQ_API_KEY
+from core.database import get_pool
 from services.rag import answer_query
 
 router = APIRouter()
@@ -52,15 +54,57 @@ class VoiceRequest(BaseModel):
 
 
 @router.post("/chat")
-async def chat(request: ChatRequest) -> dict:
+async def chat(
+    request: ChatRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    pool = get_pool()
     history = [{"role": m.role, "content": m.content} for m in request.conversation_history]
     result = await answer_query(request.question, history, doc_id=request.doc_id)
+
+    # Persist both turns to chat_history
+    await pool.execute(
+        "INSERT INTO chat_history (user_id, doc_id, role, content) VALUES ($1, $2, 'user', $3)",
+        current_user["id"],
+        request.doc_id or "",
+        request.question,
+    )
+    await pool.execute(
+        "INSERT INTO chat_history (user_id, doc_id, role, content) VALUES ($1, $2, 'assistant', $3)",
+        current_user["id"],
+        request.doc_id or "",
+        result["answer"],
+    )
+
     return result
 
 
+@router.get("/chat/history/{doc_id}")
+async def get_history(doc_id: str, current_user: dict = Depends(get_current_user)):
+    pool = get_pool()
+    rows = await pool.fetch(
+        """
+        SELECT role, content, created_at
+        FROM chat_history
+        WHERE user_id = $1 AND doc_id = $2
+        ORDER BY created_at ASC
+        """,
+        current_user["id"],
+        doc_id,
+    )
+    return {
+        "history": [
+            {"role": r["role"], "content": r["content"], "timestamp": r["created_at"].isoformat()}
+            for r in rows
+        ]
+    }
+
+
 @router.post("/transcribe")
-async def transcribe_voice(request: VoiceRequest) -> dict:
-    """Transcribe audio via Groq Whisper."""
+async def transcribe_voice(
+    request: VoiceRequest,
+    current_user: dict = Depends(get_current_user),
+):
     try:
         audio_bytes = base64.b64decode(request.audio_base64)
         transcription = _get_groq().audio.transcriptions.create(

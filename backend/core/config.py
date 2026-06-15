@@ -17,3 +17,9 @@ if _origins_env:
     ALLOWED_ORIGINS = [o.strip() for o in _origins_env.split(",")]
 else:
     ALLOWED_ORIGINS = ["http://localhost:3000", "https://doc-mind-three.vercel.app"]
+
+# PostgreSQL / Auth
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "changeme")
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRE_MINUTES = int(os.environ.get("JWT_EXPIRE_MINUTES", "60"))
