@@ -1,4 +1,5 @@
 import chromadb
+from chromadb.config import Settings
 from core.config import CHROMA_PATH
 from services.embeddings import get_embedding, get_embeddings
 
@@ -7,7 +8,10 @@ CHUNK_OVERLAP = 50
 
 # Collection has no embedding_function — we supply embeddings explicitly
 # so no local model is loaded and no ONNX runtime is needed.
-chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
+chroma_client = chromadb.PersistentClient(
+    path=CHROMA_PATH,
+    settings=Settings(anonymized_telemetry=False),
+)
 collection = chroma_client.get_or_create_collection(
     name="documents",
     metadata={"hnsw:space": "cosine"},
