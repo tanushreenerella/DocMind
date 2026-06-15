@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
-apt-get install -y tesseract-ocr poppler-utils
+set -e
 pip install -r requirements.txt
