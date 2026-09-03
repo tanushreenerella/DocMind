@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from core.auth import get_current_user
 from core.database import get_pool
+from services.timeline import build_evidence_timeline
 
 router = APIRouter()
 
@@ -38,3 +39,20 @@ async def document_count(current_user: dict = Depends(get_current_user)):
         current_user["id"],
     )
     return {"count": count}
+
+
+@router.post("/documents/{doc_id}/evidence-timeline")
+async def evidence_timeline(doc_id: str, current_user: dict = Depends(get_current_user)):
+    """Produce an evidence-backed timeline only after verifying document ownership."""
+    pool = get_pool()
+    document = await pool.fetchrow(
+        "SELECT doc_id FROM documents WHERE doc_id = $1 AND user_id = $2 AND status = 'complete'",
+        doc_id,
+        current_user["id"],
+    )
+    if not document:
+        raise HTTPException(404, "Document not found")
+    return await build_evidence_timeline(
+        doc_id,
+        user_id=current_user["id"],
+    )

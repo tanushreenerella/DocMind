@@ -11,6 +11,10 @@ STORAGE_PATH = os.environ.get("STORAGE_PATH", "./storage")
 CHROMA_PATH = os.environ.get("CHROMA_PATH", "./storage/chroma_db")
 IMAGES_PATH = os.environ.get("IMAGES_PATH", "./storage/page_images")
 RATE_LIMIT_PER_MINUTE = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "30"))
+HYBRID_SEARCH_ENABLED = (
+    os.environ.get("HYBRID_SEARCH_ENABLED", "false").strip().lower()
+    == "true"
+)
 
 _origins_env = os.environ.get("ALLOWED_ORIGINS", "")
 if _origins_env:

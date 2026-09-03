@@ -23,6 +23,12 @@ export interface ChatResponse {
   has_answer: boolean;
 }
 
+export interface EvidenceTimeline {
+  briefing: string;
+  citations: Citation[];
+  has_timeline: boolean;
+}
+
 export interface UploadJob {
   doc_id: string;
   filename: string;
@@ -146,13 +152,26 @@ export async function signup(
 }
 
 export async function login(email: string, password: string): Promise<AuthUser> {
+  const formData = new URLSearchParams();
+  formData.append("username", email);
+  formData.append("password", password);
+
   const res = await fetchWithRetry(`${API_BASE}/auth/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: formData.toString(),
   });
+
   const data = await handleResponse<AuthResponse>(res);
-  const user: AuthUser = { user_id: data.user_id, email: data.email, full_name: data.full_name };
+
+  const user: AuthUser = {
+    user_id: data.user_id,
+    email: data.email,
+    full_name: data.full_name,
+  };
+
   saveAuth(data.access_token, user);
   return user;
 }
@@ -165,6 +184,23 @@ export async function sendMessage(
   docId?: string
 ): Promise<ChatResponse> {
   const res = await fetchWithRetry(`${API_BASE}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({
+      question,
+      conversation_history: history,
+      ...(docId ? { doc_id: docId } : {}),
+    }),
+  });
+  return handleResponse<ChatResponse>(res);
+}
+
+export async function sendAgenticMessage(
+  question: string,
+  history: Message[],
+  docId?: string
+): Promise<ChatResponse> {
+  const res = await fetchWithRetry(`${API_BASE}/api/chat/agentic`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({
@@ -211,6 +247,14 @@ export async function listDocuments(): Promise<DocumentsResponse> {
     headers: { ...authHeaders() },
   });
   return handleResponse<DocumentsResponse>(res);
+}
+
+export async function generateEvidenceTimeline(docId: string): Promise<EvidenceTimeline> {
+  const res = await fetchWithRetry(`${API_BASE}/api/documents/${encodeURIComponent(docId)}/evidence-timeline`, {
+    method: "POST",
+    headers: { ...authHeaders() },
+  });
+  return handleResponse<EvidenceTimeline>(res);
 }
 
 export function getPageImageUrl(imageFilename: string): string {

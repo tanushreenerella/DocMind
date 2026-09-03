@@ -25,7 +25,12 @@ async def _set_status(doc_id: str, **fields) -> None:
     await pool.execute(f"UPDATE documents SET {sets} WHERE doc_id = $1", doc_id, *vals)
 
 
-async def _process_document(doc_id: str, file_path: str, filename: str) -> None:
+async def _process_document(
+    doc_id: str,
+    user_id: str,
+    file_path: str,
+    filename: str,
+) -> None:
     try:
         await _set_status(doc_id, stage="parsing", status="processing", progress=10)
         pages = await parse_document(file_path, doc_id)
@@ -44,7 +49,13 @@ async def _process_document(doc_id: str, file_path: str, filename: str) -> None:
             stage="indexing",
         )
 
-        await index_document(doc_id, filename, pages, classification)
+        await index_document(
+            doc_id,
+            user_id,
+            filename,
+            pages,
+            classification,
+        )
 
         await _set_status(doc_id, stage="complete", status="complete", progress=100)
 
@@ -96,7 +107,13 @@ async def upload_documents(
             safe_name,
         )
 
-        background_tasks.add_task(_process_document, doc_id, temp_path, safe_name)
+        background_tasks.add_task(
+            _process_document,
+            doc_id,
+            current_user["id"],
+            temp_path,
+            safe_name,
+        )
         job_ids.append({"doc_id": doc_id, "filename": safe_name})
 
     return {"jobs": job_ids}

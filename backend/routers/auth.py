@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr, field_validator
 from core.auth import hash_password, verify_password, create_access_token, get_current_user
 from core.database import get_pool
@@ -59,27 +60,32 @@ async def signup(body: SignupRequest):
         email=row["email"],
         full_name=row["full_name"] or "",
     )
-
-
 @router.post("/login", response_model=AuthResponse)
-async def login(body: LoginRequest):
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     pool = get_pool()
 
     row = await pool.fetchrow(
         "SELECT id, email, hashed_password, full_name FROM users WHERE email = $1",
-        body.email,
+        form_data.username,
     )
-    if not row or not verify_password(body.password, row["hashed_password"]):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    if not row or not verify_password(
+        form_data.password,
+        row["hashed_password"]
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
 
     token = create_access_token(str(row["id"]), row["email"])
+
     return AuthResponse(
         access_token=token,
         user_id=str(row["id"]),
         email=row["email"],
         full_name=row["full_name"] or "",
     )
-
 
 @router.get("/me")
 async def me(current_user: dict = Depends(get_current_user)):

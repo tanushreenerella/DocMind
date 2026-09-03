@@ -2,14 +2,14 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Upload, Brain, Menu, X, Loader2, Send, FileText, LogOut } from "lucide-react";
+import { Upload, Brain, Menu, X, Loader2, Send, FileText, LogOut, Sparkles, CalendarDays } from "lucide-react";
 import MessageBubble from "@/components/MessageBubble";
 import VoiceInput from "@/components/VoiceInput";
 import AuthGuard from "@/components/AuthGuard";
-import { listDocuments, sendMessage, warmupBackend } from "@/lib/api";
+import { generateEvidenceTimeline, listDocuments, sendAgenticMessage, sendMessage, warmupBackend } from "@/lib/api";
 import { getUser, logout } from "@/lib/auth";
 import { useRouter } from "next/navigation";
-import type { IndexedDocument, Citation } from "@/lib/api";
+import type { IndexedDocument, Citation, EvidenceTimeline } from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -86,6 +86,10 @@ function HomeContent() {
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [serverReady, setServerReady] = useState(false);
+  const [timeline, setTimeline] = useState<EvidenceTimeline | null>(null);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+  const [timelineError, setTimelineError] = useState("");
+  const [agenticMode, setAgenticMode] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -135,9 +139,24 @@ function HomeContent() {
       return;
     }
     setMessages(loadHistory(doc.doc_id));
+    setTimeline(null);
+    setTimelineError("");
     setSelectedDoc(doc);
     setInput("");
     setSidebarOpen(false);
+  };
+
+  const handleTimeline = async () => {
+    if (!selectedDoc || timelineLoading) return;
+    setTimelineLoading(true);
+    setTimelineError("");
+    try {
+      setTimeline(await generateEvidenceTimeline(selectedDoc.doc_id));
+    } catch {
+      setTimelineError("Could not generate an evidence timeline. Please try again.");
+    } finally {
+      setTimelineLoading(false);
+    }
   };
 
   const adjustTextarea = () => {
@@ -166,7 +185,9 @@ function HomeContent() {
 
       try {
         const history = messages.map((m) => ({ role: m.role, content: m.content }));
-        const result = await sendMessage(q, history, selectedDoc.doc_id);
+        const result = agenticMode
+          ? await sendAgenticMessage(q, history, selectedDoc.doc_id)
+          : await sendMessage(q, history, selectedDoc.doc_id);
         const aiMsg: StoredMessage = {
           id: crypto.randomUUID(),
           role: "assistant",
@@ -189,7 +210,7 @@ function HomeContent() {
         setLoading(false);
       }
     },
-    [input, selectedDoc, loading, messages]
+    [input, selectedDoc, loading, messages, agenticMode]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -373,6 +394,32 @@ function HomeContent() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {selectedDoc && (
+              <button
+                type="button"
+                onClick={() => setAgenticMode((enabled) => !enabled)}
+                aria-pressed={agenticMode}
+                title="Plans sub-questions, checks retrieved evidence, and retries weak searches."
+                className={`flex items-center gap-1.5 text-xs sm:text-sm font-medium px-3 py-2 rounded-xl transition-colors ${
+                  agenticMode
+                    ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                <Sparkles className="w-4 h-4" />
+                Agentic mode: {agenticMode ? "On" : "Off"}
+              </button>
+            )}
+            {selectedDoc && (
+              <button
+                onClick={handleTimeline}
+                disabled={timelineLoading}
+                className="hidden md:flex items-center gap-1.5 text-sm font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 disabled:opacity-60 px-3 py-2 rounded-xl transition-colors"
+              >
+                {timelineLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                Evidence timeline
+              </button>
+            )}
             {user && (
               <span className="hidden sm:block text-xs text-gray-400 truncate max-w-32">
                 {user.email}
@@ -405,6 +452,24 @@ function HomeContent() {
 
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+          {(timeline || timelineError) && (
+            <section className="max-w-4xl mx-auto rounded-2xl border border-violet-200 bg-violet-50/60 p-4">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2 text-violet-900 font-semibold text-sm">
+                  <CalendarDays className="w-4 h-4" /> Evidence timeline
+                </div>
+                <button onClick={() => { setTimeline(null); setTimelineError(""); }} className="text-violet-500 hover:text-violet-800" aria-label="Close evidence timeline">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {timelineError ? <p className="text-sm text-red-600">{timelineError}</p> : timeline && (
+                <>
+                  <p className="whitespace-pre-line text-sm leading-6 text-slate-700">{timeline.briefing}</p>
+                  {timeline.citations.length > 0 && <p className="mt-3 text-xs text-violet-700">Evidence pages: {timeline.citations.map((c) => c.page_number).filter((p, i, pages) => pages.indexOf(p) === i).join(", ")}</p>}
+                </>
+              )}
+            </section>
+          )}
           {/* State 1: no document selected */}
           {noDocSelected && (
             <div className="flex flex-col items-center justify-center h-full text-center gap-4">

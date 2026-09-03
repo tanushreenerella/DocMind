@@ -8,6 +8,7 @@ from pydantic import BaseModel, field_validator
 from core.auth import get_current_user
 from core.config import GROQ_API_KEY
 from core.database import get_pool
+from services.agentic_rag import answer_agentic_query
 from services.rag import answer_query
 
 router = APIRouter()
@@ -53,16 +54,82 @@ class VoiceRequest(BaseModel):
     audio_base64: str
 
 
+async def _require_owned_document(
+    doc_id: str | None,
+    user_id: str,
+) -> None:
+    """Reject document IDs not owned by the caller without revealing why."""
+    if not doc_id:
+        return
+
+    pool = get_pool()
+    owned_document = await pool.fetchval(
+        "SELECT 1 FROM documents WHERE doc_id = $1 AND user_id = $2",
+        doc_id,
+        user_id,
+    )
+    if not owned_document:
+        # Keep this identical for unknown and foreign document IDs.
+        raise HTTPException(
+            status_code=403,
+            detail="Document access denied",
+        )
+
+
 @router.post("/chat")
 async def chat(
     request: ChatRequest,
     current_user: dict = Depends(get_current_user),
 ):
     pool = get_pool()
+    await _require_owned_document(
+        request.doc_id,
+        current_user["id"],
+    )
     history = [{"role": m.role, "content": m.content} for m in request.conversation_history]
-    result = await answer_query(request.question, history, doc_id=request.doc_id)
+    result = await answer_query(
+        request.question,
+        history,
+        doc_id=request.doc_id,
+        user_id=current_user["id"],
+    )
 
     # Persist both turns to chat_history
+    await pool.execute(
+        "INSERT INTO chat_history (user_id, doc_id, role, content) VALUES ($1, $2, 'user', $3)",
+        current_user["id"],
+        request.doc_id or "",
+        request.question,
+    )
+    await pool.execute(
+        "INSERT INTO chat_history (user_id, doc_id, role, content) VALUES ($1, $2, 'assistant', $3)",
+        current_user["id"],
+        request.doc_id or "",
+        result["answer"],
+    )
+
+    return result
+
+
+@router.post("/chat/agentic")
+async def chat_agentic(
+    request: ChatRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Phase-1 LangGraph endpoint; preserves the existing chat response contract."""
+    pool = get_pool()
+    await _require_owned_document(
+        request.doc_id,
+        current_user["id"],
+    )
+    history = [{"role": m.role, "content": m.content} for m in request.conversation_history]
+    result = await answer_agentic_query(
+        request.question,
+        history,
+        user_id=current_user["id"],
+        doc_id=request.doc_id,
+    )
+
     await pool.execute(
         "INSERT INTO chat_history (user_id, doc_id, role, content) VALUES ($1, $2, 'user', $3)",
         current_user["id"],

@@ -1,6 +1,26 @@
 import os
 from contextlib import asynccontextmanager
 
+# Compatibility shim: adapt older positional `posthog.capture(user, event, props)`
+# calls (used by Chromadb's telemetry) to the newer `posthog.capture(event, distinct_id=..., properties=...)` API.
+try:
+    import posthog
+
+    _posthog_capture = getattr(posthog, "capture", None)
+
+    def _capture_compat(*args, **kwargs):
+        if _posthog_capture is None:
+            return None
+        # Older code called: posthog.capture(user_id, event_name, properties)
+        if len(args) == 3 and isinstance(args[2], dict):
+            user_id, event_name, properties = args
+            return _posthog_capture(event_name, distinct_id=user_id, properties=properties, **kwargs)
+        return _posthog_capture(*args, **kwargs)
+
+    posthog.capture = _capture_compat
+except Exception:
+    pass
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse

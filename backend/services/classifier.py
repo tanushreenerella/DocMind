@@ -67,10 +67,11 @@ Return ONLY the JSON object, no markdown, no explanation."""
 
     try:
         response = _get_client().chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="qwen/qwen3.6-27b",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1,
             max_tokens=800,
+            reasoning_format="hidden",
         )
 
         raw = response.choices[0].message.content.strip()
