@@ -118,6 +118,34 @@ class HybridSearchTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(self.collection.get_calls, 1)
 
+    async def test_reranking_reorders_hits_and_updates_scores(self) -> None:
+        class FakeReranker:
+            def predict(self, pairs: list[tuple[str, str]]) -> list[float]:
+                self.pairs = pairs
+                return [0.1, 0.9]
+
+        reranker = FakeReranker()
+        with (
+            patch.object(embedder, "HYBRID_SEARCH_ENABLED", True),
+            patch.object(embedder, "RERANK_ENABLED", True),
+            patch.object(embedder, "_reranker", reranker),
+        ):
+            hits = await embedder.search(
+                "rarekeyword",
+                user_id="user-a",
+                doc_id="doc-a",
+            )
+
+        self.assertEqual(
+            [hit["chunk_id"] for hit in hits],
+            ["a-vector", "a-keyword"],
+        )
+        self.assertEqual(
+            [hit["relevance_score"] for hit in hits],
+            [0.9, 0.1],
+        )
+        self.assertEqual(len(reranker.pairs), 2)
+
     def test_rrf_boosts_a_chunk_ranked_by_both_retrievers(self) -> None:
         vector_hits = [
             {"chunk_id": "vector-only"},

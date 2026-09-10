@@ -1,8 +1,9 @@
+import asyncio
 import chromadb
 from chromadb.config import Settings
 from rank_bm25 import BM25Okapi
 from core.config import CHROMA_PATH
-from core.config import HYBRID_SEARCH_ENABLED
+from core.config import HYBRID_SEARCH_ENABLED, RERANK_ENABLED
 from services.embeddings import get_embedding, get_embeddings
 import re
 
@@ -22,9 +23,16 @@ _PROMPT_INJECTION_PATTERNS = (
 
 _BM25_TOKEN_PATTERN = re.compile(r"\w+", re.UNICODE)
 _RRF_K = 60
+_RERANK_CANDIDATE_LIMIT = 20
 _bm25_index: BM25Okapi | None = None
 _bm25_records: list[dict] = []
 _bm25_ready = False
+_reranker = None
+
+if RERANK_ENABLED:
+    from sentence_transformers import CrossEncoder
+
+    _reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
 # Collection has no embedding_function — we supply embeddings explicitly
 # so no local model is loaded and no ONNX runtime is needed.
@@ -189,6 +197,28 @@ def _fuse_with_rrf(
     return [hits_by_id[chunk_id] for chunk_id in ordered_ids[:n_results]]
 
 
+async def _rerank_hits(
+    query: str,
+    hits: list[dict],
+    n_results: int,
+) -> list[dict]:
+    """Rerank the leading RRF candidates with the shared cross-encoder."""
+    if not _reranker:
+        return hits[:n_results]
+
+    candidates = hits[:_RERANK_CANDIDATE_LIMIT]
+    scores = await asyncio.to_thread(
+        _reranker.predict,
+        [(query, hit["chunk_text"]) for hit in candidates],
+    )
+    reranked = [
+        {**hit, "relevance_score": float(score)}
+        for hit, score in zip(candidates, scores)
+    ]
+    reranked.sort(key=lambda hit: hit["relevance_score"], reverse=True)
+    return reranked[:n_results]
+
+
 def chunk_text(text: str) -> list[str]:
     chunks: list[str] = []
     start = 0
@@ -262,7 +292,10 @@ async def search(
         total = collection.count()
         if total == 0:
             return []
-        safe_n = min(n_results, total)
+        safe_n = min(
+            max(n_results, _RERANK_CANDIDATE_LIMIT),
+            total,
+        ) if HYBRID_SEARCH_ENABLED and RERANK_ENABLED else min(n_results, total)
 
         query_embedding = await get_embedding(query)
 
@@ -313,15 +346,18 @@ async def search(
 
         bm25_hits = _search_bm25(
             query,
-            n_results=n_results,
+            n_results=safe_n,
             user_id=user_id,
             doc_id=doc_id,
         )
-        return _fuse_with_rrf(
+        fused_hits = _fuse_with_rrf(
             hits,
             bm25_hits,
-            n_results=n_results,
+            n_results=safe_n,
         )
+        if RERANK_ENABLED:
+            return await _rerank_hits(query, fused_hits, n_results)
+        return fused_hits[:n_results]
     except Exception as exc:
         print(f"[search error] {exc}")
         return []

@@ -1,0 +1,806 @@
+DOCMIND REPOSITORY AUDIT REPORT
+================================
+
+Audited revision: e9a3daa (origin/master)
+Repository: tanushreenerella/DocMind
+Audit date: 2026-09-10
+Working tree: clean at audit time
+
+
+1. EXECUTIVE STATUS
+===================
+
+BUILT:
+- FastAPI backend and Next.js frontend.
+- JWT signup/login with bcrypt password hashing.
+- PostgreSQL-backed users, documents, and chat history.
+- PDF text extraction and table extraction.
+- Optional OCR fallback using pdf2image and pytesseract.
+- Groq document classification.
+- Gemini document/query embeddings.
+- Persistent Chroma vector storage.
+- Optional BM25 hybrid retrieval with reciprocal rank fusion.
+- Standard RAG chat with citations.
+- LangGraph planner/retriever/critic/synthesizer pipeline.
+- Evidence timeline generation.
+- Groq Whisper voice transcription.
+- PDF.js page rendering.
+- Upload validation, CORS, rate limiting, and path checks.
+
+IMPORTANT RISKS:
+- PNG/JPEG/TIFF uploads pass validation but are not actually parsed or indexed.
+- Page-image requests do not verify document ownership.
+- Public Vercel frontend loads, but the guessed Render backend health URL returned HTTP 503 during the audit.
+- Frontend lint fails with three errors and two warnings.
+- The selected local Python interpreter is broken, so Python tests could not run.
+- Render configuration does not install Tesseract or Poppler system binaries.
+- Chroma and uploaded-file storage are local and may be lost on ephemeral Render storage.
+- README model names and architecture are outdated.
+
+
+2. ARCHITECTURE
+===============
+
+2.1 UPLOAD PIPELINE
+-------------------
+
+Request entry point:
+- File: backend/routers/upload.py
+- Function: upload_documents()
+- Endpoint: POST /api/upload
+- Authentication: Depends(get_current_user)
+- Upload processing: FastAPI BackgroundTasks
+
+Flow:
+
+POST /api/upload
+  -> get_current_user()
+  -> validate_file()
+  -> sanitize_filename()
+  -> write storage/temp/{doc_id}_{filename}
+  -> insert documents database row
+  -> BackgroundTasks.add_task(_process_document)
+       -> parse_document()
+       -> classify_document()
+       -> index_document()
+       -> mark job complete
+
+2.2 FILE VALIDATION
+-------------------
+
+File: backend/core/security.py
+
+Function: validate_file(file)
+
+Implemented checks:
+- Allowed extensions: .pdf, .png, .jpg, .jpeg, .tiff.
+- MIME type validation.
+- File size limit from MAX_FILE_SIZE_MB, default 20 MB.
+- Magic-byte validation.
+- Filename sanitization through sanitize_filename().
+- Path traversal protection through basename and character filtering.
+
+Important defect:
+- PNG, JPEG, and TIFF files are accepted by validation.
+- backend/services/parser.py only handles .pdf.
+- parse_document() returns [] for other file types.
+- Such files can be marked complete without indexed content.
+
+2.3 TEXT EXTRACTION
+-------------------
+
+File: backend/services/parser.py
+
+Functions:
+- parse_document()
+- _parse_pdf()
+
+Library:
+- pdfplumber
+
+Behavior:
+- Opens each PDF with pdfplumber.
+- Calls plumber_page.extract_text() for every page.
+- Stores page number, text, image filename, table information, and image path.
+
+2.4 TABLE EXTRACTION
+--------------------
+
+Library:
+- pdfplumber
+
+Function:
+- plumber_page.extract_tables()
+
+Behavior:
+- Extracted tables are converted to text by _table_to_text().
+- Table text is appended to normal page text before chunking.
+- Structured tables remain in the temporary page object.
+- Structured table data is not separately stored in Chroma.
+
+2.5 OCR FALLBACK
+----------------
+
+File: backend/services/parser.py
+
+Function:
+- _try_import_ocr()
+- OCR call inside _parse_pdf()
+
+Libraries:
+- pdf2image
+- pytesseract
+- Poppler system binary
+- Tesseract system binary
+
+Trigger:
+- OCR runs when extracted page text has fewer than 20 characters.
+
+Behavior:
+- PDF pages are converted to JPEG images.
+- Images use 100 DPI for PDFs up to 30 pages and 72 DPI for larger PDFs.
+- OCR input is resized to half dimensions.
+- pytesseract.image_to_string() is called.
+- Page thumbnails are saved under IMAGES_PATH.
+
+Deployment concern:
+- render.yaml sets TESSERACT_CMD=tesseract.
+- Render build.sh installs Python packages only.
+- No Tesseract or Poppler installation is configured in the repository.
+
+2.6 CLASSIFICATION
+------------------
+
+File: backend/services/classifier.py
+
+Function:
+- classify_document()
+
+Provider:
+- Groq
+
+Exact model:
+- qwen/qwen3.6-27b
+
+API call:
+- client.chat.completions.create()
+
+Configuration:
+- temperature=0.1
+- max_tokens=800
+- reasoning_format=hidden
+
+Input:
+- First five pages only.
+- At most 1,000 characters from each page.
+
+Output:
+- JSON classification containing document type, topic, sensitivity, entities, characteristics, and summary.
+
+Failure behavior:
+- Returns a fallback classification with document_type=other and sensitivity_level=internal.
+
+2.7 CHUNKING
+------------
+
+File: backend/services/embedder.py
+
+Function:
+- chunk_text()
+
+Configuration:
+- CHUNK_SIZE=500 characters.
+- CHUNK_OVERLAP=50 characters.
+
+Behavior:
+- Character-based chunks, not token-based.
+- Empty chunks are discarded.
+- IDs use {doc_id}_p{page_number}_c{chunk_index}.
+
+2.8 EMBEDDINGS
+--------------
+
+File: backend/services/embeddings.py
+
+Provider:
+- Google GenAI
+
+API:
+- client.models.embed_content()
+
+Exact model:
+- models/gemini-embedding-001
+
+Functions:
+- get_embedding()
+- get_embeddings()
+
+Behavior:
+- Individual query embeddings use get_embedding().
+- Bulk indexing uses batches of 10.
+- Rate-limit failures retry up to six attempts.
+- Backoff is 30, 60, 90, then 120 seconds.
+
+Documentation mismatch:
+- README claims Gemini text-embedding-004.
+- Current code uses models/gemini-embedding-001.
+
+2.9 STORAGE
+-----------
+
+File: backend/services/embedder.py
+
+Database:
+- ChromaDB PersistentClient.
+
+Collection:
+- documents
+
+Distance:
+- cosine via metadata hnsw:space=cosine
+
+Storage path:
+- CHROMA_PATH, default ./storage/chroma_db
+
+Metadata stored per chunk:
+- doc_id
+- user_id
+- doc_name
+- page_number
+- image_filename
+- sensitivity_level
+- document_type
+- chunk_index
+
+PDF storage:
+- Completed PDFs are moved to storage/pdfs/{doc_id}.pdf.
+- Non-PDF temporary files are deleted after processing.
+
+
+3. CHAT AND QUERY PIPELINE
+==========================
+
+3.1 STANDARD CHAT
+-----------------
+
+File: backend/routers/chat.py
+
+Endpoint:
+- POST /api/chat
+
+Flow:
+
+POST /api/chat
+  -> get_current_user()
+  -> _require_owned_document()
+  -> answer_query()
+       -> search()
+       -> relevance filtering
+       -> prompt construction
+       -> Groq chat completion
+       -> citation extraction
+       -> citation marker replacement
+  -> persist user and assistant messages
+
+3.2 RETRIEVAL
+-------------
+
+File: backend/services/embedder.py
+
+Function:
+- search()
+
+Vector retrieval:
+1. Generate a Gemini query embedding.
+2. Query Chroma.
+3. Apply metadata filter user_id == current user.
+4. If supplied, also apply doc_id == requested document.
+5. Convert Chroma distance into relevance_score = 1 - distance.
+
+Hybrid retrieval:
+- Enabled only when HYBRID_SEARCH_ENABLED=true.
+- BM25 index is built from Chroma documents.
+- BM25 filtering applies user_id and optional doc_id.
+- Chroma and BM25 rankings are fused using reciprocal rank fusion.
+
+3.3 RERANKING
+-------------
+
+There is no model-based reranker.
+
+The repository has:
+- Chroma vector ranking.
+- Optional BM25 keyword ranking.
+- Reciprocal rank fusion.
+
+RRF is ranking fusion, not semantic reranking.
+
+3.4 STANDARD LLM CALL
+---------------------
+
+File: backend/services/rag.py
+
+Function:
+- answer_query()
+
+Provider:
+- Groq
+
+Exact model:
+- qwen/qwen3.6-27b
+
+Configuration:
+- temperature=0.2
+- max_tokens=1500
+- reasoning_format=hidden
+
+Prompt behavior:
+- Uses only retrieved document sources.
+- Requires [SOURCE N] markers.
+- Wraps document content in document_excerpt tags.
+- Instructs the model to ignore instructions inside document text.
+
+3.5 CITATIONS
+-------------
+
+File: backend/services/rag.py
+
+Behavior:
+- Detects [SOURCE N] markers in the model response.
+- Creates citation records containing:
+  - doc_name
+  - page_number
+  - image_filename
+  - doc_id
+  - excerpt
+- Replaces markers with [filename, p.N].
+
+If the model omits markers:
+- Standard RAG returns no citation objects.
+- Agentic RAG has a separate fallback reference list.
+
+3.6 EVIDENCE TIMELINE
+---------------------
+
+File: backend/services/timeline.py
+
+Endpoint:
+- POST /api/documents/{doc_id}/evidence-timeline
+
+Retrieval queries:
+- dates deadlines milestones renewals effective dates
+- amounts totals payments fees financial figures
+- obligations actions risks exceptions next steps
+
+LLM:
+- Groq qwen/qwen3.6-27b
+
+Behavior:
+- Parses JSON output.
+- Validates source numbers.
+- Produces a briefing, events, risks, and citations.
+
+
+4. AGENTIC LAYER
+=================
+
+Status: IMPLEMENTED, not merely a stub.
+
+File:
+- backend/services/agentic_rag.py
+
+Library:
+- LangGraph StateGraph
+
+Endpoint:
+- POST /api/chat/agentic
+
+Graph:
+
+START
+  -> planner
+  -> retriever
+  -> critic
+  -> conditional route
+       critic -> retriever when evidence is insufficient
+       critic -> synthesizer when evidence is sufficient
+  -> END
+
+Nodes:
+
+Planner:
+- Groq qwen/qwen3.6-27b.
+- Classifies a question as simple or complex.
+- Produces one question for simple queries.
+- Produces 2-4 subquestions for complex queries.
+- Falls back to the original question on invalid output.
+
+Retriever:
+- Runs the existing search() function for each subquestion.
+- Preserves user_id and optional doc_id filters.
+- Executes searches concurrently with asyncio.gather().
+
+Critic:
+- Groq qwen/qwen3.6-27b.
+- Returns sufficient or insufficient.
+- Can produce a rewritten query.
+- Allows up to two retrieval retries per subquestion.
+
+Synthesizer:
+- Groq qwen/qwen3.6-27b.
+- Synthesizes only evidence marked sufficient.
+- Filters unsafe-looking output.
+- Converts [SOURCE N] into readable citations.
+- Adds a references list if the model omits explicit source markers.
+
+State includes:
+- original_question
+- user_id
+- doc_id
+- conversation_history
+- sub_questions
+- retrieved_chunks
+- critic_verdicts
+- retry_counts
+- retrieval_queries
+- final_answer
+- citations
+- has_answer
+
+Documentation mismatch:
+- Older comments describe this as a future or phase-1 stub.
+- Current code contains the complete planner/retriever/critic/synthesizer flow.
+
+
+5. MODELS AND EXTERNAL APIs
+===========================
+
+LLM references:
+- Groq qwen/qwen3.6-27b: document classification.
+- Groq qwen/qwen3.6-27b: standard RAG answer.
+- Groq qwen/qwen3.6-27b: agentic planner.
+- Groq qwen/qwen3.6-27b: agentic critic.
+- Groq qwen/qwen3.6-27b: agentic synthesizer.
+- Groq qwen/qwen3.6-27b: evidence timeline.
+
+Embedding model:
+- Google GenAI models/gemini-embedding-001.
+
+Speech model:
+- Groq whisper-large-v3-turbo.
+
+External calls/libraries:
+- Groq chat.completions.create.
+- Groq audio.transcriptions.create.
+- Google GenAI models.embed_content.
+- ChromaDB PersistentClient.
+- PostgreSQL through asyncpg.
+- LangGraph StateGraph.
+- PDF.js worker from unpkg.com.
+
+Not found:
+- No OpenAI API references.
+- No Anthropic API references.
+- No FAISS usage.
+
+
+6. AUTHENTICATION AND ISOLATION
+===============================
+
+Authentication implementation:
+- JWT access tokens.
+- HS256 signing.
+- Configurable expiration, default 60 minutes.
+- bcrypt password hashing.
+- User lookup from PostgreSQL on every authenticated request.
+
+Files:
+- backend/core/auth.py
+- backend/routers/auth.py
+
+Chat ownership:
+- Both /api/chat and /api/chat/agentic call _require_owned_document().
+- Ownership SQL checks doc_id and user_id.
+- Retrieval independently applies user_id and optional doc_id metadata filters.
+
+Chroma isolation:
+- Each current chunk stores user_id and doc_id.
+- Chroma vector search filters by user_id and optional doc_id.
+- BM25 search also filters by user_id and optional doc_id.
+- Focused tests cover cross-user BM25 isolation.
+
+Confirmed ownership gap:
+
+Page-image endpoint:
+- Endpoint: GET /api/page-image/{image_filename}
+- Requires authentication.
+- Validates characters and real path.
+- Does NOT verify that the image belongs to a document owned by the caller.
+- Image names include doc_id, so a user who knows or guesses another UUID may request another user’s page image.
+
+Chat history:
+- GET /api/chat/history/{doc_id} filters by user_id and doc_id.
+- It does not explicitly verify document ownership.
+- Foreign IDs return empty history rather than an access error.
+
+Legacy Chroma data:
+- scripts/backfill_chroma_user_metadata.py exists because older records may lack user_id.
+- Current search excludes chunks without matching user_id.
+- Older documents may therefore be invisible until backfilled.
+
+
+7. SECURITY AUDIT
+==================
+
+IMPLEMENTED:
+- JWT authentication.
+- bcrypt password hashing.
+- Per-user PostgreSQL document queries.
+- Per-user Chroma metadata filtering.
+- Document ownership checks for upload status, PDFs, listing, chat, and timeline.
+- Extension allowlist.
+- MIME validation.
+- Magic-byte validation.
+- File-size limit.
+- Filename sanitization.
+- Path traversal checks.
+- Generic exception responses.
+- Chat question length limit of 2,000 characters.
+- Conversation role validation.
+- CORS middleware.
+- SlowAPI rate limiting.
+- Prompt-injection monitoring logs.
+- Prompt boundaries around document excerpts.
+- Agentic unsafe-output filtering.
+- Temporary file cleanup.
+
+PARTIAL OR RISKY:
+
+Rate-limit configuration:
+- RATE_LIMIT_PER_MINUTE is read from config.
+- main.py hardcodes default_limits=["30/minute"].
+- Changing RATE_LIMIT_PER_MINUTE has no effect.
+
+Rate-limit distribution:
+- SlowAPI is process-local/in-memory.
+- It is not a distributed limiter for multiple workers or instances.
+
+Background processing:
+- FastAPI BackgroundTasks is not a durable queue.
+- Processing can be lost during restart or deployment.
+
+Prompt injection:
+- Suspicious phrases are logged.
+- Suspicious content remains searchable.
+- Protection depends on prompt framing and model compliance.
+
+Voice input:
+- audio_base64 has no explicit request-size cap.
+
+JWT secret:
+- Missing JWT_SECRET_KEY silently defaults to changeme.
+- Startup does not reject the default secret.
+
+MISSING:
+- Virus scanning.
+- Encryption at rest.
+- Audit logging.
+- Durable job queue.
+- Hosted/distributed vector storage.
+- Document-level ACLs beyond owner-only access.
+- Database migrations/schema in the repository.
+
+STALE DOCUMENTATION CLAIMS:
+- README claims LLaMA-3.3 70B Versatile; code uses qwen/qwen3.6-27b.
+- README claims Gemini text-embedding-004; code uses models/gemini-embedding-001.
+- README claims Next.js 15; package.json uses Next.js 16.2.9.
+- README describes ChatWindow as the active home chat component; app/page.tsx is active.
+- README lists planned security items in sections that read as implemented.
+
+
+8. RECENT CHANGES
+==================
+
+Last 30 commits:
+
+ e9a3daa  2026-09-04  new updates
+ 7048e98  2026-06-15  modifed
+ cf22391  2026-06-15  updates
+ ea7ba15  2026-06-15  updation
+ e44b7b2  2026-06-15  system prompt changed
+ 6647029  2026-06-15  error resolved
+ 0f208d9  2026-06-15  requirement changes
+ 4831ed2  2026-06-15  requirement changes
+ 83ab8c7  2026-06-15  authorization and ocr implemented
+ 82e2e82  2026-06-14  requirements.txt modified
+ 7b4375c  2026-06-14  pdf page modifcation
+ 83dbf06  2026-06-14  additonal changes
+ e78d107  2026-06-14  feat(frontend): render PDF pages via pdf.js canvas instead of iframe
+ 29019f0  2026-06-14  feat: PDF page preview via iframe — no server-side image generation
+ d515022  2026-06-14  fix(frontend): hide page image when image_filename is empty
+ 9056ae1  2026-06-14  .env example changes
+ aa95198  2026-06-14  fix(backend): load .env automatically with python-dotenv
+ fde93ef  2026-06-14  feat(backend): replace ONNX local embeddings with Gemini text-embedding-004
+ 0f4757c  2026-06-14  added logging for debugging
+ 6539c23  2026-06-13  fix(frontend): defer listDocuments until server warmup completes
+ 0382e91  2026-06-13  fix(backend): block upload until server ready; extend warmup to 90s
+ 841ef26  2026-06-13  fix(backend): pre-warm ONNX model at startup to prevent OOM on Render
+ 5659809  2026-06-13  feat(frontend): add cold-start warmup and retry resilience for Render free tier
+ 2d129a5  2026-06-13  fix 500 on chat: guard n_results, CORS on errors, wrap Groq call
+ f02d423  2026-06-13  add retry logic to all API calls for Render cold-start resilience
+ 3ed8054  2026-06-13  fix OOM: remove pdf2image, pytesseract, and other heavy deps
+ d18cf35  2026-06-13  add onnxruntime for DefaultEmbeddingFunction
+ 8d7dc66  2026-06-13  fix all settings imports across routers and services
+ 3bcf70c  2026-06-13  minor backend changes
+ 4591d99  2026-06-13  changes in url
+ 179a983  2026-06-13  routing changes
+
+Pipeline/auth/RAG-related changes:
+- Authentication and PostgreSQL user isolation were added in 83ab8c7.
+- OCR was reintroduced after an earlier OOM-related removal.
+- ONNX embeddings were replaced by Gemini embeddings.
+- Chroma search gained optional BM25/RRF hybrid retrieval.
+- LangGraph agentic RAG was added in the latest commit.
+- Evidence timeline functionality was added in the latest commit.
+- PDF rendering moved from iframe/server image behavior to PDF.js canvas rendering.
+- Cold-start retries and frontend warmup behavior were added for Render.
+
+Repository hygiene issue:
+- Multiple generated backend and script __pycache__/*.pyc files are committed.
+
+
+9. DEPLOYMENT
+=============
+
+Render manifest:
+- File: render.yaml
+- Service name: docmind-backend
+- Runtime: python
+- Root directory: backend
+- Build command: bash build.sh
+- Start command: uvicorn main:app --host 0.0.0.0 --port $PORT
+
+Render environment variable names:
+- GROQ_API_KEY
+- GEMINI_API_KEY
+- DATABASE_URL
+- JWT_SECRET_KEY
+- JWT_EXPIRE_MINUTES
+- TESSERACT_CMD
+- ALLOWED_ORIGINS
+- MAX_FILE_SIZE_MB
+- STORAGE_PATH
+- CHROMA_PATH
+- IMAGES_PATH
+- RATE_LIMIT_PER_MINUTE
+- HYBRID_SEARCH_ENABLED
+- POPPLER_PATH
+
+Explicitly declared in render.yaml:
+- GROQ_API_KEY
+- GEMINI_API_KEY
+- DATABASE_URL
+- JWT_SECRET_KEY
+- JWT_EXPIRE_MINUTES
+- TESSERACT_CMD
+- ALLOWED_ORIGINS
+
+Python version:
+- README claims Python 3.11.
+- Committed bytecode is CPython 3.11.
+- render.yaml does not pin a Python version.
+- No runtime.txt was found.
+
+Deployment risks:
+- Tesseract and Poppler are not installed by build.sh.
+- Local Chroma and file storage may be lost on restart/redeploy.
+- DATABASE_URL is required but no schema migration is included.
+- Missing JWT_SECRET_KEY falls back to changeme.
+- HYBRID_SEARCH_ENABLED defaults to false.
+- RATE_LIMIT_PER_MINUTE is ignored by main.py.
+
+Vercel:
+- No vercel.json was found.
+- Frontend environment variable: NEXT_PUBLIC_API_URL.
+- Public frontend: https://doc-mind-three.vercel.app
+- Public check showed the sign-in page successfully.
+
+Backend live check:
+- Guessed URL checked: https://docmind-backend.onrender.com/health
+- Result: HTTP 503.
+- Render dashboard access and exact provider logs were unavailable.
+- The 503 is confirmed externally, but root cause cannot be determined from repository/public access alone.
+
+
+10. UNUSED OR DEAD CODE
+=======================
+
+Legacy frontend component:
+- File: frontend/components/ChatWindow.tsx
+- Original standalone chat UI.
+- Calls standard /api/chat.
+- Does not support selected-document context.
+- Not imported by active frontend/app/page.tsx.
+
+Potentially legacy page-image path:
+- Backend still exposes GET /api/page-image/{image_filename}.
+- Current frontend renders PDFs via frontend/components/PdfPage.tsx and PDF.js.
+- The page-image route may be fallback or legacy behavior.
+
+Other development/dead-code candidates:
+- backend/test_models.py is a standalone embedding/API diagnostic.
+- scripts/verify_document_isolation.py is a manual utility, not an automated test.
+- Committed __pycache__ files are generated artifacts.
+- No database migration/schema files are present despite runtime database dependencies.
+
+
+11. VALIDATION RESULTS
+======================
+
+Frontend lint:
+
+Command:
+- npm run lint
+
+Result:
+- Failed.
+
+Errors:
+- frontend/app/upload/page.tsx: ref is updated during render.
+- frontend/components/AuthGuard.tsx: synchronous state update inside effect.
+- frontend/components/PdfPage.tsx: synchronous state updates inside effect.
+
+Warnings:
+- Unused ESLint disable directive.
+- Unused err variable in legacy ChatWindow.tsx.
+
+Python tests:
+
+Command attempted:
+- python -m unittest backend.tests.test_hybrid_search
+
+Result:
+- Could not start.
+
+Cause:
+- Selected interpreter is C:\Users\tanus\AppData\Local\Programs\Python\Python310-32\python.exe.
+- Python startup fails with ModuleNotFoundError: No module named 'encodings'.
+- Repository expects Python 3.11.
+
+
+12. FRONTIER GAP
+================
+
+WHAT IS BUILT:
+- End-to-end PDF document intelligence for authenticated users.
+- PDF parsing, tables, optional OCR, classification, chunking, embeddings, and Chroma storage.
+- Standard and agentic RAG chat.
+- User/document-filtered retrieval.
+- Citations and evidence timeline.
+- JWT authentication and PostgreSQL persistence.
+- Voice transcription and PDF.js previews.
+
+WHAT IS PLANNED OR ONLY CLAIMED:
+- Image-file ingestion beyond PDFs.
+- Durable asynchronous processing queue.
+- Redis-backed rate limiting and job status.
+- Encryption at rest.
+- Virus scanning.
+- Audit logging.
+- Hosted persistent vector database.
+- Stronger document-level ACLs.
+- Deployment hardening.
+- Documentation refresh.
+- Cleanup of legacy frontend and generated artifacts.
+
+WHAT IS BROKEN OR NEEDS IMMEDIATE ATTENTION:
+- Accepted image formats do not enter a working parser.
+- Page-image endpoint can expose another user’s page image if the filename is known.
+- Render backend health check returned 503 during audit.
+- Frontend lint fails.
+- Local Python test interpreter is unusable.
+- OCR dependencies are not provisioned in Render configuration.
+- Local Chroma/file storage is not durable on ephemeral deployment storage.
+- Rate-limit environment setting is ignored.
+- JWT uses a known fallback secret when configuration is missing.
+- README contains incorrect model names and stale architecture claims.

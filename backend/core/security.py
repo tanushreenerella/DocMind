@@ -57,7 +57,7 @@ async def validate_file(file: UploadFile) -> bool:
         return False
 
     ext = Path(file.filename).suffix.lower()
-    if ext not in ALLOWED_EXTENSIONS:
+    if ext != ".pdf":
         return False
 
     # Content-type check (browsers send this; don't rely solely on it)

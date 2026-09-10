@@ -84,7 +84,7 @@ async def upload_documents(
 
     for file in files:
         if not await validate_file(file):
-            raise HTTPException(400, f"Invalid file: {file.filename}")
+            raise HTTPException(400, "Only PDF files are supported")
 
         doc_id = str(uuid.uuid4())
         safe_name = sanitize_filename(file.filename or "upload")
@@ -179,6 +179,19 @@ async def get_page_image(
 ):
     if not all(c.isalnum() or c in "-_." for c in image_filename):
         raise HTTPException(400, "Invalid filename")
+
+    match = re.fullmatch(r"([0-9a-f-]+)_p\d+\.jpg", image_filename)
+    if not match:
+        raise HTTPException(400, "Invalid filename")
+
+    pool = get_pool()
+    owned_document = await pool.fetchval(
+        "SELECT 1 FROM documents WHERE doc_id = $1 AND user_id = $2",
+        match.group(1),
+        current_user["id"],
+    )
+    if not owned_document:
+        raise HTTPException(403, "Document access denied")
 
     img_path = os.path.join(IMAGES_PATH, image_filename)
     abs_img = os.path.realpath(img_path)

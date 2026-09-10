@@ -28,7 +28,13 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from core.config import IMAGES_PATH, CHROMA_PATH, STORAGE_PATH, ALLOWED_ORIGINS
+from core.config import (
+    ALLOWED_ORIGINS,
+    CHROMA_PATH,
+    IMAGES_PATH,
+    RATE_LIMIT_PER_MINUTE,
+    STORAGE_PATH,
+)
 from core.database import connect, disconnect
 from routers import chat, documents, upload
 from routers import auth
@@ -48,7 +54,10 @@ async def lifespan(app: FastAPI):
     await disconnect()
 
 
-limiter = Limiter(key_func=get_remote_address, default_limits=["30/minute"])
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=[f"{RATE_LIMIT_PER_MINUTE}/minute"],
+)
 
 app = FastAPI(
     title="DocMind — Document Intelligence API",

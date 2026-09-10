@@ -15,6 +15,10 @@ HYBRID_SEARCH_ENABLED = (
     os.environ.get("HYBRID_SEARCH_ENABLED", "false").strip().lower()
     == "true"
 )
+RERANK_ENABLED = (
+    os.environ.get("RERANK_ENABLED", "false").strip().lower()
+    == "true"
+)
 
 _origins_env = os.environ.get("ALLOWED_ORIGINS", "")
 if _origins_env:
@@ -24,6 +28,8 @@ else:
 
 # PostgreSQL / Auth
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
-JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "changeme")
+JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
+if not JWT_SECRET_KEY:
+    raise RuntimeError("JWT_SECRET_KEY environment variable must be set")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.environ.get("JWT_EXPIRE_MINUTES", "60"))

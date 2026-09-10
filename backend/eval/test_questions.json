@@ -1,0 +1,27 @@
+[
+  {
+    "question": "Replace this with a question about an uploaded document.",
+    "ground_truth": "Replace this with the expected answer.",
+    "doc_id": null
+  },
+  {
+    "question": "Replace this with a second question about an uploaded document.",
+    "ground_truth": "Replace this with the expected answer.",
+    "doc_id": null
+  },
+  {
+    "question": "Replace this with a third question about an uploaded document.",
+    "ground_truth": "Replace this with the expected answer.",
+    "doc_id": null
+  },
+  {
+    "question": "Replace this with a fourth question about an uploaded document.",
+    "ground_truth": "Replace this with the expected answer.",
+    "doc_id": null
+  },
+  {
+    "question": "Replace this with a fifth question about an uploaded document.",
+    "ground_truth": "Replace this with the expected answer.",
+    "doc_id": null
+  }
+]
