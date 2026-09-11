@@ -115,7 +115,7 @@ async def answer_query(
             model="qwen/qwen3.6-27b",
             messages=messages,
             temperature=0.2,
-            max_tokens=1500,
+            max_tokens=700,
             reasoning_format="hidden",
         )
         answer: str = response.choices[0].message.content.strip()

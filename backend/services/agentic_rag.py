@@ -184,7 +184,7 @@ async def _plan_question(state: AgenticState) -> dict:
                 },
             ],
             temperature=0,
-            max_tokens=1024,
+            max_tokens=300,
             reasoning_format="hidden",
         )
 
@@ -428,7 +428,7 @@ async def _grade_sub_question(
                 },
             ],
             temperature=0,
-            max_tokens=1024,
+            max_tokens=200,
             reasoning_format="hidden",
         )
 
@@ -745,7 +745,7 @@ async def _synthesize_answer(
             model="qwen/qwen3.6-27b",
             messages=messages,
             temperature=0.2,
-            max_tokens=2048,
+            max_tokens=700,
             reasoning_format="hidden",
         )
 
