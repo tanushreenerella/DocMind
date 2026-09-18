@@ -1,11 +1,13 @@
 """
 Agentic RAG: retrieves relevant chunks, synthesizes grounded answers with citations.
 """
+import re
+
 from groq import Groq
 
 from core.config import GROQ_API_KEY
 from services.embedder import search
-
+from core.config import RERANK_ENABLED
 _client: Groq | None = None
 
 
@@ -31,7 +33,13 @@ def _document_excerpt(text: str) -> str:
 
 
 _SYSTEM_PROMPT = """You are a helpful document assistant. Answer questions based ONLY on the provided document sources.
-
+Formatting and tone:
+- Do not use Markdown bold (no ** anywhere) or headers.
+- When listing multiple items, use plain numbered points like "1.", "2.",
+  "3." — not bullet symbols, not bold labels.
+- Write in a natural, conversational tone, like a knowledgeable person
+  explaining something to a friend — not a robotic list of extracted facts.
+- Prefer short connecting sentences between points over dense fact-dumps.
 Rules:
 - Answer the user's question directly. Do not describe your reasoning process.
 - NEVER output internal reasoning, chain-of-thought, analysis, or thinking steps.
@@ -52,6 +60,8 @@ Example of the expected answer format:
 The AI-Powered Diet Assistant generates personalized dietary recommendations based on user inputs [SOURCE 1].
 It uses the Gemini API and FAISS for context-aware retrieval [SOURCE 1].
 """
+
+
 async def answer_query(
     question: str,
     conversation_history: list[dict],
@@ -81,7 +91,12 @@ async def answer_query(
             "has_answer": False,
         }
 
-    relevant_hits = [h for h in hits if h["relevance_score"] > 0.1]
+    if RERANK_ENABLED:
+        # Cross-encoder scores are raw logits (can be negative) and are
+        # already relevance-sorted; skip the cosine-similarity threshold.
+        relevant_hits = hits
+    else:
+        relevant_hits = [h for h in hits if h["relevance_score"] > 0.1]
 
     if not relevant_hits:
         return {
@@ -112,13 +127,16 @@ async def answer_query(
 
     try:
         response = _get_client().chat.completions.create(
-            model="qwen/qwen3.6-27b",
+            model="qwen/qwen3.8-27b",
             messages=messages,
             temperature=0.2,
             max_tokens=700,
-            reasoning_format="hidden",
+            reasoning_effort="none",
         )
-        answer: str = response.choices[0].message.content.strip()
+        answer: str = (response.choices[0].message.content or "").strip()
+        if not answer:
+            print("[rag error] Empty response from model")
+            raise ValueError("empty response")
     except Exception as exc:
         print(f"[rag error] Groq call failed: {exc}")
         return {
@@ -126,6 +144,19 @@ async def answer_query(
             "citations": [],
             "has_answer": False,
         }
+
+    # Strip any self-written references section despite instructions.
+    for marker in ("\nReferences:", "\nSources:"):
+        idx = answer.find(marker)
+        if idx != -1:
+            answer = answer[:idx].strip()
+
+    # Split grouped citation brackets like [SOURCE 1, SOURCE 2] into
+    # separate markers [SOURCE 1][SOURCE 2].
+    def _split_grouped(match):
+        nums = re.findall(r"\d+", match.group(0))
+        return "".join(f"[SOURCE {n}]" for n in nums)
+    answer = re.sub(r"\[SOURCE[^\]]*\]", _split_grouped, answer)
 
     # Collect citations for sources actually referenced in the answer
     citations: list[dict] = []
@@ -151,6 +182,9 @@ async def answer_query(
             f"[SOURCE {i+1}]",
             f"[{hit['doc_name']}, p.{hit['page_number']}]",
         )
+
+    # Collapse duplicate displayed citations (same doc/page repeated).
+    answer = re.sub(r"(\[[^\]]+, p\.\d+\])(?:\1)+", r"\1", answer)
 
     return {
         "answer": answer,

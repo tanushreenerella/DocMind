@@ -78,11 +78,11 @@ Sources:
     try:
         response = await asyncio.to_thread(
             _get_client().chat.completions.create,
-            model="qwen/qwen3.6-27b",
+            model="qwen/qwen3.8-27b",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1,
             max_tokens=700,
-            reasoning_format="hidden",
+            reasoning_format="none",
         )
         data = _parse_json(response.choices[0].message.content or "{}")
     except (Exception, json.JSONDecodeError) as exc:

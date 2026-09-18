@@ -14,19 +14,58 @@ from pathlib import Path
 from typing import Any
 
 from datasets import Dataset
+from langchain_core.embeddings import Embeddings
+from langchain_groq import ChatGroq
 from ragas import evaluate
+from ragas.embeddings import LangchainEmbeddingsWrapper
+from ragas.llms import LangchainLLMWrapper
 from ragas.metrics import answer_relevancy, context_precision, faithfulness
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
+from core.config import GROQ_API_KEY
 from services.embedder import search
+from services.embeddings import get_embedding, get_embeddings
 from services.rag import answer_query
 
 DEFAULT_QUESTIONS_FILE = Path(__file__).with_name("test_questions.json")
 DEFAULT_RESULTS_FILE = Path(__file__).with_name("results.json")
 METRICS = ("faithfulness", "answer_relevancy", "context_precision")
+
+
+class GeminiEmbeddings(Embeddings):
+    """Expose the application's Gemini embeddings through LangChain's interface."""
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return asyncio.run(get_embeddings(texts))
+
+    def embed_query(self, text: str) -> list[float]:
+        return asyncio.run(get_embedding(text))
+
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+        return await get_embeddings(texts)
+
+    async def aembed_query(self, text: str) -> list[float]:
+        return await get_embedding(text)
+
+
+def _build_ragas_evaluators() -> tuple[
+    LangchainLLMWrapper,
+    LangchainEmbeddingsWrapper,
+]:
+    # Match the production answer model so judge behavior tracks user-facing output.
+    judge_llm = LangchainLLMWrapper(
+        ChatGroq(
+           model="qwen/3.8-27b",
+            api_key=GROQ_API_KEY,
+            temperature=0,
+            reasoning_format="hidden",
+        )
+    )
+    judge_embeddings = LangchainEmbeddingsWrapper(GeminiEmbeddings())
+    return judge_llm, judge_embeddings
 
 
 def _load_questions(path: Path) -> list[dict[str, Any]]:
@@ -86,9 +125,12 @@ def _score_examples(examples: list[dict[str, Any]]) -> list[dict[str, Any]]:
             for example in examples
         ]
     )
+    judge_llm, judge_embeddings = _build_ragas_evaluators()
     evaluation = evaluate(
         dataset,
         metrics=[faithfulness, answer_relevancy, context_precision],
+        llm=judge_llm,
+        embeddings=judge_embeddings,
         raise_exceptions=False,
     )
     rows = evaluation.to_pandas().to_dict(orient="records")

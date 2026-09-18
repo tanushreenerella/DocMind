@@ -1,0 +1,109 @@
+{
+  "summary": {
+    "faithfulness": null,
+    "answer_relevancy": null,
+    "context_precision": null
+  },
+  "examples": [
+    {
+      "question": "What does the term multi-tenancy mean in cloud computing?",
+      "ground_truth": "Multi-tenancy means multiple customers share the same physical resources in a cloud environment.",
+      "answer": "Multi-tenancy in cloud computing refers to an architecture where multiple customers share the same physical resources [cloudmcq.pdf, p.1]. This setup allows a single instance of software and its underlying infrastructure to serve multiple customers, often referred to as tenants [cloudmcq.pdf, p.1].",
+      "contexts": [
+        "loud resources can be scaled up or down quickly to meet demand, which is a\nfundamental characteristic of cloud computing.\n5. What does the term \"Multi-tenancy\" mean in cloud computing?\na) A single application serving multiple customers\nb) Multiple customers using separate, isolated resources\nc) Multiple customers sharing the same physical resources\nd) A customer using services from multiple providers\nAnswer: c) Multiple customers sharing the same physical resources\nExplanation: Multi-tenancy is ",
+        " physical resources\nExplanation: Multi-tenancy is an architecture where a single instance of software and its underlying\ninfrastructure serves multiple customers (\"tenants\").\n6. Which type of cloud deployment model offers the highest level of control and security?\na) Public Cloud",
+        "Explanation: A multi-cloud strategy involves using services from multiple cloud providers (e.g., AWS\nand Azure) for the same purpose.\n39. What is a \"cold\" disaster recovery site?\na) A site with running servers that can take over immediately\nb) A site with power and cooling but no pre-configured hardware\nc) A cloud-based recovery site\nd) A site located in a cold climate for natural cooling\nAnswer: b) A site with power and cooling but no pre-configured hardware\nExplanation: A cold site has the bas",
+        "en beyond the\nbudget of a single company.\n2. The \"Shared Responsibility Model\" in cloud security means:\na) The provider and customer share the cost of security breaches.\nb) Security is always the primary responsibility of the provider.\nc) Security responsibilities are divided between the provider and the customer.\nd) The customer is responsible for all security aspects.\nAnswer: c) Security responsibilities are divided between the provider and the customer.\nExplanation: The model defines what the",
+        ")\nExplanation: In IaaS, the customer manages the operating systems, applications, and network\nconfigurations, giving them the most control over the security settings of their environment.\n4. Which of the following is a key benefit of cloud computing?\na) Guaranteed 100% uptime\nb) Elimination of all security risks\nc) Rapid elasticity and scalability\nd) Reduced need for internet connectivity\nAnswer: c) Rapid elasticity and scalability\nExplanation: Cloud resources can be scaled up or down quickly to",
+        "r Lock-in\" in the context of cloud computing?\na) The physical locking of server racks\nb) The difficulty in moving from one cloud provider to another due to proprietary technologies\nc) A security feature that locks accounts\nd) A type of encryption provided by the vendor\nAnswer: b) The difficulty in moving from one cloud provider to another due to proprietary\ntechnologies\nExplanation: Vendor lock-in occurs when a customer becomes dependent on a vendor's products and\nservices and cannot easily swit"
+      ],
+      "doc_id": "6d8b8d59-9fa9-4a4b-a151-b78a61ba55a3",
+      "has_answer": true,
+      "metrics": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": null
+      }
+    },
+    {
+      "question": "What is a DDoS attack?",
+      "ground_truth": "A DDoS attack overwhelms a target's resources, such as servers or networks, with traffic to make them unavailable.",
+      "answer": "A Distributed Denial of Service (DDoS) attack primarily aims to overwhelm a system with massive traffic from multiple sources to make it unavailable [cloudmcq.pdf, p.2]. This flood of traffic targets resources such as servers or networks, rendering them unable to serve legitimate users [cloudmcq.pdf, p.2].",
+      "contexts": [
+        "ake it unavailable\nd) Gain administrative access to servers\nAnswer: c) Overwhelm a system with traffic to make it unavailable\nExplanation: A DDoS attack floods a target's resources (e.g., servers, network) with massive traffic\nfrom multiple sources, rendering them unable to serve legitimate users.\n10. Identity and Access Management (IAM) is crucial in the cloud for:\na) Ensuring high-speed data transfer\nb) Managing user identities and controlling their access to resources\nc) Encrypting all databa",
+        "tection against DDoS attacks?\na) AWS GuardDuty\nb) AWS Shield\nc) AWS WAF\nd) AWS KMS\nAnswer: b) AWS Shield\nExplanation: AWS Shield is a managed Distributed Denial of Service (DDoS) protection service that\nsafeguards applications running on AWS.\n53. The practice of \"Server Hardening\" involves:\na) Making servers physically difficult to move\nb) Reducing server performance to save energy\nc) Reducing the attack surface by minimizing vulnerabilities\nd) Using only the most expensive server types\nAnswer: ",
+        "rtual Private Network (VPN)\nd) Web Application Firewall (WAF)\nAnswer: a) Cloud Access Security Broker (CASB)\nExplanation: A CASB is a security policy enforcement point that sits between cloud service consumers\nand providers to enforce security, compliance, and governance policies.\n9. A DDoS (Distributed Denial of Service) attack primarily aims to:\na) Steal sensitive customer data\nb) Encrypt files for ransom\nc) Overwhelm a system with traffic to make it unavailable\nd) Gain administrative access t",
+        "rsonal information.\n18. A vulnerability that allows a user to access resources from another tenant in a cloud\nenvironment is a:\na) Data Breach\nb) Isolation Failure\nc) DDoS Attack\nd) Insider Threat\nAnswer: b) Isolation Failure\nExplanation: This refers to a failure in the hypervisor or cloud management platform that is supposed\nto keep tenant environments strictly separated from one another.\n19. What does a Web Application Firewall (WAF) protect against?\na) Phishing emails\nb) Common web exploits l",
+        " timing of other events. An attacker can exploit the tiny window between when a\ncondition is checked and when it is used.\n92. Which GCP service provides built-in DDoS protection and a global load balancer?\na) Cloud CDN\nb) Cloud Armor\nc) Cloud NAT\nd) Cloud DNS\nAnswer: b) Cloud Armor\nExplanation: Google Cloud Armor provides DDoS defense and WAF capabilities at the edge of\nGoogle's network, and it works with global load balancers.\n93. What is \"Vendor Lock-in\" in the context of cloud computing?\na) T",
+        "ss to a private network\nc) To act as a primary database server\nd) To perform automated backups\nAnswer: b) To provide a single, secured entry point for administrative access to a private network\nExplanation: A bastion host is a specially hardened server designed to withstand attacks. It is the only\nnode exposed to the public internet, through which administrators SSH or RDP to access the internal\nprivate network.\n52. Which AWS service provides protection against DDoS attacks?\na) AWS GuardDuty\nb) "
+      ],
+      "doc_id": "6d8b8d59-9fa9-4a4b-a151-b78a61ba55a3",
+      "has_answer": true,
+      "metrics": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": null
+      }
+    },
+    {
+      "question": "What is the main risk associated with orphaned resources in the cloud?",
+      "ground_truth": "Orphaned resources can remain running, incur ongoing costs, and pose security risks if they are forgotten and not tracked.",
+      "answer": "The main risk associated with orphaned resources in the cloud is that they can be forgotten but continue running, which leads to incurring costs and posing security risks [cloudmcq.pdf, p.13]. These resources, such as unattached storage volumes or unused instances, are often overlooked and may contain sensitive data or misconfigurations [cloudmcq.pdf, p.13].",
+      "contexts": [
+        "e granted for a short, limited time\nonly when needed, rather than being permanently assigned, reducing the attack surface.\n68. What is the main risk associated with \"Orphaned Resources\" in the cloud?\na) They improve cost efficiency.\nb) They can be forgotten but still running, incurring costs and posing security risks.\nc) They automatically scale down.\nd) They are automatically secured by the provider.\nAnswer: b) They can be forgotten but still running, incurring costs and posing security risks.\n",
+        "nning, incurring costs and posing security risks.\nExplanation: Orphaned resources (like unattached storage volumes or unused instances) are often\noverlooked, continue to accrue costs, and may contain sensitive data or misconfigurations.\n69. Which service is used for auditing and tracking user activity and API usage in AWS?\na) AWS CloudTrail\nb) AWS Config\nc) AWS CloudWatch\nd) AWS X-Ray\nAnswer: a) AWS CloudTrail\nExplanation: AWS CloudTrail is a service that enables governance, compliance, and oper",
+        "d) To manage user identities\nAnswer: b) To automatically detect and remediate misconfigurations\nExplanation: CSPM tools continuously monitor cloud environments for misconfigured resources (e.g.,\nopen S3 buckets, weak security group rules) that pose security risks.\n23. Which of the following is an example of an \"insider threat\"?\na) A hacker from a foreign country\nb) A disgruntled employee with authorized access\nc) A natural disaster\nd) A hardware failure\nAnswer: b) A disgruntled employee with aut",
+        ")\nExplanation: In IaaS, the customer manages the operating systems, applications, and network\nconfigurations, giving them the most control over the security settings of their environment.\n4. Which of the following is a key benefit of cloud computing?\na) Guaranteed 100% uptime\nb) Elimination of all security risks\nc) Rapid elasticity and scalability\nd) Reduced need for internet connectivity\nAnswer: c) Rapid elasticity and scalability\nExplanation: Cloud resources can be scaled up or down quickly to",
+        " (on-premises) and a public cloud, with\norchestration between the two platforms.\n27. What is the primary risk of using shadow IT?\na) Increased cost\nb) It bypasses organizational security policies and controls\nc) It slows down innovation\nd) It requires more IT staff\nAnswer: b) It bypasses organizational security policies and controls\nExplanation: Shadow IT refers to IT systems and solutions used without explicit organizational\napproval, making them invisible to and unmanaged by the security team.",
+        "rations (e.g., unsecured storage buckets, default passwords) are a leading\ncause of data breaches in the cloud.\n37. What is the purpose of a Service Level Agreement (SLA) in cloud computing?\na) To define the price of services\nb) To legally define the service standards, including uptime and support responsiveness\nc) To specify the technical architecture\nd) To list all employees of the provider\nAnswer: b) To legally define the service standards, including uptime and support responsiveness\nExplanat"
+      ],
+      "doc_id": "6d8b8d59-9fa9-4a4b-a151-b78a61ba55a3",
+      "has_answer": true,
+      "metrics": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": null
+      }
+    },
+    {
+      "question": "What are the main steps in the NLP preprocessing pipeline?",
+      "ground_truth": "The classic preprocessing pipeline includes tokenization, stop-word removal, normalization, stemming or lemmatization, part-of-speech tagging, and named entity recognition.",
+      "answer": "The classic NLP preprocessing pipeline consists of tokenization, stop-word removal, normalization, stemming or lemmatization, part-of-speech tagging, and named entity recognition [nlp.pdf, p.1].\n\nA more detailed breakdown of the typical pipeline flow includes raw text moving through preprocessing, tokenization, normalization, and feature extraction before reaching the model [nlp.pdf, p.1].\n\nSpecific preprocessing steps often involve lowercasing, removing punctuation or special characters, removing numbers, cleaning extra whitespace, stripping URLs, HTML tags, and emails, and handling contractions [nlp.pdf, p.2].\n\nIt is important to note that not every step is always required, as blindly stripping elements like punctuation or casing can hurt performance in tasks such as sentiment analysis [nlp.pdf, p.2].",
+      "contexts": [
+        " Foundations of Natural Language Processing\nA hands-on notebook covering the core building blocks of NLP: what it is, where it's used, the linguistics behind it, and the classic\npreprocessing pipeline (tokenization → stop-word removal → normalization → stemming/lemmatization → POS tagging → NER).\nEach concept has a short explanation followed by runnable code using NLTK and spaCy.\nLibraries used: nltk, spacy (with the en_core_web_sm model)\n# Setup — run this first\nimport nltk\nimport spacy\nimport",
+        "iment analysis on news/earnings calls, fraud-flagging in text\nE-commerce Product review analysis, recommendation via review text\n Foundations of Natural Language Processing\nA hands-on notebook covering the core building blocks of NLP: what it is, where it's used, the linguistics behind it, and the classic\npreprocessing pipeline (tokenization → stop-word removal → normalization → stemming/lemmatization → POS tagging → NER).\nEach concept has a short explanation followed by runnable code using NLT",
+        " – new slang, abbreviations, code-switching\nIrregular – exceptions to grammar rules are everywhere\nTypical NLP Pipeline\nRaw Text → Preprocessing → Tokenization → Normalization →\nFeature Extraction (POS, NER, embeddings) → Model → Output\nThis notebook walks through each of these stages.\n2. Applications of NLP in Industry\nDomain Application\nSearch & Information Retrieval Query understanding, semantic search, ranking (Google, Bing)\nCustomer Support Chatbots, ticket routing, sentiment-based escalati",
+        "ing contractions (e.g., \"don't\" → \"do not\")\n⚠ Note: Not every step is always needed — e.g., for sentiment analysis, punctuation like \"!!!\" or casing (\"AMAZING\") can carry signal,\nso blindly stripping everything can hurt performance. Always tailor preprocessing to the downstream task.\nraw_text = '''\nCheck out https://example.com!!! NLP is AMAZING <b>really</b> :)\nCall me at 123-456-7890 or email me at test@example.com. Multiple spaces here.\n'''\ndef preprocess(text):\ntext = text.lower() # 1. lower",
+        "ion / special characters\n3. Removing numbers (task-dependent)\n4. Removing extra whitespace\n5. Removing URLs, HTML tags, emails\n6. Handling contractions (e.g., \"don't\" → \"do not\")\n⚠ Note: Not every step is always needed — e.g., for sentiment analysis, punctuation like \"!!!\" or casing (\"AMAZING\") can carry signal,\nso blindly stripping everything can hurt performance. Always tailor preprocessing to the downstream task.\nraw_text = '''\nCheck out https://example.com!!! NLP is AMAZING <b>really</b> :)\n",
+        "Chatbots, ticket routing, sentiment-based escalation\nHealthcare Extracting diagnoses/medications from clinical notes\nFinance Sentiment analysis on news/earnings calls, fraud-flagging in text\nE-commerce Product review analysis, recommendation via review text\nFoundations of Natural Language Processing\nA hands-on notebook covering the core building blocks of NLP: what it is, where it's used, the linguistics behind it, and the classic\npreprocessing pipeline (tokenization → stop-word removal → normal"
+      ],
+      "doc_id": "a2a5365b-423c-4ff8-8d28-2cd1240a6c78",
+      "has_answer": true,
+      "metrics": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": null
+      }
+    },
+    {
+      "question": "Why is NLP considered a hard problem?",
+      "ground_truth": "NLP is hard because human language is ambiguous, context-dependent, constantly evolving with new slang, and irregular with many exceptions to grammar rules.",
+      "answer": "NLP is considered a hard problem primarily because human language presents several inherent challenges for computers. First, language is ambiguous, meaning a single sentence can have multiple interpretations, such as in the phrase \"I saw the man with the telescope\" where it is unclear who possesses the telescope [nlp.pdf, p.1]. Second, it is context-dependent, requiring systems to distinguish between different meanings of the same word based on the situation, like the difference between a river bank and a financial bank [nlp.pdf, p.1]. Additionally, language is ever-evolving, constantly introducing new slang, abbreviations, and code-switching that models must adapt to [nlp.pdf, p.1]. Finally, human language is irregular, with numerous exceptions to standard grammar rules that complicate algorithmic processing [nlp.pdf, p.1].",
+      "contexts": [
+        "istics – learning patterns from language data\nWhy is NLP hard?\nHuman language is:\nAmbiguous – \"I saw the man with the telescope\" (who has the telescope?)\nContext-dependent – \"bank\" (river bank vs. financial bank)\nEver-evolving – new slang, abbreviations, code-switching\nIrregular – exceptions to grammar rules are everywhere\nTypical NLP Pipeline\nRaw Text → Preprocessing → Tokenization → Normalization →\nFeature Extraction (POS, NER, embeddings) → Model → Output\nThis notebook walks through each of t",
+        "rate\nhuman language — in text or speech form.\nNLP sits at the intersection of:\nLinguistics – the structure and rules of language\nComputer Science – algorithms and data structures to represent language\nMachine Learning / Statistics – learning patterns from language data\nWhy is NLP hard?\nHuman language is:\nAmbiguous – \"I saw the man with the telescope\" (who has the telescope?)\nContext-dependent – \"bank\" (river bank vs. financial bank)\nEver-evolving – new slang, abbreviations, code-switching\nIrregu",
+        "Computer Science – algorithms and data structures to represent language\nMachine Learning / Statistics – learning patterns from language data\nWhy is NLP hard?\nHuman language is:\nAmbiguous – \"I saw the man with the telescope\" (who has the telescope?)\nContext-dependent – \"bank\" (river bank vs. financial bank)\nEver-evolving – new slang, abbreviations, code-switching\nIrregular – exceptions to grammar rules are everywhere\nTypical NLP Pipeline\nRaw Text → Preprocessing → Tokenization → Normalization →\nF",
+        "tup complete ✅\nNLTK version: 3.9.1\nspaCy version: 3.8.14\n1. Introduction to Natural Language Processing\nNatural Language Processing (NLP) is the branch of AI concerned with enabling computers to understand, interpret, and generate\nhuman language — in text or speech form.\nNLP sits at the intersection of:\nLinguistics – the structure and rules of language\nComputer Science – algorithms and data structures to represent language\nMachine Learning / Statistics – learning patterns from language data\nWhy ",
+        "cleaning text, breaking it into tokens,\ntagging grammar, and identifying entities.\n 3. Fundamentals of Linguistics for NLP\nNLP borrows concepts from linguistics to structure the problem:\nPhonetics/Phonology – sounds of language (relevant to speech recognition, not text NLP)\nMorphology – structure of words (e.g., \"unhappiness\" = un + happy + ness)\nSyntax – how words combine into sentences (grammar, parse trees)\nSemantics – meaning of words and sentences\nPragmatics – meaning in context (sarcasm, ",
+        "lete ✅\")\nprint(\"NLTK version:\", nltk.__version__)\nprint(\"spaCy version:\", spacy.__version__)\nSetup complete ✅\nNLTK version: 3.9.1\nspaCy version: 3.8.14\n1. Introduction to Natural Language Processing\nNatural Language Processing (NLP) is the branch of AI concerned with enabling computers to understand, interpret, and generate\nhuman language — in text or speech form.\nNLP sits at the intersection of:\nLinguistics – the structure and rules of language\nComputer Science – algorithms and data structures "
+      ],
+      "doc_id": "a2a5365b-423c-4ff8-8d28-2cd1240a6c78",
+      "has_answer": true,
+      "metrics": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": null
+      }
+    }
+  ]
+}

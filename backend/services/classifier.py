@@ -67,14 +67,17 @@ Return ONLY the JSON object, no markdown, no explanation."""
 
     try:
         response = _get_client().chat.completions.create(
-            model="qwen/qwen3.6-27b",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-            max_tokens=800,
-            reasoning_format="hidden",
+        model="qwen/qwen3.8-27b",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.1,
+        max_tokens=900,
+        reasoning_effort="none",
         )
 
-        raw = response.choices[0].message.content.strip()
+        raw = (response.choices[0].message.content or "").strip()
+        if not raw:
+            print(f"[classifier error] Empty response from model for {filename}")
+            raise ValueError("empty response")
 
         # Strip markdown fences if present
         if raw.startswith("```"):
@@ -85,5 +88,6 @@ Return ONLY the JSON object, no markdown, no explanation."""
 
         return json.loads(raw.strip())
 
-    except (json.JSONDecodeError, Exception):
+    except (json.JSONDecodeError, Exception) as exc:
+        print(f"[classifier error] Failed to classify {filename}: {exc}")
         return _FALLBACK.copy()

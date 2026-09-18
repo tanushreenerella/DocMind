@@ -1,39 +1,41 @@
-"""
-Document parser: PDF text extraction via pdfplumber.
-pytesseract OCR runs as fallback for scanned/handwritten pages with minimal text.
-Requires: Tesseract-OCR + Poppler installed on system (set paths in .env).
-"""
+"""Document parser with pdfplumber extraction and Gemini Vision OCR fallback."""
+import asyncio
+from io import BytesIO
 import os
 from pathlib import Path
 
 import pdfplumber
+from google import genai
+from google.genai import types
 
-IMAGES_PATH = os.getenv("IMAGES_PATH", "./storage/page_images")
-POPPLER_PATH = os.getenv("POPPLER_PATH", "")       # e.g. C:\poppler\bin
-TESSERACT_CMD = os.getenv("TESSERACT_CMD", "")     # e.g. C:\Program Files\Tesseract-OCR\tesseract.exe
+from core.config import GEMINI_API_KEY, GEMINI_OCR_MODEL, IMAGES_PATH
+
 OCR_TEXT_THRESHOLD = 20
-PAGE_IMAGE_DPI = 100
+PAGE_IMAGE_DPI = 175
+_gemini_client: genai.Client | None = None
 
 
-def _try_import_ocr():
-    """Returns (convert_from_path, pytesseract) or (None, None) if unavailable."""
-    try:
-        from pdf2image import convert_from_path
-        import pytesseract as _tess
-
-        if TESSERACT_CMD:
-            _tess.pytesseract.tesseract_cmd = TESSERACT_CMD
-
-        _tess.get_tesseract_version()   # raises if binary not found
-        print("[parser] OCR ready (Tesseract + pdf2image available)")
-        return convert_from_path, _tess
-    except Exception as e:
-        print(f"[parser] OCR unavailable: {e}")
-        print("[parser] Tip: set TESSERACT_CMD and POPPLER_PATH in .env")
-        return None, None
+def _get_gemini_client() -> genai.Client:
+    global _gemini_client
+    if _gemini_client is None:
+        _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    return _gemini_client
 
 
-_convert_from_path, _pytesseract = _try_import_ocr()
+async def _ocr_page_with_gemini(pil_image) -> str:
+    """Transcribe one rendered PDF page with Gemini Vision."""
+    image_bytes = BytesIO()
+    pil_image.save(image_bytes, format="JPEG", quality=85)
+    response = await asyncio.to_thread(
+        _get_gemini_client().models.generate_content,
+        model=GEMINI_OCR_MODEL,
+        contents=[
+            "Transcribe all readable text on this document page. Return only the transcription.",
+            types.Part.from_bytes(data=image_bytes.getvalue(), mime_type="image/jpeg"),
+        ],
+        config=types.GenerateContentConfig(temperature=0),
+    )
+    return (response.text or "").strip()
 
 
 async def parse_document(file_path: str, doc_id: str) -> list[dict]:
@@ -46,47 +48,25 @@ async def parse_document(file_path: str, doc_id: str) -> list[dict]:
 async def _parse_pdf(file_path: str, doc_id: str) -> list[dict]:
     os.makedirs(IMAGES_PATH, exist_ok=True)
 
-    # Convert all pages to images (needed for OCR + thumbnails)
-    page_images: list = []
-    if _convert_from_path is not None:
-        try:
-            with pdfplumber.open(file_path) as _tmp:
-                total_pages = len(_tmp.pages)
-            dpi = PAGE_IMAGE_DPI if total_pages <= 30 else 72
-
-            kwargs: dict = {"dpi": dpi, "fmt": "jpeg"}
-            if POPPLER_PATH:
-                kwargs["poppler_path"] = POPPLER_PATH
-
-            print(f"[parser] converting {total_pages} pages at {dpi} DPI")
-            page_images = _convert_from_path(file_path, **kwargs)
-            print(f"[parser] got {len(page_images)} page images")
-        except Exception as e:
-            print(f"[parser] image conversion failed: {e}")
-            print("[parser] Tip: check POPPLER_PATH is set correctly in .env")
-
     pages = []
     with pdfplumber.open(file_path) as pdf:
-        for i, plumber_page in enumerate(pdf.pages):
-            page_num = i + 1
+        for page_num, plumber_page in enumerate(pdf.pages, start=1):
             text = plumber_page.extract_text() or ""
 
-            pil_image = page_images[i] if i < len(page_images) else None
+            pil_image = None
 
-            # OCR for pages where pdfplumber found almost no text
-            if len(text.strip()) < OCR_TEXT_THRESHOLD and pil_image is not None and _pytesseract is not None:
+            # OCR only pages where pdfplumber found almost no text.
+            if len(text.strip()) < OCR_TEXT_THRESHOLD:
                 try:
-                    small = pil_image.resize(
-                        (pil_image.width // 2, pil_image.height // 2)
-                    )
-                    ocr_text = _pytesseract.image_to_string(small)
+                    pil_image = plumber_page.to_image(resolution=PAGE_IMAGE_DPI).original
+                    ocr_text = await _ocr_page_with_gemini(pil_image)
                     if ocr_text.strip():
-                        print(f"[parser] page {page_num}: OCR got {len(ocr_text)} chars")
+                        print(f"[parser] page {page_num}: Gemini OCR got {len(ocr_text)} chars")
                         text = ocr_text
                     else:
-                        print(f"[parser] page {page_num}: OCR returned empty — image may be blank")
+                        print(f"[parser] page {page_num}: Gemini OCR returned empty")
                 except Exception as e:
-                    print(f"[parser] page {page_num}: OCR error — {e}")
+                    print(f"[parser] page {page_num}: Gemini OCR error — {e}")
 
             # Table extraction
             raw_tables = plumber_page.extract_tables() or []
@@ -100,6 +80,11 @@ async def _parse_pdf(file_path: str, doc_id: str) -> list[dict]:
 
             # Save page thumbnail
             img_filename = ""
+            if pil_image is None:
+                try:
+                    pil_image = plumber_page.to_image(resolution=PAGE_IMAGE_DPI).original
+                except Exception as e:
+                    print(f"[parser] page {page_num}: thumbnail render error — {e}")
             if pil_image is not None:
                 img_filename = f"{doc_id}_p{page_num}.jpg"
                 img_path = os.path.join(IMAGES_PATH, img_filename)

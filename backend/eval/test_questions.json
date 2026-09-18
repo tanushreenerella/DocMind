@@ -1,27 +1,27 @@
 [
   {
-    "question": "Replace this with a question about an uploaded document.",
-    "ground_truth": "Replace this with the expected answer.",
-    "doc_id": null
+    "question": "What does the term multi-tenancy mean in cloud computing?",
+    "ground_truth": "Multi-tenancy means multiple customers share the same physical resources in a cloud environment.",
+    "doc_id": "6d8b8d59-9fa9-4a4b-a151-b78a61ba55a3"
   },
   {
-    "question": "Replace this with a second question about an uploaded document.",
-    "ground_truth": "Replace this with the expected answer.",
-    "doc_id": null
+    "question": "What is a DDoS attack?",
+    "ground_truth": "A DDoS attack overwhelms a target's resources, such as servers or networks, with traffic to make them unavailable.",
+    "doc_id": "6d8b8d59-9fa9-4a4b-a151-b78a61ba55a3"
   },
   {
-    "question": "Replace this with a third question about an uploaded document.",
-    "ground_truth": "Replace this with the expected answer.",
-    "doc_id": null
+    "question": "What is the main risk associated with orphaned resources in the cloud?",
+    "ground_truth": "Orphaned resources can remain running, incur ongoing costs, and pose security risks if they are forgotten and not tracked.",
+    "doc_id": "6d8b8d59-9fa9-4a4b-a151-b78a61ba55a3"
   },
   {
-    "question": "Replace this with a fourth question about an uploaded document.",
-    "ground_truth": "Replace this with the expected answer.",
-    "doc_id": null
+    "question": "What are the main steps in the NLP preprocessing pipeline?",
+    "ground_truth": "The classic preprocessing pipeline includes tokenization, stop-word removal, normalization, stemming or lemmatization, part-of-speech tagging, and named entity recognition.",
+    "doc_id": "a2a5365b-423c-4ff8-8d28-2cd1240a6c78"
   },
   {
-    "question": "Replace this with a fifth question about an uploaded document.",
-    "ground_truth": "Replace this with the expected answer.",
-    "doc_id": null
+    "question": "Why is NLP considered a hard problem?",
+    "ground_truth": "NLP is hard because human language is ambiguous, context-dependent, constantly evolving with new slang, and irregular with many exceptions to grammar rules.",
+    "doc_id": "a2a5365b-423c-4ff8-8d28-2cd1240a6c78"
   }
 ]

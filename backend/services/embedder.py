@@ -204,9 +204,15 @@ async def _rerank_hits(
 ) -> list[dict]:
     """Rerank the leading RRF candidates with the shared cross-encoder."""
     if not _reranker:
+        print("[rerank] reranker not loaded (RERANK_ENABLED off?) — skipping")
         return hits[:n_results]
 
     candidates = hits[:_RERANK_CANDIDATE_LIMIT]
+    print(
+        "[rerank] BEFORE:",
+        [(h["doc_name"], h["page_number"], round(h["relevance_score"], 3)) for h in candidates[:3]],
+    )
+
     scores = await asyncio.to_thread(
         _reranker.predict,
         [(query, hit["chunk_text"]) for hit in candidates],
@@ -216,6 +222,12 @@ async def _rerank_hits(
         for hit, score in zip(candidates, scores)
     ]
     reranked.sort(key=lambda hit: hit["relevance_score"], reverse=True)
+
+    print(
+        "[rerank] AFTER: ",
+        [(h["doc_name"], h["page_number"], round(h["relevance_score"], 3)) for h in reranked[:3]],
+    )
+
     return reranked[:n_results]
 
 
@@ -356,6 +368,7 @@ async def search(
             n_results=safe_n,
         )
         if RERANK_ENABLED:
+            print("[rerank] cross-encoder reranking triggered")
             return await _rerank_hits(query, fused_hits, n_results)
         return fused_hits[:n_results]
     except Exception as exc:

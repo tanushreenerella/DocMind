@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Upload, Brain, Menu, X, Loader2, Send, FileText, LogOut, Sparkles, CalendarDays } from "lucide-react";
+import { Upload, Brain, Menu, X, Loader2, Send, FileText, LogOut, Sparkles, CalendarDays, Layers } from "lucide-react";
 import MessageBubble from "@/components/MessageBubble";
 import VoiceInput from "@/components/VoiceInput";
 import AuthGuard from "@/components/AuthGuard";
@@ -43,6 +43,8 @@ const TYPE_ICONS: Record<string, string> = {
   other: "📄",
 };
 
+const ALL_DOCUMENTS_HISTORY_ID = "all_documents";
+
 function typeLabel(t: string) {
   return t.replace(/_/g, " ");
 }
@@ -82,6 +84,7 @@ function HomeContent() {
   const [docs, setDocs] = useState<IndexedDocument[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<IndexedDocument | null>(null);
   const [messages, setMessages] = useState<StoredMessage[]>([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -128,10 +131,18 @@ function HomeContent() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  // Load the all-documents conversation, which is the default selection.
+  useEffect(() => {
+    setMessages(loadHistory(ALL_DOCUMENTS_HISTORY_ID));
+    setHistoryLoaded(true);
+  }, []);
+
   // Persist messages whenever they change
   useEffect(() => {
-    if (selectedDoc) saveHistory(selectedDoc.doc_id, messages);
-  }, [messages, selectedDoc]);
+    if (historyLoaded) {
+      saveHistory(selectedDoc?.doc_id ?? ALL_DOCUMENTS_HISTORY_ID, messages);
+    }
+  }, [historyLoaded, messages, selectedDoc]);
 
   const selectDoc = (doc: IndexedDocument) => {
     if (selectedDoc?.doc_id === doc.doc_id) {
@@ -142,6 +153,19 @@ function HomeContent() {
     setTimeline(null);
     setTimelineError("");
     setSelectedDoc(doc);
+    setInput("");
+    setSidebarOpen(false);
+  };
+
+  const selectAllDocuments = () => {
+    if (!selectedDoc) {
+      setSidebarOpen(false);
+      return;
+    }
+    setMessages(loadHistory(ALL_DOCUMENTS_HISTORY_ID));
+    setTimeline(null);
+    setTimelineError("");
+    setSelectedDoc(null);
     setInput("");
     setSidebarOpen(false);
   };
@@ -169,7 +193,7 @@ function HomeContent() {
   const handleSend = useCallback(
     async (text?: string) => {
       const q = (text ?? input).trim();
-      if (!q || !selectedDoc || loading) return;
+      if (!q || docs.length === 0 || loading) return;
 
       setInput("");
       if (textareaRef.current) textareaRef.current.style.height = "auto";
@@ -186,8 +210,8 @@ function HomeContent() {
       try {
         const history = messages.map((m) => ({ role: m.role, content: m.content }));
         const result = agenticMode
-          ? await sendAgenticMessage(q, history, selectedDoc.doc_id)
-          : await sendMessage(q, history, selectedDoc.doc_id);
+          ? await sendAgenticMessage(q, history, selectedDoc?.doc_id)
+          : await sendMessage(q, history, selectedDoc?.doc_id);
         const aiMsg: StoredMessage = {
           id: crypto.randomUUID(),
           role: "assistant",
@@ -210,7 +234,7 @@ function HomeContent() {
         setLoading(false);
       }
     },
-    [input, selectedDoc, loading, messages, agenticMode]
+    [input, selectedDoc, docs.length, loading, messages, agenticMode]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -271,6 +295,28 @@ function HomeContent() {
           </span>
         </div>
 
+        <div className="space-y-0.5">
+          <button
+            onClick={selectAllDocuments}
+            className={`
+              w-full text-left px-3 py-2.5 rounded-xl transition-all duration-150
+              ${!selectedDoc
+                ? "bg-indigo-50 border-l-2 border-indigo-500 pl-2.5"
+                : "hover:bg-gray-50 border-l-2 border-transparent"
+              }
+            `}
+          >
+            <div className="flex items-center gap-2">
+              <Layers className={`w-4 h-4 shrink-0 ${!selectedDoc ? "text-indigo-600" : "text-violet-500"}`} />
+              <div className="min-w-0">
+                <p className={`text-sm font-medium ${!selectedDoc ? "text-indigo-700" : "text-gray-700"}`}>
+                  All Documents
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">Search across your knowledge base</p>
+              </div>
+            </div>
+          </button>
+
         {docs.length === 0 ? (
           <div className="text-center py-8 px-4">
             <FileText className="w-8 h-8 text-gray-300 mx-auto mb-2" />
@@ -280,7 +326,7 @@ function HomeContent() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-0.5">
+          <div className="space-y-0.5 pt-1">
             {docs.map((doc) => {
               const isActive = selectedDoc?.doc_id === doc.doc_id;
               return (
@@ -326,14 +372,15 @@ function HomeContent() {
             })}
           </div>
         )}
+        </div>
       </div>
     </aside>
   );
 
   // ─── Main content ─────────────────────────────────────────────────────────
 
-  const noDocSelected = !selectedDoc;
-  const docSelectedNoMessages = selectedDoc && messages.length === 0 && !loading;
+  const canChat = docs.length > 0;
+  const chatSelectedNoMessages = messages.length === 0 && !loading;
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -386,15 +433,18 @@ function HomeContent() {
                 </div>
               </div>
             ) : (
-              <div>
-                <h1 className="text-base font-semibold text-gray-900">DocMind</h1>
-                <p className="text-xs text-gray-400">Select a document to start chatting</p>
+              <div className="flex items-center gap-2 min-w-0">
+                <Layers className="w-5 h-5 text-violet-500 shrink-0" />
+                <div>
+                  <h1 className="text-sm font-semibold text-gray-900">All Documents</h1>
+                  <p className="text-xs text-gray-400">Searching across {docs.length} document{docs.length !== 1 ? "s" : ""}</p>
+                </div>
               </div>
             )}
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {selectedDoc && (
+            {canChat && (
               <button
                 type="button"
                 onClick={() => setAgenticMode((enabled) => !enabled)}
@@ -470,31 +520,8 @@ function HomeContent() {
               )}
             </section>
           )}
-          {/* State 1: no document selected */}
-          {noDocSelected && (
-            <div className="flex flex-col items-center justify-center h-full text-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg">
-                <Brain className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-700">Select a document to start chatting</h2>
-                <p className="text-sm text-gray-400 mt-1 max-w-xs">
-                  Choose a document from the sidebar to ask questions about it.
-                </p>
-              </div>
-              {docs.length === 0 && (
-                <Link
-                  href="/upload"
-                  className="text-sm font-medium text-indigo-600 hover:text-indigo-700 underline underline-offset-2"
-                >
-                  Upload documents first →
-                </Link>
-              )}
-            </div>
-          )}
-
-          {/* State 2: document selected, no messages */}
-          {docSelectedNoMessages && (
+          {/* State 2: selection active, no messages */}
+          {chatSelectedNoMessages && (selectedDoc ? (
             <div className="flex flex-col items-center justify-center h-full text-center gap-3">
               <span className="text-5xl">{TYPE_ICONS[selectedDoc.document_type] ?? "📄"}</span>
               <div>
@@ -509,7 +536,22 @@ function HomeContent() {
                 </p>
               </div>
             </div>
-          )}
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center gap-3">
+              <Layers className="w-12 h-12 text-violet-500" />
+              <div>
+                <h2 className="text-base font-semibold text-gray-700">Ask across all documents</h2>
+                <p className="text-sm text-gray-400 mt-2 max-w-xs">
+                  Questions in this chat search across {docs.length} document{docs.length !== 1 ? "s" : ""}.
+                </p>
+              </div>
+              {docs.length === 0 && (
+                <Link href="/upload" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 underline underline-offset-2">
+                  Upload documents first →
+                </Link>
+              )}
+            </div>
+          ))}
 
           {/* State 3: messages */}
           {messages.map((msg) => (
@@ -545,7 +587,7 @@ function HomeContent() {
               className={`
                 flex-1 flex items-end gap-2 bg-gray-50 border rounded-2xl px-3 py-2
                 transition-all duration-200
-                ${selectedDoc
+                ${canChat
                   ? "border-gray-200 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100"
                   : "border-gray-200 opacity-50 cursor-not-allowed"
                 }
@@ -559,17 +601,19 @@ function HomeContent() {
                 placeholder={
                   selectedDoc
                     ? `Ask about ${selectedDoc.doc_name}… (Enter to send)`
-                    : "Select a document first"
+                    : canChat
+                      ? "Ask across all documents… (Enter to send)"
+                      : "Upload a document first"
                 }
-                disabled={!selectedDoc || loading}
+                disabled={!canChat || loading}
                 rows={1}
                 className="flex-1 bg-transparent resize-none outline-none text-sm text-gray-800 placeholder-gray-400 py-1 max-h-30 disabled:cursor-not-allowed"
               />
-              <VoiceInput onSend={handleSend} disabled={!selectedDoc || loading} />
+              <VoiceInput onSend={handleSend} disabled={!canChat || loading} />
             </div>
             <button
               onClick={() => handleSend()}
-              disabled={!input.trim() || !selectedDoc || loading}
+              disabled={!input.trim() || !canChat || loading}
               className="p-3 bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl transition-all duration-200 disabled:cursor-not-allowed shrink-0"
             >
               <Send className="w-4 h-4" />
