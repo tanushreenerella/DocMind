@@ -1,4 +1,5 @@
 import asyncio
+import os
 import chromadb
 from chromadb.config import Settings
 from rank_bm25 import BM25Okapi
@@ -24,15 +25,21 @@ _PROMPT_INJECTION_PATTERNS = (
 _BM25_TOKEN_PATTERN = re.compile(r"\w+", re.UNICODE)
 _RRF_K = 60
 _RERANK_CANDIDATE_LIMIT = 20
+_RERANK_MODEL = "ms-marco-MiniLM-L-12-v2"
 _bm25_index: BM25Okapi | None = None
 _bm25_records: list[dict] = []
 _bm25_ready = False
 _reranker = None
 
 if RERANK_ENABLED:
-    from sentence_transformers import CrossEncoder
+    # FlashRank runs the cross-encoder on ONNX Runtime (no torch/transformers),
+    # which keeps memory low enough for a 512MB instance.
+    from flashrank import Ranker
 
-    _reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+    _reranker = Ranker(
+        model_name=_RERANK_MODEL,
+        cache_dir=os.environ.get("FLASHRANK_CACHE_DIR", "/tmp/flashrank"),
+    )
 
 # Collection has no embedding_function — we supply embeddings explicitly
 # so no local model is loaded and no ONNX runtime is needed.
@@ -213,15 +220,21 @@ async def _rerank_hits(
         [(h["doc_name"], h["page_number"], round(h["relevance_score"], 3)) for h in candidates[:3]],
     )
 
-    scores = await asyncio.to_thread(
-        _reranker.predict,
-        [(query, hit["chunk_text"]) for hit in candidates],
+    from flashrank import RerankRequest
+
+    request = RerankRequest(
+        query=query,
+        passages=[
+            {"id": index, "text": hit["chunk_text"]}
+            for index, hit in enumerate(candidates)
+        ],
     )
+    # FlashRank returns the passages sorted by score, best first.
+    ranked = await asyncio.to_thread(_reranker.rerank, request)
     reranked = [
-        {**hit, "relevance_score": float(score)}
-        for hit, score in zip(candidates, scores)
+        {**candidates[item["id"]], "relevance_score": float(item["score"])}
+        for item in ranked
     ]
-    reranked.sort(key=lambda hit: hit["relevance_score"], reverse=True)
 
     print(
         "[rerank] AFTER: ",

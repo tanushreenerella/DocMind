@@ -120,9 +120,13 @@ class HybridSearchTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_reranking_reorders_hits_and_updates_scores(self) -> None:
         class FakeReranker:
-            def predict(self, pairs: list[tuple[str, str]]) -> list[float]:
-                self.pairs = pairs
-                return [0.1, 0.9]
+            def rerank(self, request) -> list[dict]:
+                self.passages = request.passages
+                # FlashRank returns passages sorted best-first.
+                return [
+                    {**self.passages[1], "score": 0.9},
+                    {**self.passages[0], "score": 0.1},
+                ]
 
         reranker = FakeReranker()
         with (
@@ -144,7 +148,7 @@ class HybridSearchTests(unittest.IsolatedAsyncioTestCase):
             [hit["relevance_score"] for hit in hits],
             [0.9, 0.1],
         )
-        self.assertEqual(len(reranker.pairs), 2)
+        self.assertEqual(len(reranker.passages), 2)
 
     def test_rrf_boosts_a_chunk_ranked_by_both_retrievers(self) -> None:
         vector_hits = [

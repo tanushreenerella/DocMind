@@ -15,5 +15,5 @@ bcrypt==4.0.1
 langgraph>=0.2,<1.0
 langchain-core>=0.3,<1.0
 rank-bm25==0.2.2
-sentence-transformers
+flashrank==0.2.10
 langchain-groq

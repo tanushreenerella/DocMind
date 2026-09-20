@@ -92,8 +92,8 @@ async def answer_query(
         }
 
     if RERANK_ENABLED:
-        # Cross-encoder scores are raw logits (can be negative) and are
-        # already relevance-sorted; skip the cosine-similarity threshold.
+        # Reranker scores are on a different scale than cosine similarity and
+        # hits are already relevance-sorted; skip the cosine threshold.
         relevant_hits = hits
     else:
         relevant_hits = [h for h in hits if h["relevance_score"] > 0.1]
