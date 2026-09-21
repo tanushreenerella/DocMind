@@ -21,6 +21,21 @@ RERANK_ENABLED = (
     == "true"
 )
 
+# Chroma Cloud
+_missing_chroma_vars = [
+    name
+    for name in ("CHROMA_API_KEY", "CHROMA_TENANT", "CHROMA_DATABASE")
+    if not os.environ.get(name)
+]
+if _missing_chroma_vars:
+    raise RuntimeError(
+        "Missing required Chroma Cloud environment variable(s): "
+        + ", ".join(_missing_chroma_vars)
+    )
+CHROMA_API_KEY = os.environ["CHROMA_API_KEY"]
+CHROMA_TENANT = os.environ["CHROMA_TENANT"]
+CHROMA_DATABASE = os.environ["CHROMA_DATABASE"]
+
 _origins_env = os.environ.get("ALLOWED_ORIGINS", "")
 if _origins_env:
     ALLOWED_ORIGINS = [o.strip() for o in _origins_env.split(",")]

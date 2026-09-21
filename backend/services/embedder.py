@@ -1,9 +1,8 @@
 import asyncio
 import os
 import chromadb
-from chromadb.config import Settings
 from rank_bm25 import BM25Okapi
-from core.config import CHROMA_PATH
+from core.config import CHROMA_API_KEY, CHROMA_TENANT, CHROMA_DATABASE
 from core.config import HYBRID_SEARCH_ENABLED, RERANK_ENABLED
 from services.embeddings import get_embedding, get_embeddings
 import re
@@ -43,16 +42,41 @@ if RERANK_ENABLED:
 
 # Collection has no embedding_function — we supply embeddings explicitly
 # so no local model is loaded and no ONNX runtime is needed.
-chroma_client = chromadb.PersistentClient(
-    path=CHROMA_PATH,
-    # Disable/avoid sending telemetry from the Chroma client to prevent
-    # compatibility issues with local telemetry integrations.
-    settings=Settings(anonymized_telemetry=True),
+chroma_client = chromadb.CloudClient(
+    api_key=CHROMA_API_KEY,
+    tenant=CHROMA_TENANT,
+    database=CHROMA_DATABASE,
 )
 collection = chroma_client.get_or_create_collection(
     name="documents",
-    metadata={"hnsw:space": "cosine"},
+    # Chroma 1.x replaced the legacy metadata={"hnsw:space": ...} with
+    # `configuration`, which is the form Chroma documents for both local and
+    # Cloud. Distance is immutable once the collection exists.
+    configuration={"hnsw": {"space": "cosine"}},
 )
+
+
+def _assert_cosine_space(chroma_collection) -> None:
+    """Fail fast unless the collection really uses cosine distance.
+
+    relevance_score = 1 - distance (and the RAG relevance thresholds built on
+    it) is only meaningful for cosine. If the server ignored the requested
+    space, or the collection was created earlier with another one, a wrong
+    metric would silently corrupt every score, so refuse to start instead.
+    """
+    index_config = chroma_collection.configuration_json or {}
+    index = index_config.get("hnsw") or index_config.get("spann") or {}
+    space = index.get("space")
+    if space != "cosine":
+        raise RuntimeError(
+            f"Chroma collection {chroma_collection.name!r} reports distance "
+            f"space {space!r}, expected 'cosine'. Delete the collection in "
+            "the Chroma Cloud dashboard (distance cannot be changed after "
+            "creation), re-upload documents, and restart."
+        )
+
+
+_assert_cosine_space(collection)
 
 
 def _tokenize_for_bm25(text: str) -> list[str]:

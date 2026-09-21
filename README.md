@@ -75,6 +75,18 @@ cp .env.example .env
 uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+### Running Backend Tests
+
+```bash
+cd backend
+python -m unittest discover -s tests -t . -v
+```
+
+Tests are fully offline: `backend/tests/__init__.py` swaps in a fake Chroma
+client and dummy `CHROMA_*` credentials before `services.embedder` is imported,
+so no real Chroma Cloud credentials are needed (and none can be used) in local
+or CI runs.
+
 ### Frontend Setup
 
 ```bash
@@ -114,7 +126,9 @@ python scripts/create_sample_docs.py
 | `ALLOWED_ORIGINS` | | `["http://localhost:3000"]` | CORS whitelist (JSON array) |
 | `MAX_FILE_SIZE_MB` | | `20` | Max upload size per file |
 | `STORAGE_PATH` | | `./storage` | Base storage directory |
-| `CHROMA_PATH` | | `./storage/chroma_db` | ChromaDB persistence path |
+| `CHROMA_API_KEY` | ✅ | — | Chroma Cloud API key (startup fails if missing) |
+| `CHROMA_TENANT` | ✅ | — | Chroma Cloud tenant ID |
+| `CHROMA_DATABASE` | ✅ | — | Chroma Cloud database. Use a separate one for local dev vs production |
 | `IMAGES_PATH` | | `./storage/page_images` | Rendered page images path |
 | `RATE_LIMIT_PER_MINUTE` | | `30` | API rate limit per IP |
 
@@ -171,7 +185,7 @@ python scripts/create_sample_docs.py
 2. Connect your GitHub repo, root directory: `bfai-assessment/backend`
 3. Build command: `pip install -r requirements.txt`
 4. Start command: `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
-5. Add environment variables in the Render dashboard (`GROQ_API_KEY`, `ALLOWED_ORIGINS`)
+5. Add environment variables in the Render dashboard (`GROQ_API_KEY`, `ALLOWED_ORIGINS`, `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE` — the last three pointing at the **production** Chroma database)
 6. Set `ALLOWED_ORIGINS` to include your Vercel URL: `["https://your-app.vercel.app"]`
 
 > **Note**: Render free tier has ephemeral storage — ChromaDB and page images won't persist across deploys. Use a paid plan with a persistent disk, or swap ChromaDB for a hosted vector DB (Pinecone, Qdrant Cloud).
