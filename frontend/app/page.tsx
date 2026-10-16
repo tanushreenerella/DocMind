@@ -44,6 +44,8 @@ const TYPE_ICONS: Record<string, string> = {
 };
 
 const ALL_DOCUMENTS_HISTORY_ID = "all_documents";
+// Stable reference so `messages` doesn't change identity every render.
+const EMPTY_MESSAGES: StoredMessage[] = [];
 
 function typeLabel(t: string) {
   return t.replace(/_/g, " ");
@@ -51,18 +53,27 @@ function typeLabel(t: string) {
 
 // ─── localStorage helpers ─────────────────────────────────────────────────────
 
-function loadHistory(docId: string): StoredMessage[] {
+// Keys are scoped by user so accounts sharing a browser never see each other's
+// history. With no known user we neither read nor write: falling back to an
+// unscoped key would reintroduce the leak.
+function historyStorageKey(userId: string, docId: string) {
+  return `chat_${userId}_${docId}`;
+}
+
+function loadHistory(userId: string | null, docId: string): StoredMessage[] {
+  if (!userId) return [];
   try {
-    const raw = localStorage.getItem(`chat_${docId}`);
+    const raw = localStorage.getItem(historyStorageKey(userId, docId));
     return raw ? (JSON.parse(raw) as StoredMessage[]) : [];
   } catch {
     return [];
   }
 }
 
-function saveHistory(docId: string, messages: StoredMessage[]) {
+function saveHistory(userId: string | null, docId: string, messages: StoredMessage[]) {
+  if (!userId) return;
   try {
-    localStorage.setItem(`chat_${docId}`, JSON.stringify(messages));
+    localStorage.setItem(historyStorageKey(userId, docId), JSON.stringify(messages));
   } catch {
     /* storage full — ignore */
   }
@@ -81,18 +92,29 @@ export default function HomePage() {
 function HomeContent() {
   const router = useRouter();
   const user = getUser();
+  const userId = user?.user_id ?? null;
   const [docs, setDocs] = useState<IndexedDocument[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<IndexedDocument | null>(null);
-  const [messages, setMessages] = useState<StoredMessage[]>([]);
-  const [historyLoaded, setHistoryLoaded] = useState(false);
+  // Chat state is keyed by conversation (doc_id, or ALL_DOCUMENTS_HISTORY_ID) so
+  // a reply that arrives after the user switched documents lands in the
+  // conversation that asked it, never in the one currently on screen.
+  const [messagesByDoc, setMessagesByDoc] = useState<Record<string, StoredMessage[]>>({});
+  const [loadingByDoc, setLoadingByDoc] = useState<Record<string, boolean>>({});
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [serverReady, setServerReady] = useState(false);
   const [timeline, setTimeline] = useState<EvidenceTimeline | null>(null);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineError, setTimelineError] = useState("");
   const [agenticMode, setAgenticMode] = useState(false);
+
+  const activeKey = selectedDoc?.doc_id ?? ALL_DOCUMENTS_HISTORY_ID;
+  const messages = messagesByDoc[activeKey] ?? EMPTY_MESSAGES;
+  const loading = loadingByDoc[activeKey] ?? false;
+  const activeKeyRef = useRef(activeKey);
+  useEffect(() => {
+    activeKeyRef.current = activeKey;
+  }, [activeKey]);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -131,27 +153,38 @@ function HomeContent() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  const ensureHistoryLoaded = useCallback(
+    (key: string) => {
+      setMessagesByDoc((prev) =>
+        key in prev ? prev : { ...prev, [key]: loadHistory(userId, key) }
+      );
+    },
+    [userId]
+  );
+
   // Load the all-documents conversation, which is the default selection.
   useEffect(() => {
-    setMessages(loadHistory(ALL_DOCUMENTS_HISTORY_ID));
-    setHistoryLoaded(true);
-  }, []);
+    ensureHistoryLoaded(ALL_DOCUMENTS_HISTORY_ID);
+  }, [ensureHistoryLoaded]);
 
-  // Persist messages whenever they change
+  // Persist every loaded conversation whenever any of them changes. Only
+  // conversations already read from storage are in the map, so this can never
+  // overwrite saved history that has not been loaded yet.
   useEffect(() => {
-    if (historyLoaded) {
-      saveHistory(selectedDoc?.doc_id ?? ALL_DOCUMENTS_HISTORY_ID, messages);
+    for (const [key, msgs] of Object.entries(messagesByDoc)) {
+      saveHistory(userId, key, msgs);
     }
-  }, [historyLoaded, messages, selectedDoc]);
+  }, [userId, messagesByDoc]);
 
   const selectDoc = (doc: IndexedDocument) => {
     if (selectedDoc?.doc_id === doc.doc_id) {
       setSidebarOpen(false);
       return;
     }
-    setMessages(loadHistory(doc.doc_id));
+    ensureHistoryLoaded(doc.doc_id);
     setTimeline(null);
     setTimelineError("");
+    setTimelineLoading(false);
     setSelectedDoc(doc);
     setInput("");
     setSidebarOpen(false);
@@ -162,9 +195,10 @@ function HomeContent() {
       setSidebarOpen(false);
       return;
     }
-    setMessages(loadHistory(ALL_DOCUMENTS_HISTORY_ID));
+    ensureHistoryLoaded(ALL_DOCUMENTS_HISTORY_ID);
     setTimeline(null);
     setTimelineError("");
+    setTimelineLoading(false);
     setSelectedDoc(null);
     setInput("");
     setSidebarOpen(false);
@@ -172,12 +206,17 @@ function HomeContent() {
 
   const handleTimeline = async () => {
     if (!selectedDoc || timelineLoading) return;
+    const docId = selectedDoc.doc_id;
     setTimelineLoading(true);
     setTimelineError("");
     try {
-      setTimeline(await generateEvidenceTimeline(selectedDoc.doc_id));
+      const result = await generateEvidenceTimeline(docId);
+      // Drop the result if the user switched documents while it was loading.
+      if (activeKeyRef.current === docId) setTimeline(result);
     } catch {
-      setTimelineError("Could not generate an evidence timeline. Please try again.");
+      if (activeKeyRef.current === docId) {
+        setTimelineError("Could not generate an evidence timeline. Please try again.");
+      }
     } finally {
       setTimelineLoading(false);
     }
@@ -195,6 +234,15 @@ function HomeContent() {
       const q = (text ?? input).trim();
       if (!q || docs.length === 0 || loading) return;
 
+      // Capture the conversation this question belongs to; the reply is
+      // appended to it even if the user selects another document meanwhile.
+      const key = activeKey;
+      const docId = selectedDoc?.doc_id;
+      const appendMessage = (msg: StoredMessage) =>
+        setMessagesByDoc((prev) => ({ ...prev, [key]: [...(prev[key] ?? []), msg] }));
+      const setKeyLoading = (value: boolean) =>
+        setLoadingByDoc((prev) => ({ ...prev, [key]: value }));
+
       setInput("");
       if (textareaRef.current) textareaRef.current.style.height = "auto";
 
@@ -204,14 +252,14 @@ function HomeContent() {
         content: q,
         timestamp: Date.now(),
       };
-      setMessages((prev) => [...prev, userMsg]);
-      setLoading(true);
+      appendMessage(userMsg);
+      setKeyLoading(true);
 
       try {
         const history = messages.map((m) => ({ role: m.role, content: m.content }));
         const result = agenticMode
-          ? await sendAgenticMessage(q, history, selectedDoc?.doc_id)
-          : await sendMessage(q, history, selectedDoc?.doc_id);
+          ? await sendAgenticMessage(q, history, docId)
+          : await sendMessage(q, history, docId);
         const aiMsg: StoredMessage = {
           id: crypto.randomUUID(),
           role: "assistant",
@@ -219,22 +267,19 @@ function HomeContent() {
           citations: result.citations,
           timestamp: Date.now(),
         };
-        setMessages((prev) => [...prev, aiMsg]);
+        appendMessage(aiMsg);
       } catch {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            content: "Something went wrong. Please try again.",
-            timestamp: Date.now(),
-          },
-        ]);
+        appendMessage({
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: "Something went wrong. Please try again.",
+          timestamp: Date.now(),
+        });
       } finally {
-        setLoading(false);
+        setKeyLoading(false);
       }
     },
-    [input, selectedDoc, docs.length, loading, messages, agenticMode]
+    [input, selectedDoc, activeKey, docs.length, loading, messages, agenticMode]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
