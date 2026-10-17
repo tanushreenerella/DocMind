@@ -1,10 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr, field_validator
-from core.auth import hash_password, verify_password, create_access_token, get_current_user
+from core.auth import (
+    clear_auth_cookie,
+    create_access_token,
+    get_current_user,
+    hash_password,
+    set_auth_cookie,
+    verify_password,
+)
 from core.database import get_pool
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 class SignupRequest(BaseModel):
@@ -26,15 +33,13 @@ class LoginRequest(BaseModel):
 
 
 class AuthResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
     user_id: str
     email: str
     full_name: str
 
 
 @router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-async def signup(body: SignupRequest):
+async def signup(body: SignupRequest, response: Response):
     pool = get_pool()
 
     existing = await pool.fetchrow("SELECT id FROM users WHERE email = $1", body.email)
@@ -53,15 +58,14 @@ async def signup(body: SignupRequest):
         body.full_name,
     )
 
-    token = create_access_token(str(row["id"]), row["email"])
+    set_auth_cookie(response, create_access_token(str(row["id"]), row["email"]))
     return AuthResponse(
-        access_token=token,
         user_id=str(row["id"]),
         email=row["email"],
         full_name=row["full_name"] or "",
     )
 @router.post("/login", response_model=AuthResponse)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
     pool = get_pool()
 
     row = await pool.fetchrow(
@@ -78,14 +82,19 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             detail="Invalid email or password"
         )
 
-    token = create_access_token(str(row["id"]), row["email"])
+    set_auth_cookie(response, create_access_token(str(row["id"]), row["email"]))
 
     return AuthResponse(
-        access_token=token,
         user_id=str(row["id"]),
         email=row["email"],
         full_name=row["full_name"] or "",
     )
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(response: Response):
+    clear_auth_cookie(response)
+
 
 @router.get("/me")
 async def me(current_user: dict = Depends(get_current_user)):

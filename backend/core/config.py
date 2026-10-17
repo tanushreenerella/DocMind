@@ -49,3 +49,5 @@ if not JWT_SECRET_KEY:
     raise RuntimeError("JWT_SECRET_KEY environment variable must be set")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.environ.get("JWT_EXPIRE_MINUTES", "60"))
+# Secure by default; set COOKIE_SECURE=false only for plain-http local dev.
+COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "true").strip().lower() != "false"

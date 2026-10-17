@@ -35,6 +35,7 @@ from core.config import (
     RATE_LIMIT_PER_MINUTE,
     STORAGE_PATH,
 )
+from core.auth import require_allowed_origin
 from core.database import connect, disconnect
 from routers import chat, documents, upload
 from routers import auth
@@ -77,6 +78,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.middleware("http")(require_allowed_origin)
 
 app.include_router(auth.router)
 app.include_router(upload.router, prefix="/api")

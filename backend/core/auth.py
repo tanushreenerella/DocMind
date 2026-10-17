@@ -1,16 +1,24 @@
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Awaitable, Callable, Optional
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Cookie, HTTPException, Request, Response, status
+from fastapi.responses import JSONResponse
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from core.config import JWT_SECRET_KEY, JWT_ALGORITHM, JWT_EXPIRE_MINUTES
+from core.config import (
+    ALLOWED_ORIGINS,
+    COOKIE_SECURE,
+    JWT_ALGORITHM,
+    JWT_EXPIRE_MINUTES,
+    JWT_SECRET_KEY,
+)
 from core.database import get_pool
 
+ACCESS_TOKEN_COOKIE = "access_token"
+_STATE_CHANGING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def hash_password(password: str) -> str:
@@ -27,14 +35,40 @@ def create_access_token(user_id: str, email: str) -> str:
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
+def set_auth_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=ACCESS_TOKEN_COOKIE,
+        value=token,
+        max_age=JWT_EXPIRE_MINUTES * 60,
+        path="/",
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="lax",
+    )
+
+
+def clear_auth_cookie(response: Response) -> None:
+    # Attributes must match set_auth_cookie or browsers keep the original cookie.
+    response.delete_cookie(
+        key=ACCESS_TOKEN_COOKIE,
+        path="/",
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="lax",
+    )
+
+
+async def get_current_user(
+    access_token: Optional[str] = Cookie(default=None),
+) -> dict:
     credentials_exc = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or expired token",
-        headers={"WWW-Authenticate": "Bearer"},
     )
+    if not access_token:
+        raise credentials_exc
     try:
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(access_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
         user_id: Optional[str] = payload.get("sub")
         email: Optional[str] = payload.get("email")
         if user_id is None or email is None:
@@ -48,3 +82,20 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
         raise credentials_exc
 
     return {"id": str(row["id"]), "email": row["email"], "full_name": row["full_name"]}
+
+
+async def require_allowed_origin(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
+    """CSRF guard: state-changing requests must come from an allowed Origin.
+
+    Requests without an Origin header are rejected too, since the auth cookie
+    is sent automatically and the header is the only proof of where they came from.
+    """
+    if (
+        request.method in _STATE_CHANGING_METHODS
+        and request.headers.get("origin") not in ALLOWED_ORIGINS
+    ):
+        return JSONResponse(status_code=403, content={"detail": "Origin not allowed"})
+    return await call_next(request)
