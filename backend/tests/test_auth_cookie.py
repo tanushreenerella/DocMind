@@ -6,6 +6,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from core import auth as core_auth
+from core.rate_limit import limiter
 from main import app
 
 USER_ID = "11111111-1111-1111-1111-111111111111"
@@ -39,6 +40,8 @@ class FakePool:
 
 class AuthCookieTests(unittest.TestCase):
     def setUp(self) -> None:
+        # These tests log in repeatedly; keep them clear of the login rate limit.
+        limiter.reset()
         pool = FakePool()
         self.patches = [
             patch("routers.auth.get_pool", return_value=pool),

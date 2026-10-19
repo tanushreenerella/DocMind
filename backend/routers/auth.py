@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr, field_validator
 from core.auth import (
@@ -9,7 +9,9 @@ from core.auth import (
     set_auth_cookie,
     verify_password,
 )
+from core.config import RATE_LIMIT_AUTH
 from core.database import get_pool
+from core.rate_limit import limiter
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -39,7 +41,8 @@ class AuthResponse(BaseModel):
 
 
 @router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-async def signup(body: SignupRequest, response: Response):
+@limiter.limit(RATE_LIMIT_AUTH)
+async def signup(request: Request, body: SignupRequest, response: Response):
     pool = get_pool()
 
     existing = await pool.fetchrow("SELECT id FROM users WHERE email = $1", body.email)
@@ -65,7 +68,12 @@ async def signup(body: SignupRequest, response: Response):
         full_name=row["full_name"] or "",
     )
 @router.post("/login", response_model=AuthResponse)
-async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
+@limiter.limit(RATE_LIMIT_AUTH)
+async def login(
+    request: Request,
+    response: Response,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+):
     pool = get_pool()
 
     row = await pool.fetchrow(

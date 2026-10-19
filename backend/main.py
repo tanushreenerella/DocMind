@@ -24,19 +24,18 @@ except Exception:
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
 
 from core.config import (
     ALLOWED_ORIGINS,
     CHROMA_PATH,
     IMAGES_PATH,
-    RATE_LIMIT_PER_MINUTE,
     STORAGE_PATH,
 )
 from core.auth import require_allowed_origin
 from core.database import connect, disconnect
+from core.rate_limit import limiter, rate_limit_exceeded_handler
 from routers import chat, documents, upload
 from routers import auth
 
@@ -55,11 +54,6 @@ async def lifespan(app: FastAPI):
     await disconnect()
 
 
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=[f"{RATE_LIMIT_PER_MINUTE}/minute"],
-)
-
 app = FastAPI(
     title="DocMind — Document Intelligence API",
     version="1.0.0",
@@ -69,7 +63,7 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -78,6 +72,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Applies the default limit to routes without their own @limiter.limit.
+app.add_middleware(SlowAPIMiddleware)
+# Added last so it runs first: rejected origins never spend rate-limit budget.
 app.middleware("http")(require_allowed_origin)
 
 app.include_router(auth.router)
@@ -87,6 +84,7 @@ app.include_router(documents.router, prefix="/api")
 
 
 @app.get("/health")
+@limiter.exempt
 async def health() -> dict:
     return {"status": "ok"}
 
@@ -100,3 +98,10 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
     return response
+@app.get("/api/debug-ip")
+async def debug_ip(request: Request):
+    return {
+        "xff": request.headers.get("x-forwarded-for"),
+        "real_ip": request.headers.get("x-real-ip"),
+        "client": request.client.host if request.client else None,
+    }

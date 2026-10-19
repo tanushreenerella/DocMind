@@ -1,13 +1,19 @@
 import base64
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from groq import Groq
 from pydantic import BaseModel, field_validator
 
 from core.auth import get_current_user
-from core.config import GROQ_API_KEY
+from core.config import (
+    GROQ_API_KEY,
+    RATE_LIMIT_AGENTIC_CHAT,
+    RATE_LIMIT_CHAT,
+    RATE_LIMIT_VOICE,
+)
 from core.database import get_pool
+from core.rate_limit import limiter
 from services.agentic_rag import answer_agentic_query
 from services.rag import answer_query
 
@@ -77,20 +83,22 @@ async def _require_owned_document(
 
 
 @router.post("/chat")
+@limiter.limit(RATE_LIMIT_CHAT)
 async def chat(
-    request: ChatRequest,
+    request: Request,
+    body: ChatRequest,
     current_user: dict = Depends(get_current_user),
 ):
     pool = get_pool()
     await _require_owned_document(
-        request.doc_id,
+        body.doc_id,
         current_user["id"],
     )
-    history = [{"role": m.role, "content": m.content} for m in request.conversation_history]
+    history = [{"role": m.role, "content": m.content} for m in body.conversation_history]
     result = await answer_query(
-        request.question,
+        body.question,
         history,
-        doc_id=request.doc_id,
+        doc_id=body.doc_id,
         user_id=current_user["id"],
     )
 
@@ -98,13 +106,13 @@ async def chat(
     await pool.execute(
         "INSERT INTO chat_history (user_id, doc_id, role, content) VALUES ($1, $2, 'user', $3)",
         current_user["id"],
-        request.doc_id or "",
-        request.question,
+        body.doc_id or "",
+        body.question,
     )
     await pool.execute(
         "INSERT INTO chat_history (user_id, doc_id, role, content) VALUES ($1, $2, 'assistant', $3)",
         current_user["id"],
-        request.doc_id or "",
+        body.doc_id or "",
         result["answer"],
     )
 
@@ -112,34 +120,36 @@ async def chat(
 
 
 @router.post("/chat/agentic")
+@limiter.limit(RATE_LIMIT_AGENTIC_CHAT)
 async def chat_agentic(
-    request: ChatRequest,
+    request: Request,
+    body: ChatRequest,
     current_user: dict = Depends(get_current_user),
 ):
     """Phase-1 LangGraph endpoint; preserves the existing chat response contract."""
     pool = get_pool()
     await _require_owned_document(
-        request.doc_id,
+        body.doc_id,
         current_user["id"],
     )
-    history = [{"role": m.role, "content": m.content} for m in request.conversation_history]
+    history = [{"role": m.role, "content": m.content} for m in body.conversation_history]
     result = await answer_agentic_query(
-        request.question,
+        body.question,
         history,
         user_id=current_user["id"],
-        doc_id=request.doc_id,
+        doc_id=body.doc_id,
     )
 
     await pool.execute(
         "INSERT INTO chat_history (user_id, doc_id, role, content) VALUES ($1, $2, 'user', $3)",
         current_user["id"],
-        request.doc_id or "",
-        request.question,
+        body.doc_id or "",
+        body.question,
     )
     await pool.execute(
         "INSERT INTO chat_history (user_id, doc_id, role, content) VALUES ($1, $2, 'assistant', $3)",
         current_user["id"],
-        request.doc_id or "",
+        body.doc_id or "",
         result["answer"],
     )
 
@@ -168,12 +178,14 @@ async def get_history(doc_id: str, current_user: dict = Depends(get_current_user
 
 
 @router.post("/transcribe")
+@limiter.limit(RATE_LIMIT_VOICE)
 async def transcribe_voice(
-    request: VoiceRequest,
+    request: Request,
+    body: VoiceRequest,
     current_user: dict = Depends(get_current_user),
 ):
     try:
-        audio_bytes = base64.b64decode(request.audio_base64)
+        audio_bytes = base64.b64decode(body.audio_base64)
         transcription = _get_groq().audio.transcriptions.create(
             file=("audio.webm", audio_bytes, "audio/webm"),
             model="whisper-large-v3-turbo",

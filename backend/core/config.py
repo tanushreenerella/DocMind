@@ -12,6 +12,14 @@ STORAGE_PATH = os.environ.get("STORAGE_PATH", "./storage")
 CHROMA_PATH = os.environ.get("CHROMA_PATH", "./storage/chroma_db")
 IMAGES_PATH = os.environ.get("IMAGES_PATH", "./storage/page_images")
 RATE_LIMIT_PER_MINUTE = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "30"))
+# Per-route limits use the `limits` syntax, e.g. "5/minute", "10/hour".
+RATE_LIMIT_AUTH = os.environ.get("RATE_LIMIT_AUTH", "5/minute")
+RATE_LIMIT_CHAT = os.environ.get("RATE_LIMIT_CHAT", "20/minute")
+RATE_LIMIT_AGENTIC_CHAT = os.environ.get("RATE_LIMIT_AGENTIC_CHAT", "10/minute")
+RATE_LIMIT_UPLOAD = os.environ.get("RATE_LIMIT_UPLOAD", "10/hour")
+RATE_LIMIT_VOICE = os.environ.get("RATE_LIMIT_VOICE", "10/minute")
+# e.g. redis://host:6379/0; counters are per-process with memory://.
+RATE_LIMIT_STORAGE_URI = os.environ.get("RATE_LIMIT_STORAGE_URI", "memory://")
 HYBRID_SEARCH_ENABLED = (
     os.environ.get("HYBRID_SEARCH_ENABLED", "false").strip().lower()
     == "true"

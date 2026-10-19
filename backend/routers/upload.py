@@ -4,12 +4,13 @@ import uuid
 from pathlib import Path
 from typing import List
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from core.auth import get_current_user
-from core.config import STORAGE_PATH, IMAGES_PATH
+from core.config import STORAGE_PATH, IMAGES_PATH, RATE_LIMIT_UPLOAD
 from core.database import get_pool
+from core.rate_limit import limiter
 from core.security import sanitize_filename, validate_file
 from services.classifier import classify_document
 from services.embedder import index_document
@@ -74,7 +75,9 @@ async def _process_document(
 
 
 @router.post("/upload")
+@limiter.limit(RATE_LIMIT_UPLOAD)
 async def upload_documents(
+    request: Request,
     background_tasks: BackgroundTasks,
     files: List[UploadFile] = File(...),
     current_user: dict = Depends(get_current_user),
