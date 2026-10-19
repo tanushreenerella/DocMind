@@ -1,9 +1,11 @@
 import asyncio
 import os
+import threading
 import chromadb
 from rank_bm25 import BM25Okapi
 from core.config import CHROMA_API_KEY, CHROMA_TENANT, CHROMA_DATABASE
 from core.config import HYBRID_SEARCH_ENABLED, RERANK_ENABLED
+from core.config import RERANK_CANDIDATES, RERANK_MODEL
 from services.embeddings import get_embedding, get_embeddings
 import re
 
@@ -23,22 +25,47 @@ _PROMPT_INJECTION_PATTERNS = (
 
 _BM25_TOKEN_PATTERN = re.compile(r"\w+", re.UNICODE)
 _RRF_K = 60
-_RERANK_CANDIDATE_LIMIT = 20
-_RERANK_MODEL = "ms-marco-MiniLM-L-12-v2"
 _bm25_index: BM25Okapi | None = None
 _bm25_records: list[dict] = []
 _bm25_ready = False
 _reranker = None
+_reranker_lock = threading.Lock()
 
+def _validate_rerank_model(model_name: str) -> None:
+    """Fail fast on names FlashRank doesn't ship (Ranker would raise KeyError)."""
+    from flashrank.Config import model_file_map
+
+    if model_name not in model_file_map:
+        raise RuntimeError(
+            f"RERANK_MODEL={model_name!r} is not a FlashRank model; "
+            f"choose one of: {', '.join(sorted(model_file_map))}"
+        )
+
+
+# The model loads lazily, so check the name at startup rather than on the
+# first query.
 if RERANK_ENABLED:
-    # FlashRank runs the cross-encoder on ONNX Runtime (no torch/transformers),
-    # which keeps memory low enough for a 512MB instance.
-    from flashrank import Ranker
+    _validate_rerank_model(RERANK_MODEL)
 
-    _reranker = Ranker(
-        model_name=_RERANK_MODEL,
-        cache_dir=os.environ.get("FLASHRANK_CACHE_DIR", "/tmp/flashrank"),
-    )
+
+def _get_reranker():
+    """Load the cross-encoder on first use; blocking, so call it off the event loop.
+
+    FlashRank runs it on ONNX Runtime (no torch/transformers), which keeps
+    memory low enough for a 512MB instance. A cold cache downloads the model.
+    """
+    global _reranker
+    if _reranker is None:
+        with _reranker_lock:
+            if _reranker is None:
+                from flashrank import Ranker
+
+                print(f"[rerank] loading {RERANK_MODEL}")
+                _reranker = Ranker(
+                    model_name=RERANK_MODEL,
+                    cache_dir=os.environ.get("FLASHRANK_CACHE_DIR", "/tmp/flashrank"),
+                )
+    return _reranker
 
 # Collection has no embedding_function — we supply embeddings explicitly
 # so no local model is loaded and no ONNX runtime is needed.
@@ -234,11 +261,7 @@ async def _rerank_hits(
     n_results: int,
 ) -> list[dict]:
     """Rerank the leading RRF candidates with the shared cross-encoder."""
-    if not _reranker:
-        print("[rerank] reranker not loaded (RERANK_ENABLED off?) — skipping")
-        return hits[:n_results]
-
-    candidates = hits[:_RERANK_CANDIDATE_LIMIT]
+    candidates = hits[:RERANK_CANDIDATES]
     print(
         "[rerank] BEFORE:",
         [(h["doc_name"], h["page_number"], round(h["relevance_score"], 3)) for h in candidates[:3]],
@@ -253,8 +276,14 @@ async def _rerank_hits(
             for index, hit in enumerate(candidates)
         ],
     )
-    # FlashRank returns the passages sorted by score, best first.
-    ranked = await asyncio.to_thread(_reranker.rerank, request)
+    # Model loading (first call) and scoring are both CPU/IO-bound, so run them
+    # in a worker thread. FlashRank returns passages sorted best first.
+    try:
+        ranked = await asyncio.to_thread(lambda: _get_reranker().rerank(request))
+    except Exception as exc:
+        # Keep the fused order rather than failing the whole search.
+        print(f"[rerank] failed, using fused order: {exc}")
+        return hits[:n_results]
     reranked = [
         {**candidates[item["id"]], "relevance_score": float(item["score"])}
         for item in ranked
@@ -342,7 +371,7 @@ async def search(
         if total == 0:
             return []
         safe_n = min(
-            max(n_results, _RERANK_CANDIDATE_LIMIT),
+            max(n_results, RERANK_CANDIDATES),
             total,
         ) if HYBRID_SEARCH_ENABLED and RERANK_ENABLED else min(n_results, total)
 

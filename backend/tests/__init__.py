@@ -15,6 +15,12 @@ os.environ["CHROMA_API_KEY"] = "test-api-key"
 os.environ["CHROMA_TENANT"] = "test-tenant"
 os.environ["CHROMA_DATABASE"] = "test-database"
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret")
+# Retrieval flags off unless a test patches them on, so a developer's .env
+# can't make tests download and run the real reranker model.
+os.environ["HYBRID_SEARCH_ENABLED"] = "false"
+os.environ["RERANK_ENABLED"] = "false"
+# In-process counters; never a real Redis from .env.
+os.environ["RATE_LIMIT_STORAGE_URI"] = "memory://"
 
 _fake_collection = MagicMock()
 _fake_collection.name = "documents"

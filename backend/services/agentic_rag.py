@@ -1,13 +1,15 @@
 """LangGraph entry point for the agentic RAG pipeline.
 
-Phase 1 deliberately uses the existing single-pass answer function as its
-only node. Later phases replace this node with planner, retriever, critic,
-and synthesizer nodes without changing the API contract.
+planner -> research -> synthesizer. The research node runs retrieval and the
+critic for every sub-question concurrently; each sub-question retries with the
+critic's rewritten query (at most _MAX_RETRIEVAL_RETRIES times) on its own,
+without waiting for the others.
 """
 
 import asyncio
 import json
-from typing import TypedDict
+import time
+from typing import Awaitable, Callable, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
@@ -38,9 +40,6 @@ class AgenticState(TypedDict, total=False):
     critic_verdicts: dict[str, str]
     retry_counts: dict[str, int]
     retrieval_queries: dict[str, str]
-
-    active_sub_questions: list[str]
-    pending_sub_questions: list[str]
 
     final_answer: str
     citations: list[dict]
@@ -105,8 +104,6 @@ def _parse_planner_response(
     if not raw:
         print("[agentic planner] empty response; using original question")
         return [original_question], "factual"
-
-    print("[agentic planner raw]", repr(raw))
 
     cleaned = raw.strip()
 
@@ -226,67 +223,6 @@ async def _plan_question(state: AgenticState) -> dict:
 
 
 # =============================================================================
-# RETRIEVER
-# =============================================================================
-
-async def _retrieve_sub_questions(state: AgenticState) -> dict:
-    """Reuse the existing Chroma search once for every planned sub-question."""
-
-    sub_questions = (
-        state.get("sub_questions")
-        or [state["original_question"]]
-    )
-
-    targets = (
-        state.get("pending_sub_questions")
-        or sub_questions
-    )
-
-    retrieval_queries = state.get("retrieval_queries", {})
-    doc_id = state.get("doc_id")
-
-    results = await asyncio.gather(
-        *(
-            search(
-                retrieval_queries.get(
-                    sub_question,
-                    sub_question,
-                ),
-                n_results=6,
-                doc_id=doc_id,
-                user_id=state["user_id"],
-            )
-            for sub_question in targets
-        )
-    )
-
-    collected = dict(
-        state.get("retrieved_chunks", {})
-    )
-
-    collected.update(
-        {
-            sub_question: chunks
-            for sub_question, chunks
-            in zip(targets, results)
-        }
-    )
-
-    # Debug: log retrieval results for visibility during development.
-    try:
-        for q, chks in collected.items():
-            print(f"[agentic retriever] question={q!r} -> {len(chks)} chunks")
-    except Exception:
-        pass
-
-    return {
-        "retrieved_chunks": collected,
-        "active_sub_questions": targets,
-        "pending_sub_questions": [],
-    }
-
-
-# =============================================================================
 # CRITIC
 # =============================================================================
 
@@ -340,8 +276,6 @@ def _parse_critic_response(
             "marking insufficient"
         )
         return "insufficient", fallback_query
-
-    print("[agentic critic raw]", repr(raw))
 
     cleaned = raw.strip()
 
@@ -482,100 +416,79 @@ async def _grade_sub_question(
         )
 
 
-async def _critic_retrieval(
+# =============================================================================
+# RESEARCH (retriever + critic, per sub-question)
+# =============================================================================
+
+_MAX_RETRIEVAL_RETRIES = 2
+_NO_RELIABLE_VERDICT = "no reliable answer found in the provided documents"
+
+
+async def _research_sub_question(
+    sub_question: str,
+    question_type: str,
+    user_id: str,
+    doc_id: str | None,
+) -> tuple[list[dict], str, int, str]:
+    """Retrieve, grade, and retry one sub-question until sufficient or out of retries.
+
+    Returns the last attempt's chunks, the verdict, retries used, and the last query.
+    """
+    query = sub_question
+    retries = 0
+    while True:
+        chunks = await search(
+            query,
+            n_results=6,
+            doc_id=doc_id,
+            user_id=user_id,
+        )
+        print(f"[agentic retriever] question={sub_question!r} -> {len(chunks)} chunks")
+
+        _, verdict, rewrite = await _grade_sub_question(
+            sub_question,
+            chunks,
+            question_type,
+        )
+        if verdict == "sufficient":
+            return chunks, verdict, retries, query
+        if retries >= _MAX_RETRIEVAL_RETRIES:
+            return chunks, _NO_RELIABLE_VERDICT, retries, query
+
+        retries += 1
+        query = rewrite
+
+
+async def _research(
     state: AgenticState,
 ) -> dict:
-    """Grade only the chunks retrieved in the current graph pass."""
+    """Run retrieval + critic for all sub-questions concurrently."""
 
-    active_questions = state.get(
-        "active_sub_questions",
-        [],
+    sub_questions = (
+        state.get("sub_questions")
+        or [state["original_question"]]
     )
-
-    chunks_by_question = state.get(
-        "retrieved_chunks",
-        {},
-    )
-
     question_type = state.get("question_type", "factual")
 
-    grades = await asyncio.gather(
+    results = await asyncio.gather(
         *(
-            _grade_sub_question(
-                question,
-                chunks_by_question.get(
-                    question,
-                    [],
-                ),
+            _research_sub_question(
+                sub_question,
                 question_type,
+                state["user_id"],
+                state.get("doc_id"),
             )
-            for question in active_questions
+            for sub_question in sub_questions
         )
     )
 
-    verdicts = dict(
-        state.get("critic_verdicts", {})
-    )
-
-    retries = dict(
-        state.get("retry_counts", {})
-    )
-
-    queries = dict(
-        state.get("retrieval_queries", {})
-    )
-
-    pending: list[str] = []
-
-    for question, verdict, rewrite in grades:
-
-        if verdict == "sufficient":
-            verdicts[question] = "sufficient"
-            continue
-
-        used_retries = retries.get(
-            question,
-            0,
-        )
-
-        if used_retries < 2:
-
-            retries[question] = (
-                used_retries + 1
-            )
-
-            queries[question] = rewrite
-
-            pending.append(question)
-
-            verdicts[question] = (
-                "insufficient; retrying retrieval"
-            )
-
-        else:
-
-            verdicts[question] = (
-                "no reliable answer found "
-                "in the provided documents"
-            )
-
+    by_question = dict(zip(sub_questions, results))
     return {
-        "critic_verdicts": verdicts,
-        "retry_counts": retries,
-        "retrieval_queries": queries,
-        "pending_sub_questions": pending,
+        "retrieved_chunks": {q: r[0] for q, r in by_question.items()},
+        "critic_verdicts": {q: r[1] for q, r in by_question.items()},
+        "retry_counts": {q: r[2] for q, r in by_question.items()},
+        "retrieval_queries": {q: r[3] for q, r in by_question.items()},
     }
-
-
-def _route_after_critic(
-    state: AgenticState,
-) -> str:
-
-    return (
-        "retriever"
-        if state.get("pending_sub_questions")
-        else "synthesizer"
-    )
 
 
 # =============================================================================
@@ -973,6 +886,23 @@ async def _synthesize_answer(
 # LANGGRAPH
 # =============================================================================
 
+def _timed(
+    name: str,
+    node: Callable[[AgenticState], Awaitable[dict]],
+) -> Callable[[AgenticState], Awaitable[dict]]:
+    """Wrap a graph node so its wall-clock duration is logged."""
+
+    async def run(state: AgenticState) -> dict:
+        started = time.perf_counter()
+        try:
+            return await node(state)
+        finally:
+            elapsed_ms = (time.perf_counter() - started) * 1000
+            print(f"[agentic timing] {name}: {elapsed_ms:.0f} ms")
+
+    return run
+
+
 def _build_graph():
 
     graph = StateGraph(
@@ -981,22 +911,17 @@ def _build_graph():
 
     graph.add_node(
         "planner",
-        _plan_question,
+        _timed("planner", _plan_question),
     )
 
     graph.add_node(
-        "retriever",
-        _retrieve_sub_questions,
-    )
-
-    graph.add_node(
-        "critic",
-        _critic_retrieval,
+        "research",
+        _timed("research", _research),
     )
 
     graph.add_node(
         "synthesizer",
-        _synthesize_answer,
+        _timed("synthesizer", _synthesize_answer),
     )
 
     graph.add_edge(
@@ -1006,21 +931,12 @@ def _build_graph():
 
     graph.add_edge(
         "planner",
-        "retriever",
+        "research",
     )
 
     graph.add_edge(
-        "retriever",
-        "critic",
-    )
-
-    graph.add_conditional_edges(
-        "critic",
-        _route_after_critic,
-        {
-            "retriever": "retriever",
-            "synthesizer": "synthesizer",
-        },
+        "research",
+        "synthesizer",
     )
 
     graph.add_edge(
@@ -1058,9 +974,6 @@ async def answer_agentic_query(
             "critic_verdicts": {},
             "retry_counts": {},
             "retrieval_queries": {},
-
-            "active_sub_questions": [],
-            "pending_sub_questions": [],
         }
     )
 
