@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FileText } from "lucide-react";
-import { getToken } from "@/lib/auth";
 
 interface PdfPageProps {
   pdfUrl: string;
@@ -32,10 +31,9 @@ export default function PdfPage({
         // Use unpkg CDN worker — version matches the installed package automatically
         pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-        const token = getToken();
         const pdf = await pdfjs.getDocument({
           url: pdfUrl,
-          httpHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+          withCredentials: true,
         }).promise;
         const page = await pdf.getPage(pageNumber);
         const viewport = page.getViewport({ scale });

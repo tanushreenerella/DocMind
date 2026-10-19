@@ -1,6 +1,7 @@
-import { getToken, saveAuth, type AuthUser } from "./auth";
+import { clearUser, saveUser, type AuthUser } from "./auth";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Same-origin paths: next.config rewrites /api/* to the backend, so the
+// HttpOnly auth cookie is first-party and sent automatically.
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface Message {
@@ -77,24 +78,52 @@ export interface DocumentsResponse {
 }
 
 export interface AuthResponse {
-  access_token: string;
-  token_type: string;
   user_id: string;
   email: string;
   full_name: string;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function authHeaders(): Record<string, string> {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+interface MeResponse {
+  id: string;
+  email: string;
+  full_name: string | null;
 }
 
-async function handleResponse<T>(res: Response): Promise<T> {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
+
+export const RATE_LIMIT_MESSAGE = "Too many requests, try again shortly";
+
+/** The rate-limit message for 429s; `fallback` for every other failure. */
+export function userFacingError(err: unknown, fallback: string): string {
+  return err instanceof ApiError && err.status === 429 ? err.message : fallback;
+}
+
+function redirectToLogin(): void {
+  if (typeof window === "undefined") return;
+  clearUser();
+  if (window.location.pathname !== "/login") window.location.assign("/login");
+}
+
+interface HandleResponseOptions {
+  /** Off for login/signup (401 = bad credentials) and /me (AuthGuard redirects itself). */
+  redirectOnUnauthorized?: boolean;
+}
+
+async function handleResponse<T>(
+  res: Response,
+  { redirectOnUnauthorized = true }: HandleResponseOptions = {}
+): Promise<T> {
   if (!res.ok) {
+    if (res.status === 429) throw new ApiError(RATE_LIMIT_MESSAGE, 429);
+    if (res.status === 401 && redirectOnUnauthorized) redirectToLogin();
     const body = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error((body as { detail?: string }).detail ?? res.statusText);
+    throw new ApiError((body as { detail?: string }).detail ?? res.statusText, res.status);
   }
   return res.json() as Promise<T>;
 }
@@ -122,7 +151,7 @@ async function fetchWithRetry(
 export async function warmupBackend(): Promise<boolean> {
   for (let i = 0; i < 30; i++) {
     try {
-      const res = await fetch(`${API_BASE}/health`);
+      const res = await fetch("/health");
       if (res.ok) return true;
     } catch {
       // still waking up
@@ -139,14 +168,14 @@ export async function signup(
   password: string,
   fullName: string
 ): Promise<AuthUser> {
-  const res = await fetchWithRetry(`${API_BASE}/auth/signup`, {
+  const res = await fetchWithRetry("/api/auth/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password, full_name: fullName }),
   });
-  const data = await handleResponse<AuthResponse>(res);
+  const data = await handleResponse<AuthResponse>(res, { redirectOnUnauthorized: false });
   const user: AuthUser = { user_id: data.user_id, email: data.email, full_name: data.full_name };
-  saveAuth(data.access_token, user);
+  saveUser(user);
   return user;
 }
 
@@ -155,7 +184,7 @@ export async function login(email: string, password: string): Promise<AuthUser> 
   formData.append("username", email);
   formData.append("password", password);
 
-  const res = await fetchWithRetry(`${API_BASE}/auth/login`, {
+  const res = await fetchWithRetry("/api/auth/login", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -163,7 +192,7 @@ export async function login(email: string, password: string): Promise<AuthUser> 
     body: formData.toString(),
   });
 
-  const data = await handleResponse<AuthResponse>(res);
+  const data = await handleResponse<AuthResponse>(res, { redirectOnUnauthorized: false });
 
   const user: AuthUser = {
     user_id: data.user_id,
@@ -171,8 +200,15 @@ export async function login(email: string, password: string): Promise<AuthUser> 
     full_name: data.full_name,
   };
 
-  saveAuth(data.access_token, user);
+  saveUser(user);
   return user;
+}
+
+/** Resolves the cookie session; throws ApiError(401) when not logged in. */
+export async function getCurrentUser(): Promise<AuthUser> {
+  const res = await fetchWithRetry("/api/auth/me");
+  const data = await handleResponse<MeResponse>(res, { redirectOnUnauthorized: false });
+  return { user_id: data.id, email: data.email, full_name: data.full_name ?? "" };
 }
 
 // ─── Protected API ────────────────────────────────────────────────────────────
@@ -182,9 +218,9 @@ export async function sendMessage(
   history: Message[],
   docId?: string
 ): Promise<ChatResponse> {
-  const res = await fetchWithRetry(`${API_BASE}/api/chat`, {
+  const res = await fetchWithRetry("/api/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       question,
       conversation_history: history,
@@ -199,9 +235,9 @@ export async function sendAgenticMessage(
   history: Message[],
   docId?: string
 ): Promise<ChatResponse> {
-  const res = await fetchWithRetry(`${API_BASE}/api/chat/agentic`, {
+  const res = await fetchWithRetry("/api/chat/agentic", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       question,
       conversation_history: history,
@@ -214,52 +250,45 @@ export async function sendAgenticMessage(
 export async function uploadFiles(files: File[]): Promise<UploadResponse> {
   const form = new FormData();
   files.forEach((f) => form.append("files", f));
-  const res = await fetchWithRetry(`${API_BASE}/api/upload`, {
+  const res = await fetchWithRetry("/api/upload", {
     method: "POST",
-    headers: { ...authHeaders() },
     body: form,
   });
   return handleResponse<UploadResponse>(res);
 }
 
 export async function getStatus(docId: string): Promise<JobStatus> {
-  const res = await fetchWithRetry(
-    `${API_BASE}/api/status/${encodeURIComponent(docId)}`,
-    { headers: { ...authHeaders() } }
-  );
+  const res = await fetchWithRetry(`/api/status/${encodeURIComponent(docId)}`);
   return handleResponse<JobStatus>(res);
 }
 
 export async function transcribeAudio(
   base64Audio: string
 ): Promise<{ transcript: string }> {
-  const res = await fetchWithRetry(`${API_BASE}/api/transcribe`, {
+  const res = await fetchWithRetry("/api/transcribe", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ audio_base64: base64Audio }),
   });
   return handleResponse<{ transcript: string }>(res);
 }
 
 export async function listDocuments(): Promise<DocumentsResponse> {
-  const res = await fetchWithRetry(`${API_BASE}/api/documents`, {
-    headers: { ...authHeaders() },
-  });
+  const res = await fetchWithRetry("/api/documents");
   return handleResponse<DocumentsResponse>(res);
 }
 
 export async function generateEvidenceTimeline(docId: string): Promise<EvidenceTimeline> {
-  const res = await fetchWithRetry(`${API_BASE}/api/documents/${encodeURIComponent(docId)}/evidence-timeline`, {
+  const res = await fetchWithRetry(`/api/documents/${encodeURIComponent(docId)}/evidence-timeline`, {
     method: "POST",
-    headers: { ...authHeaders() },
   });
   return handleResponse<EvidenceTimeline>(res);
 }
 
 export function getPageImageUrl(imageFilename: string): string {
-  return `${API_BASE}/api/page-image/${encodeURIComponent(imageFilename)}`;
+  return `/api/page-image/${encodeURIComponent(imageFilename)}`;
 }
 
 export function getPdfUrl(docId: string): string {
-  return `${API_BASE}/api/pdf/${encodeURIComponent(docId)}`;
+  return `/api/pdf/${encodeURIComponent(docId)}`;
 }

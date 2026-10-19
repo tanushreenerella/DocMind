@@ -6,7 +6,7 @@ import { Upload, Brain, Menu, X, Loader2, Send, FileText, LogOut, Sparkles, Cale
 import MessageBubble from "@/components/MessageBubble";
 import VoiceInput from "@/components/VoiceInput";
 import AuthGuard from "@/components/AuthGuard";
-import { generateEvidenceTimeline, listDocuments, sendAgenticMessage, sendMessage, warmupBackend } from "@/lib/api";
+import { generateEvidenceTimeline, listDocuments, sendAgenticMessage, sendMessage, userFacingError, warmupBackend } from "@/lib/api";
 import { getUser, logout } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import type { IndexedDocument, Citation, EvidenceTimeline } from "@/lib/api";
@@ -125,8 +125,8 @@ function HomeContent() {
       .catch(() => {});
   }, []);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push("/login");
   };
 
@@ -213,9 +213,9 @@ function HomeContent() {
       const result = await generateEvidenceTimeline(docId);
       // Drop the result if the user switched documents while it was loading.
       if (activeKeyRef.current === docId) setTimeline(result);
-    } catch {
+    } catch (err) {
       if (activeKeyRef.current === docId) {
-        setTimelineError("Could not generate an evidence timeline. Please try again.");
+        setTimelineError(userFacingError(err, "Could not generate an evidence timeline. Please try again."));
       }
     } finally {
       setTimelineLoading(false);
@@ -268,11 +268,11 @@ function HomeContent() {
           timestamp: Date.now(),
         };
         appendMessage(aiMsg);
-      } catch {
+      } catch (err) {
         appendMessage({
           id: crypto.randomUUID(),
           role: "assistant",
-          content: "Something went wrong. Please try again.",
+          content: userFacingError(err, "Something went wrong. Please try again."),
           timestamp: Date.now(),
         });
       } finally {

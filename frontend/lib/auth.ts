@@ -1,5 +1,16 @@
-const TOKEN_KEY = "docmind_token";
+// The session lives in an HttpOnly cookie the browser sends automatically;
+// localStorage only caches the (non-secret) profile for display.
 const USER_KEY = "docmind_user";
+const LEGACY_TOKEN_KEY = "docmind_token";
+
+// Purge bearer tokens saved by earlier versions of the app.
+if (typeof window !== "undefined") {
+  try {
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+  } catch {
+    // storage unavailable
+  }
+}
 
 export interface AuthUser {
   user_id: string;
@@ -7,14 +18,8 @@ export interface AuthUser {
   full_name: string;
 }
 
-export function saveAuth(token: string, user: AuthUser): void {
-  localStorage.setItem(TOKEN_KEY, token);
+export function saveUser(user: AuthUser): void {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
-}
-
-export function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
 }
 
 export function getUser(): AuthUser | null {
@@ -27,11 +32,16 @@ export function getUser(): AuthUser | null {
   }
 }
 
-export function isLoggedIn(): boolean {
-  return !!getToken();
+export function clearUser(): void {
+  localStorage.removeItem(USER_KEY);
 }
 
-export function logout(): void {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
+export async function logout(): Promise<void> {
+  try {
+    await fetch("/api/auth/logout", { method: "POST" });
+  } catch {
+    // Still clear local state; the cookie expires on its own.
+  } finally {
+    clearUser();
+  }
 }
