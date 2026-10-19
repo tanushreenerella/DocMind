@@ -29,7 +29,7 @@ RERANK_ENABLED = (
     == "true"
 )
 # Must be a FlashRank model name (see flashrank.Config.model_file_map).
-RERANK_MODEL = os.environ.get("RERANK_MODEL", "ms-marco-MiniLM-L-12-v2")
+RERANK_MODEL = os.environ.get("RERANK_MODEL", "ms-marco-TinyBERT-L-2-v2")
 # How many fused candidates the cross-encoder scores per query.
 RERANK_CANDIDATES = int(os.environ.get("RERANK_CANDIDATES", "10"))
 
