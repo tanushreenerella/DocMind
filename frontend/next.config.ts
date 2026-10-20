@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
-// Server-side only: the browser talks to this app, which proxies to the backend,
-// so the auth cookie stays first-party. Read at build time for rewrites.
+// Server-side only. /api/* is proxied by middleware.ts (which adds the client IP
+// and proxy secret); this rewrite only covers /health. Read at build time.
 const BACKEND_URL = (process.env.BACKEND_URL || "http://localhost:8000").replace(/\/+$/, "");
 
 const nextConfig: NextConfig = {
@@ -10,7 +10,6 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
-      { source: "/api/:path*", destination: `${BACKEND_URL}/api/:path*` },
       // Used by warmupBackend() to wake a cold Render instance.
       { source: "/health", destination: `${BACKEND_URL}/health` },
     ];

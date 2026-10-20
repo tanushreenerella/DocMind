@@ -1,3 +1,4 @@
+import hmac
 from datetime import datetime, timedelta, timezone
 from typing import Awaitable, Callable, Optional
 
@@ -12,10 +13,12 @@ from core.config import (
     JWT_ALGORITHM,
     JWT_EXPIRE_MINUTES,
     JWT_SECRET_KEY,
+    PROXY_SECRET,
 )
 from core.database import get_pool
 
 ACCESS_TOKEN_COOKIE = "access_token"
+PROXY_SECRET_HEADER = "x-proxy-secret"
 _STATE_CHANGING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -98,4 +101,20 @@ async def require_allowed_origin(
         and request.headers.get("origin") not in ALLOWED_ORIGINS
     ):
         return JSONResponse(status_code=403, content={"detail": "Origin not allowed"})
+    return await call_next(request)
+
+
+async def require_proxy_secret(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
+    """Only the Next.js proxy may call /api: it alone knows PROXY_SECRET.
+
+    This is also what makes its x-client-ip header trustworthy for rate limiting.
+    """
+    path = request.url.path
+    if path == "/api" or path.startswith("/api/"):
+        supplied = request.headers.get(PROXY_SECRET_HEADER, "")
+        if not hmac.compare_digest(supplied.encode(), PROXY_SECRET.encode()):
+            return JSONResponse(status_code=403, content={"detail": "Forbidden"})
     return await call_next(request)

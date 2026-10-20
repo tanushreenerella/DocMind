@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@vercel/functions": "^3.10.1",
     "lucide-react": "^1.18.0",
     "next": "16.2.9",
     "pdfjs-dist": "^6.0.227",

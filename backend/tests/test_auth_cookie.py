@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from core import auth as core_auth
 from core.rate_limit import limiter
 from main import app
+from tests import PROXY_HEADERS
 
 USER_ID = "11111111-1111-1111-1111-111111111111"
 EMAIL = "user@example.com"
@@ -55,7 +56,7 @@ class AuthCookieTests(unittest.TestCase):
         self.client = TestClient(
             app,
             base_url="https://testserver",
-            headers={"Origin": self.origin},
+            headers={**PROXY_HEADERS, "Origin": self.origin},
         )
 
     def tearDown(self) -> None:
@@ -156,7 +157,7 @@ class AuthCookieTests(unittest.TestCase):
         self.assertEqual(response.headers.get_list("set-cookie"), [])
 
     def test_post_without_origin_is_403(self) -> None:
-        client = TestClient(app, base_url="https://testserver")
+        client = TestClient(app, base_url="https://testserver", headers=PROXY_HEADERS)
         for method in ("POST", "PUT", "DELETE"):
             with self.subTest(method=method):
                 response = client.request(method, "/api/auth/logout")

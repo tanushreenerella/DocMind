@@ -1,5 +1,6 @@
 """Rate limiting: per-route limits, key selection, Retry-After and storage fallback."""
 
+import itertools
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -18,6 +19,7 @@ from core.rate_limit import (
     rate_limit_key,
 )
 from main import app
+from tests import PROXY_HEADERS
 
 USER_A = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 USER_B = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
@@ -62,17 +64,22 @@ class RateLimitTests(unittest.TestCase):
         ]
         for p in self.patches:
             p.start()
-        self.client = TestClient(app, headers={"Origin": config.ALLOWED_ORIGINS[0]})
+        self.client = TestClient(
+            app, headers={**PROXY_HEADERS, "Origin": config.ALLOWED_ORIGINS[0]}
+        )
 
     def tearDown(self) -> None:
         for p in self.patches:
             p.stop()
         limiter.reset()
 
-    def _login(self, headers: dict | None = None):
+    _emails = (f"nobody{i}@example.com" for i in itertools.count())
+
+    def _login(self, headers: dict | None = None, email: str | None = None):
+        # A fresh email by default, so only the per-user/IP limit is in play.
         return self.client.post(
             "/api/auth/login",
-            data={"username": "nobody@example.com", "password": "wrong-password"},
+            data={"username": email or next(self._emails), "password": "wrong-password"},
             headers=headers or {},
         )
 
@@ -161,38 +168,81 @@ class RateLimitTests(unittest.TestCase):
         response_b = self.client.post("/api/chat", json=body, headers={"Cookie": _cookie(USER_B)})
         self.assertEqual(response_b.status_code, 200)
 
-    def test_first_forwarded_ip_is_the_key(self) -> None:
-        via_proxy_1 = {"X-Forwarded-For": "203.0.113.7, 10.0.0.1"}
-        via_proxy_2 = {"X-Forwarded-For": "203.0.113.7, 10.0.0.2"}
-        self._exhaust(lambda: self._login(via_proxy_1), config.RATE_LIMIT_AUTH)
+    def test_client_ip_header_is_the_key(self) -> None:
+        self._exhaust(lambda: self._login(_ip("203.0.113.7")), config.RATE_LIMIT_AUTH)
 
-        # Same client IP through a different proxy hop shares the bucket.
-        self._assert_limited(self._login(via_proxy_2))
-        # A different client IP, and a direct (no-XFF) caller, do not.
-        self.assertEqual(self._login({"X-Forwarded-For": "198.51.100.9"}).status_code, 401)
+        self._assert_limited(self._login(_ip("203.0.113.7")))
+        # A different client IP, and a caller with no x-client-ip, do not share it.
+        self.assertEqual(self._login(_ip("198.51.100.9")).status_code, 401)
         self.assertEqual(self._login().status_code, 401)
 
+    def test_forwarded_for_is_ignored(self) -> None:
+        self._exhaust(
+            lambda: self._login({**_ip("203.0.113.7"), "X-Forwarded-For": "10.0.0.1"}),
+            config.RATE_LIMIT_AUTH,
+        )
+        # Rotating X-Forwarded-For doesn't escape the x-client-ip bucket...
+        self._assert_limited(
+            self._login({**_ip("203.0.113.7"), "X-Forwarded-For": "198.51.100.9"})
+        )
+
+        # ...and without x-client-ip it doesn't pick a bucket at all.
+        self._exhaust(
+            lambda: self._login({"X-Forwarded-For": "192.0.2.1"}), config.RATE_LIMIT_AUTH
+        )
+        self._assert_limited(self._login({"X-Forwarded-For": "192.0.2.2"}))
+
     def test_logged_in_user_is_keyed_by_user_not_ip(self) -> None:
-        shared_ip = {"X-Forwarded-For": "203.0.113.7"}
+        shared_ip = _ip("203.0.113.7")
         self._exhaust(lambda: self._login(shared_ip), config.RATE_LIMIT_AUTH)
 
         with_cookie = {**shared_ip, "Cookie": _cookie(USER_A)}
         self.assertEqual(self._login(with_cookie).status_code, 401)
 
     def test_invalid_cookie_falls_back_to_ip(self) -> None:
-        shared_ip = {"X-Forwarded-For": "203.0.113.7"}
+        shared_ip = _ip("203.0.113.7")
         self._exhaust(lambda: self._login(shared_ip), config.RATE_LIMIT_AUTH)
 
         forged = {**shared_ip, "Cookie": f"{ACCESS_TOKEN_COOKIE}=not-a-jwt"}
         self._assert_limited(self._login(forged))
 
-    def test_key_falls_back_to_peer_ip(self) -> None:
+    def test_key_never_uses_peer_or_forwarded_for(self) -> None:
         request = Request({
             "type": "http",
-            "headers": [],
+            "headers": [(b"x-forwarded-for", b"198.51.100.9")],
             "client": ("192.0.2.5", 1234),
         })
-        self.assertEqual(rate_limit_key(request), "ip:192.0.2.5")
+        self.assertEqual(rate_limit_key(request), "ip:unknown")
+
+        request = Request({
+            "type": "http",
+            "headers": [(b"x-client-ip", b"203.0.113.7")],
+            "client": ("192.0.2.5", 1234),
+        })
+        self.assertEqual(rate_limit_key(request), "ip:203.0.113.7")
+
+    # ── per-email login limit ───────────────────────────────────────────────
+
+    def test_login_is_limited_per_email_across_ips(self) -> None:
+        limit = _amount(config.RATE_LIMIT_LOGIN_EMAIL)
+        # A fresh IP per attempt stays clear of the per-IP limit; casing and
+        # surrounding whitespace still land in one bucket.
+        emails = ["victim@example.com", "Victim@Example.com", " VICTIM@EXAMPLE.COM "]
+        for i in range(limit):
+            response = self._login(_ip(f"203.0.113.{i}"), email=emails[i % len(emails)])
+            self.assertEqual(response.status_code, 401, f"attempt {i + 1}")
+
+        self._assert_limited(
+            self._login(_ip("198.51.100.1"), email="victim@example.com"), max_retry_after=15 * 60
+        )
+        # Other accounts are unaffected.
+        self.assertEqual(
+            self._login(_ip("198.51.100.2"), email="other@example.com").status_code, 401
+        )
+
+
+def _ip(address: str) -> dict:
+    return {"x-client-ip": address}
 
 
 class StorageTests(unittest.TestCase):

@@ -15,6 +15,9 @@ os.environ["CHROMA_API_KEY"] = "test-api-key"
 os.environ["CHROMA_TENANT"] = "test-tenant"
 os.environ["CHROMA_DATABASE"] = "test-database"
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret")
+# Fixed so tests know what to send as x-proxy-secret (see PROXY_HEADERS).
+os.environ["PROXY_SECRET"] = "test-proxy-secret"
+PROXY_HEADERS = {"x-proxy-secret": "test-proxy-secret"}
 # Retrieval flags off unless a test patches them on, so a developer's .env
 # can't make tests download and run the real reranker model.
 os.environ["HYBRID_SEARCH_ENABLED"] = "false"

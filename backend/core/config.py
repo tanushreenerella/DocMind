@@ -14,6 +14,8 @@ IMAGES_PATH = os.environ.get("IMAGES_PATH", "./storage/page_images")
 RATE_LIMIT_PER_MINUTE = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "30"))
 # Per-route limits use the `limits` syntax, e.g. "5/minute", "10/hour".
 RATE_LIMIT_AUTH = os.environ.get("RATE_LIMIT_AUTH", "5/minute")
+# Login attempts per (lowercased) email, whatever IP or user they come from.
+RATE_LIMIT_LOGIN_EMAIL = os.environ.get("RATE_LIMIT_LOGIN_EMAIL", "10/15 minutes")
 RATE_LIMIT_CHAT = os.environ.get("RATE_LIMIT_CHAT", "20/minute")
 RATE_LIMIT_AGENTIC_CHAT = os.environ.get("RATE_LIMIT_AGENTIC_CHAT", "10/minute")
 RATE_LIMIT_UPLOAD = os.environ.get("RATE_LIMIT_UPLOAD", "10/hour")
@@ -60,6 +62,11 @@ JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
 if not JWT_SECRET_KEY:
     raise RuntimeError("JWT_SECRET_KEY environment variable must be set")
 JWT_ALGORITHM = "HS256"
+# Shared with the Next.js proxy, which sends it as x-proxy-secret on every
+# /api request; anything else reaching /api directly is rejected.
+PROXY_SECRET = os.environ.get("PROXY_SECRET")
+if not PROXY_SECRET:
+    raise RuntimeError("PROXY_SECRET environment variable must be set")
 JWT_EXPIRE_MINUTES = int(os.environ.get("JWT_EXPIRE_MINUTES", "60"))
 # Secure by default; set COOKIE_SECURE=false only for plain-http local dev.
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "true").strip().lower() != "false"

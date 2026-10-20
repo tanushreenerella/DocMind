@@ -11,7 +11,7 @@ from core.auth import (
 )
 from core.config import RATE_LIMIT_AUTH
 from core.database import get_pool
-from core.rate_limit import limiter
+from core.rate_limit import hit_login_email_limit, limiter, too_many_requests
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -74,6 +74,10 @@ async def login(
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
 ):
+    retry_after = hit_login_email_limit(form_data.username)
+    if retry_after is not None:
+        return too_many_requests(retry_after)
+
     pool = get_pool()
 
     row = await pool.fetchrow(

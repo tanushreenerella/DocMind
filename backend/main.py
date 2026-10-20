@@ -33,9 +33,9 @@ from core.config import (
     IMAGES_PATH,
     STORAGE_PATH,
 )
-from core.auth import require_allowed_origin
+from core.auth import require_allowed_origin, require_proxy_secret
 from core.database import connect, disconnect
-from core.rate_limit import limiter, rate_limit_exceeded_handler
+from core.rate_limit import CLIENT_IP_HEADER, limiter, rate_limit_exceeded_handler
 from routers import chat, documents, upload
 from routers import auth
 
@@ -74,8 +74,10 @@ app.add_middleware(
 )
 # Applies the default limit to routes without their own @limiter.limit.
 app.add_middleware(SlowAPIMiddleware)
-# Added last so it runs first: rejected origins never spend rate-limit budget.
+# Runs before the rate limiter: rejected origins never spend rate-limit budget.
 app.middleware("http")(require_allowed_origin)
+# Outermost: anything not sent by the Next.js proxy is rejected before any other work.
+app.middleware("http")(require_proxy_secret)
 
 app.include_router(auth.router)
 app.include_router(upload.router, prefix="/api")
@@ -98,9 +100,12 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
     return response
+
+
 @app.get("/api/debug-ip")
 async def debug_ip(request: Request):
     return {
+        "x_client_ip": request.headers.get(CLIENT_IP_HEADER),
         "xff": request.headers.get("x-forwarded-for"),
         "real_ip": request.headers.get("x-real-ip"),
         "client": request.client.host if request.client else None,

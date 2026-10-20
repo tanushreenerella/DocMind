@@ -1,6 +1,6 @@
 import { clearUser, saveUser, type AuthUser } from "./auth";
 
-// Same-origin paths: next.config rewrites /api/* to the backend, so the
+// Same-origin paths: middleware.ts proxies /api/* to the backend, so the
 // HttpOnly auth cookie is first-party and sent automatically.
 // ─── Types ────────────────────────────────────────────────────────────────────
 
