@@ -10,7 +10,13 @@ MAX_FILE_SIZE_MB = int(os.environ.get("MAX_FILE_SIZE_MB", "20"))
 ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".tiff"}
 STORAGE_PATH = os.environ.get("STORAGE_PATH", "./storage")
 CHROMA_PATH = os.environ.get("CHROMA_PATH", "./storage/chroma_db")
-IMAGES_PATH = os.environ.get("IMAGES_PATH", "./storage/page_images")
+# PDFs and page images go to Cloudflare R2 when all four R2_* vars are set
+# (see services/storage.py), else to local disk under LOCAL_OBJECTS_PATH.
+R2_ENDPOINT_URL = os.environ.get("R2_ENDPOINT_URL", "")
+R2_ACCESS_KEY_ID = os.environ.get("R2_ACCESS_KEY_ID", "")
+R2_SECRET_ACCESS_KEY = os.environ.get("R2_SECRET_ACCESS_KEY", "")
+R2_BUCKET = os.environ.get("R2_BUCKET", "")
+LOCAL_OBJECTS_PATH = os.environ.get("LOCAL_OBJECTS_PATH", "./storage/objects")
 RATE_LIMIT_PER_MINUTE = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "30"))
 # Per-route limits use the `limits` syntax, e.g. "5/minute", "10/hour".
 RATE_LIMIT_AUTH = os.environ.get("RATE_LIMIT_AUTH", "5/minute")

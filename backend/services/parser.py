@@ -8,7 +8,7 @@ import pdfplumber
 from google import genai
 from google.genai import types
 
-from core.config import GEMINI_API_KEY, GEMINI_OCR_MODEL, IMAGES_PATH
+from core.config import GEMINI_API_KEY, GEMINI_OCR_MODEL
 
 OCR_TEXT_THRESHOLD = 20
 PAGE_IMAGE_DPI = 175
@@ -38,15 +38,16 @@ async def _ocr_page_with_gemini(pil_image) -> str:
     return (response.text or "").strip()
 
 
-async def parse_document(file_path: str, doc_id: str) -> list[dict]:
+async def parse_document(file_path: str, doc_id: str, image_dir: str) -> list[dict]:
+    """Extract page text; render page images into ``image_dir`` for the caller to store."""
     ext = Path(file_path).suffix.lower()
     if ext == ".pdf":
-        return await _parse_pdf(file_path, doc_id)
+        return await _parse_pdf(file_path, doc_id, image_dir)
     return []
 
 
-async def _parse_pdf(file_path: str, doc_id: str) -> list[dict]:
-    os.makedirs(IMAGES_PATH, exist_ok=True)
+async def _parse_pdf(file_path: str, doc_id: str, image_dir: str) -> list[dict]:
+    os.makedirs(image_dir, exist_ok=True)
 
     pages = []
     with pdfplumber.open(file_path) as pdf:
@@ -87,7 +88,7 @@ async def _parse_pdf(file_path: str, doc_id: str) -> list[dict]:
                     print(f"[parser] page {page_num}: thumbnail render error — {e}")
             if pil_image is not None:
                 img_filename = f"{doc_id}_p{page_num}.jpg"
-                img_path = os.path.join(IMAGES_PATH, img_filename)
+                img_path = os.path.join(image_dir, img_filename)
                 try:
                     pil_image.save(img_path, "JPEG", quality=75)
                 except Exception as e:
@@ -97,7 +98,7 @@ async def _parse_pdf(file_path: str, doc_id: str) -> list[dict]:
             pages.append({
                 "page_number": page_num,
                 "text": text.strip(),
-                "image_path": os.path.join(IMAGES_PATH, img_filename) if img_filename else "",
+                "image_path": os.path.join(image_dir, img_filename) if img_filename else "",
                 "image_filename": img_filename,
                 "has_tables": bool(raw_tables),
                 "tables": structured_tables,

@@ -99,9 +99,19 @@ export class ApiError extends Error {
 
 export const RATE_LIMIT_MESSAGE = "Too many requests, try again shortly";
 
-/** The rate-limit message for 429s; `fallback` for every other failure. */
-export function userFacingError(err: unknown, fallback: string): string {
-  return err instanceof ApiError && err.status === 429 ? err.message : fallback;
+/**
+ * The server's message for 429s and any status in `passThrough` (whose detail is
+ * written for users); `fallback` for every other failure.
+ */
+export function userFacingError(
+  err: unknown,
+  fallback: string,
+  passThrough: readonly number[] = []
+): string {
+  if (err instanceof ApiError && (err.status === 429 || passThrough.includes(err.status))) {
+    return err.message;
+  }
+  return fallback;
 }
 
 function redirectToLogin(): void {
@@ -276,6 +286,15 @@ export async function transcribeAudio(
 export async function listDocuments(): Promise<DocumentsResponse> {
   const res = await fetchWithRetry("/api/documents");
   return handleResponse<DocumentsResponse>(res);
+}
+
+/** Deletes a document and everything derived from it. 409 while it is still processing. */
+export async function deleteDocument(docId: string): Promise<void> {
+  const res = await fetchWithRetry(`/api/documents/${encodeURIComponent(docId)}`, {
+    method: "DELETE",
+  });
+  // 204 has no body, so only the error path goes through handleResponse.
+  if (!res.ok) await handleResponse<never>(res);
 }
 
 export async function generateEvidenceTimeline(docId: string): Promise<EvidenceTimeline> {

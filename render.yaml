@@ -16,6 +16,14 @@ services:
         sync: false
       - key: PROXY_SECRET
         sync: false
+      - key: R2_ENDPOINT_URL
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        sync: false
       - key: JWT_EXPIRE_MINUTES
         value: "60"
       - key: TESSERACT_CMD

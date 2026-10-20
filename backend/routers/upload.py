@@ -1,19 +1,22 @@
+import asyncio
 import os
 import re
+import shutil
 import uuid
 from pathlib import Path
 from typing import List
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
 
 from core.auth import get_current_user
-from core.config import STORAGE_PATH, IMAGES_PATH, RATE_LIMIT_UPLOAD
+from core.config import STORAGE_PATH, RATE_LIMIT_UPLOAD
 from core.database import get_pool
 from core.rate_limit import limiter
 from core.security import sanitize_filename, validate_file
 from services.classifier import classify_document
 from services.embedder import index_document
+from services import storage
 from services.parser import parse_document
 
 router = APIRouter()
@@ -32,9 +35,18 @@ async def _process_document(
     file_path: str,
     filename: str,
 ) -> None:
+    image_dir = os.path.join(STORAGE_PATH, "temp", f"{doc_id}_pages")
     try:
         await _set_status(doc_id, stage="parsing", status="processing", progress=10)
-        pages = await parse_document(file_path, doc_id)
+        if Path(file_path).suffix.lower() == ".pdf":
+            with open(file_path, "rb") as f:
+                pdf_bytes = f.read()
+            await asyncio.to_thread(
+                storage.put, storage.pdf_key(user_id, doc_id), pdf_bytes, "application/pdf"
+            )
+
+        pages = await parse_document(file_path, doc_id, image_dir)
+        await _store_page_images(user_id, doc_id, pages)
 
         await _set_status(doc_id, page_count=len(pages), progress=50, stage="classifying")
 
@@ -65,13 +77,33 @@ async def _process_document(
         await _set_status(doc_id, status="error", stage="error", error_message=str(exc))
 
     finally:
-        if Path(file_path).suffix.lower() == ".pdf" and os.path.exists(file_path):
-            pdf_dir = os.path.join(STORAGE_PATH, "pdfs")
-            os.makedirs(pdf_dir, exist_ok=True)
-            dest = os.path.join(pdf_dir, f"{doc_id}.pdf")
-            os.replace(file_path, dest)
-        elif os.path.exists(file_path):
+        # Everything worth keeping is in storage by now; temp files never are.
+        if os.path.exists(file_path):
             os.remove(file_path)
+        shutil.rmtree(image_dir, ignore_errors=True)
+
+
+async def _store_page_images(user_id: str, doc_id: str, pages: list[dict]) -> None:
+    for page in pages:
+        if not page["image_filename"]:
+            continue
+        with open(page["image_path"], "rb") as f:
+            image_bytes = f.read()
+        await asyncio.to_thread(
+            storage.put,
+            storage.page_image_key(user_id, doc_id, page["image_filename"]),
+            image_bytes,
+            "image/jpeg",
+        )
+
+
+async def _stream_object(key: str, headers: dict[str, str]) -> StreamingResponse | None:
+    obj = await asyncio.to_thread(storage.get, key)
+    if obj is None:
+        return None
+    if obj.size is not None:
+        headers = {**headers, "Content-Length": str(obj.size)}
+    return StreamingResponse(obj.body, media_type=obj.content_type, headers=headers)
 
 
 @router.post("/upload")
@@ -167,12 +199,14 @@ async def get_pdf(doc_id: str, current_user: dict = Depends(get_current_user)):
     if not row:
         raise HTTPException(404, "Document not found")
 
-    pdf_path = os.path.join(STORAGE_PATH, "pdfs", f"{doc_id}.pdf")
-    if not os.path.exists(pdf_path):
+    # Ownership is proven above, so the caller's id is the owner's id in the key.
+    response = await _stream_object(
+        storage.pdf_key(current_user["id"], doc_id),
+        {"Content-Disposition": "inline", "Cache-Control": "private, no-store"},
+    )
+    if response is None:
         raise HTTPException(404, "PDF not found")
-
-    return FileResponse(pdf_path, media_type="application/pdf",
-                        headers={"Content-Disposition": "inline"})
+    return response
 
 
 @router.get("/page-image/{image_filename}")
@@ -196,12 +230,11 @@ async def get_page_image(
     if not owned_document:
         raise HTTPException(403, "Document access denied")
 
-    img_path = os.path.join(IMAGES_PATH, image_filename)
-    abs_img = os.path.realpath(img_path)
-    abs_dir = os.path.realpath(IMAGES_PATH)
-    if not abs_img.startswith(abs_dir):
-        raise HTTPException(400, "Invalid path")
-    if not os.path.exists(abs_img):
+    response = await _stream_object(
+        storage.page_image_key(current_user["id"], match.group(1), image_filename),
+        # Shown repeatedly in chat citations; browser-only cache, briefly.
+        {"Cache-Control": "private, max-age=300"},
+    )
+    if response is None:
         raise HTTPException(404, "Image not found")
-
-    return FileResponse(abs_img, media_type="image/jpeg")
+    return response

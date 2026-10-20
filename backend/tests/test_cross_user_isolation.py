@@ -7,7 +7,7 @@ import tempfile
 import unittest
 import uuid
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -15,7 +15,9 @@ from core import config
 from core.auth import ACCESS_TOKEN_COOKIE, create_access_token
 from core.rate_limit import limiter
 from main import app
+from services import storage
 from tests import PROXY_HEADERS
+from tests.fakes import FakeStorage
 
 USER_A = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 USER_B = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
@@ -97,6 +99,10 @@ class FakeDB:
                 "user_id": user_id, "doc_id": doc_id, "role": role,
                 "content": content, "created_at": datetime.now(timezone.utc),
             })
+        elif q.startswith("DELETE FROM"):
+            table = q.split()[2]
+            doomed = self._select(q.replace("DELETE FROM", "SELECT * FROM", 1), args)
+            self.tables[table] = [r for r in self.tables[table] if r not in doomed]
         else:
             raise AssertionError(f"unexpected execute: {query}")
 
@@ -105,38 +111,41 @@ class CrossUserIsolationTests(unittest.TestCase):
     def setUp(self) -> None:
         limiter.reset()
         self.db = FakeDB()
-        self.storage = tempfile.mkdtemp()
-        self.images = os.path.join(self.storage, "page_images")
-        os.makedirs(os.path.join(self.storage, "temp"))
-        os.makedirs(self.images)
+        self.storage = FakeStorage()
+        self.temp_root = tempfile.mkdtemp()
+        os.makedirs(os.path.join(self.temp_root, "temp"))
 
-        async def process(doc_id: str, user_id: str, file_path: str, filename: str) -> None:
-            # Stand-in for parse/classify/index: leave the same artifacts behind.
-            pdf_dir = os.path.join(self.storage, "pdfs")
-            os.makedirs(pdf_dir, exist_ok=True)
-            shutil.move(file_path, os.path.join(pdf_dir, f"{doc_id}.pdf"))
-            with open(os.path.join(self.images, f"{doc_id}_p1.jpg"), "wb") as f:
+        async def parse(file_path: str, doc_id: str, image_dir: str) -> list[dict]:
+            # Stand-in for pdfplumber: one page with a rendered image on disk.
+            os.makedirs(image_dir, exist_ok=True)
+            image_filename = f"{doc_id}_p1.jpg"
+            with open(os.path.join(image_dir, image_filename), "wb") as f:
                 f.write(B_IMAGE)
-            await self.db.execute(
-                "UPDATE documents SET status = $2, stage = $3, progress = $4 WHERE doc_id = $1",
-                doc_id, "complete", "complete", 100,
-            )
+            return [{
+                "page_number": 1, "text": "confidential terms",
+                "image_path": os.path.join(image_dir, image_filename),
+                "image_filename": image_filename, "has_tables": False, "tables": [],
+            }]
 
         self.answer = AsyncMock(return_value={"answer": "ok", "citations": [], "has_answer": True})
         self.agentic = AsyncMock(return_value={"answer": "ok", "citations": [], "has_answer": True})
         self.timeline = AsyncMock(
             return_value={"briefing": "b", "citations": [], "has_timeline": True}
         )
+        self.delete_chunks = MagicMock()
         self.patches = [
             patch(f"{module}.get_pool", return_value=self.db)
             for module in ("core.auth", "routers.chat", "routers.upload", "routers.documents")
         ] + [
-            patch("routers.upload.STORAGE_PATH", self.storage),
-            patch("routers.upload.IMAGES_PATH", self.images),
-            patch("routers.upload._process_document", process),
+            patch.object(storage, "_storage", self.storage),
+            patch("routers.upload.STORAGE_PATH", self.temp_root),
+            patch("routers.upload.parse_document", parse),
+            patch("routers.upload.classify_document", AsyncMock(return_value={})),
+            patch("routers.upload.index_document", AsyncMock()),
             patch("routers.chat.answer_query", self.answer),
             patch("routers.chat.answer_agentic_query", self.agentic),
             patch("routers.documents.build_evidence_timeline", self.timeline),
+            patch("routers.documents.delete_document_chunks", self.delete_chunks),
         ]
         for p in self.patches:
             p.start()
@@ -150,11 +159,13 @@ class CrossUserIsolationTests(unittest.TestCase):
         self.assertEqual(upload.status_code, 200, upload.text)
         self.doc_id = upload.json()["jobs"][0]["doc_id"]
         self.assertEqual(self.db.tables["documents"][0]["status"], "complete")
+        self.b_prefix = storage.document_prefix(USER_B, self.doc_id)
+        self.assertEqual(len(self.storage.keys(self.b_prefix)), 2)
 
     def tearDown(self) -> None:
         for p in self.patches:
             p.stop()
-        shutil.rmtree(self.storage, ignore_errors=True)
+        shutil.rmtree(self.temp_root, ignore_errors=True)
         limiter.reset()
 
     @staticmethod
@@ -195,6 +206,15 @@ class CrossUserIsolationTests(unittest.TestCase):
             self.client_b.get(f"/api/page-image/{self.doc_id}_p1.jpg").content, B_IMAGE
         )
 
+    def test_file_responses_are_never_shared_caches(self) -> None:
+        pdf = self.client_b.get(f"/api/pdf/{self.doc_id}")
+        image = self.client_b.get(f"/api/page-image/{self.doc_id}_p1.jpg")
+
+        self.assertEqual(pdf.headers["cache-control"], "private, no-store")
+        self.assertEqual(image.headers["cache-control"], "private, max-age=300")
+        self.assertEqual(image.headers["content-type"], "image/jpeg")
+        self.assertEqual(pdf.headers["content-type"], "application/pdf")
+
     def test_other_user_is_refused_on_every_endpoint(self) -> None:
         for name, (method, path, body) in self._doc_endpoints(self.doc_id).items():
             with self.subTest(endpoint=name):
@@ -230,6 +250,67 @@ class CrossUserIsolationTests(unittest.TestCase):
         listed_b = self.client_b.get("/api/documents").json()["documents"]
         self.assertEqual([d["doc_id"] for d in listed_b], [self.doc_id])
         self.assertEqual(self.client_b.get("/api/documents/count").json(), {"count": 1})
+
+    # ── delete ──────────────────────────────────────────────────────────────
+
+    def test_other_user_cannot_delete(self) -> None:
+        response = self.client_a.delete(f"/api/documents/{self.doc_id}")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertNotIn(B_FILENAME.encode(), response.content)
+        # Nothing of B's was touched...
+        self.delete_chunks.assert_not_called()
+        self.assertEqual(len(self.storage.keys(self.b_prefix)), 2)
+        self.assertEqual(len(self.db.tables["documents"]), 1)
+        # ...and B can still use it.
+        self.assertEqual(self.client_b.get(f"/api/pdf/{self.doc_id}").content, B_PDF)
+
+    def test_delete_of_foreign_doc_looks_like_unknown_doc(self) -> None:
+        unknown = self.client_a.delete(f"/api/documents/{uuid.uuid4()}")
+        foreign = self.client_a.delete(f"/api/documents/{self.doc_id}")
+        self.assertEqual(
+            (foreign.status_code, foreign.json()), (unknown.status_code, unknown.json())
+        )
+
+    def test_owner_delete_removes_chunks_files_and_rows(self) -> None:
+        chat_body = {"question": "q", "conversation_history": [], "doc_id": self.doc_id}
+        self.client_b.post("/api/chat", json=chat_body)
+        self.assertEqual(len(self.db.tables["chat_history"]), 2)
+
+        response = self.client_b.delete(f"/api/documents/{self.doc_id}")
+
+        self.assertEqual(response.status_code, 204, response.text)
+        self.delete_chunks.assert_called_once_with(self.doc_id, USER_B)
+        self.assertEqual(self.storage.keys(), [])
+        self.assertEqual(self.db.tables["documents"], [])
+        self.assertEqual(self.db.tables["chat_history"], [])
+        for method, path, body in self._doc_endpoints(self.doc_id).values():
+            self.assertIn(self._send(self.client_b, method, path, body).status_code, (403, 404))
+        self.assertEqual(self.client_b.get("/api/documents").json(), {"documents": []})
+        # A second delete is a plain 404.
+        self.assertEqual(self.client_b.delete(f"/api/documents/{self.doc_id}").status_code, 404)
+
+    def test_delete_leaves_other_documents_alone(self) -> None:
+        second = self.client_b.post(
+            "/api/upload", files={"files": ("second.pdf", b"%PDF-1.4 second", "application/pdf")}
+        ).json()["jobs"][0]["doc_id"]
+
+        self.assertEqual(self.client_b.delete(f"/api/documents/{self.doc_id}").status_code, 204)
+
+        self.assertEqual(self.storage.keys(self.b_prefix), [])
+        self.assertEqual(len(self.storage.keys(storage.document_prefix(USER_B, second))), 2)
+        self.assertEqual(
+            self.client_b.get(f"/api/pdf/{second}").content, b"%PDF-1.4 second"
+        )
+
+    def test_delete_while_processing_is_refused(self) -> None:
+        self.db.tables["documents"][0]["status"] = "processing"
+
+        response = self.client_b.delete(f"/api/documents/{self.doc_id}")
+
+        self.assertEqual(response.status_code, 409)
+        self.delete_chunks.assert_not_called()
+        self.assertEqual(len(self.storage.keys(self.b_prefix)), 2)
 
     def test_owner_history_is_not_visible_to_other_user(self) -> None:
         chat_body = {"question": "secret question", "conversation_history": [], "doc_id": self.doc_id}

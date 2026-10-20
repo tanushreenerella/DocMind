@@ -8,6 +8,7 @@ Chroma Cloud database (dev or prod), whatever is in the shell or ``.env``.
 """
 
 import os
+import tempfile
 from unittest.mock import MagicMock, patch
 
 # Unconditional on purpose: a real key from .env/the shell must not leak in.
@@ -24,6 +25,11 @@ os.environ["HYBRID_SEARCH_ENABLED"] = "false"
 os.environ["RERANK_ENABLED"] = "false"
 # In-process counters; never a real Redis from .env.
 os.environ["RATE_LIMIT_STORAGE_URI"] = "memory://"
+# Never a real R2 bucket from .env; anything that isn't patched to a
+# FakeStorage falls back to a throwaway local directory.
+for _name in ("R2_ENDPOINT_URL", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET"):
+    os.environ[_name] = ""
+os.environ["LOCAL_OBJECTS_PATH"] = tempfile.mkdtemp(prefix="docmind-test-objects-")
 
 _fake_collection = MagicMock()
 _fake_collection.name = "documents"

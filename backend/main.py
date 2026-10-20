@@ -30,7 +30,6 @@ from slowapi.middleware import SlowAPIMiddleware
 from core.config import (
     ALLOWED_ORIGINS,
     CHROMA_PATH,
-    IMAGES_PATH,
     STORAGE_PATH,
 )
 from core.auth import require_allowed_origin, require_proxy_secret
@@ -38,15 +37,16 @@ from core.database import connect, disconnect
 from core.rate_limit import CLIENT_IP_HEADER, limiter, rate_limit_exceeded_handler
 from routers import chat, documents, upload
 from routers import auth
+from services import storage
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Ensure storage directories exist
-    os.makedirs(IMAGES_PATH, exist_ok=True)
     os.makedirs(CHROMA_PATH, exist_ok=True)
     os.makedirs(os.path.join(STORAGE_PATH, "temp"), exist_ok=True)
-    os.makedirs(os.path.join(STORAGE_PATH, "pdfs"), exist_ok=True)
+    # Pick R2 or local disk now, so a half-configured R2 fails at boot.
+    storage.get_storage()
     # Open DB pool
     await connect()
     yield

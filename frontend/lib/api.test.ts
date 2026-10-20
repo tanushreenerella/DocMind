@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError, RATE_LIMIT_MESSAGE, listDocuments, login, userFacingError } from "@/lib/api";
+import {
+  ApiError,
+  RATE_LIMIT_MESSAGE,
+  deleteDocument,
+  listDocuments,
+  login,
+  userFacingError,
+} from "@/lib/api";
 import { getUser, saveUser } from "@/lib/auth";
 
 function respondWith(status: number, body: unknown) {
@@ -44,5 +51,39 @@ describe("api error handling", () => {
   it("uses the fallback for non-rate-limit errors", () => {
     expect(userFacingError(new ApiError("boom", 500), "fallback")).toBe("fallback");
     expect(userFacingError(new Error("network"), "fallback")).toBe("fallback");
+  });
+});
+
+describe("deleteDocument", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("sends DELETE for the encoded doc id and resolves on 204", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(deleteDocument("doc/1")).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/documents/doc%2F1", { method: "DELETE" });
+  });
+
+  it("surfaces the 409 still-processing detail", async () => {
+    const detail = "Document is still processing; try again when it finishes";
+    respondWith(409, { detail });
+
+    const err = await deleteDocument("doc-1").catch((e: unknown) => e);
+
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).status).toBe(409);
+    expect(userFacingError(err, "fallback", [409])).toBe(detail);
+    // Without opting in, a 409's detail is not shown.
+    expect(userFacingError(err, "fallback")).toBe("fallback");
+  });
+
+  it("rejects with 404 for a document that is not there", async () => {
+    respondWith(404, { detail: "Document not found" });
+
+    await expect(deleteDocument("doc-1")).rejects.toMatchObject({ status: 404 });
   });
 });

@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Upload, Brain, Menu, X, Loader2, Send, FileText, LogOut, Sparkles, CalendarDays, Layers } from "lucide-react";
+import { Upload, Brain, Menu, X, Loader2, Send, FileText, LogOut, Sparkles, CalendarDays, Layers, Trash2 } from "lucide-react";
 import MessageBubble from "@/components/MessageBubble";
 import VoiceInput from "@/components/VoiceInput";
 import AuthGuard from "@/components/AuthGuard";
-import { generateEvidenceTimeline, listDocuments, sendAgenticMessage, sendMessage, userFacingError, warmupBackend } from "@/lib/api";
+import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
+import { ApiError, deleteDocument, generateEvidenceTimeline, listDocuments, sendAgenticMessage, sendMessage, userFacingError, warmupBackend } from "@/lib/api";
 import { getUser, logout } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import type { IndexedDocument, Citation, EvidenceTimeline } from "@/lib/api";
@@ -79,6 +80,15 @@ function saveHistory(userId: string | null, docId: string, messages: StoredMessa
   }
 }
 
+function removeHistory(userId: string | null, docId: string) {
+  if (!userId) return;
+  try {
+    localStorage.removeItem(historyStorageKey(userId, docId));
+  } catch {
+    /* storage unavailable — ignore */
+  }
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
@@ -107,6 +117,9 @@ function HomeContent() {
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineError, setTimelineError] = useState("");
   const [agenticMode, setAgenticMode] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<IndexedDocument | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const activeKey = selectedDoc?.doc_id ?? ALL_DOCUMENTS_HISTORY_ID;
   const messages = messagesByDoc[activeKey] ?? EMPTY_MESSAGES;
@@ -202,6 +215,53 @@ function HomeContent() {
     setSelectedDoc(null);
     setInput("");
     setSidebarOpen(false);
+  };
+
+  const requestDelete = (doc: IndexedDocument) => {
+    setDeleteError("");
+    setPendingDelete(doc);
+  };
+
+  const cancelDelete = useCallback(() => {
+    setPendingDelete(null);
+    setDeleteError("");
+  }, []);
+
+  const confirmDelete = async () => {
+    if (!pendingDelete || deleting) return;
+    const doc = pendingDelete;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      await deleteDocument(doc.doc_id);
+    } catch (err) {
+      // 404: already gone (e.g. deleted in another tab), so finish as if we did it.
+      if (!(err instanceof ApiError && err.status === 404)) {
+        // 409's detail ("still processing…") is written for users; show it as-is.
+        setDeleteError(userFacingError(err, "Could not delete the document. Please try again.", [409]));
+        setDeleting(false);
+        return;
+      }
+    }
+
+    setDocs((prev) => prev.filter((d) => d.doc_id !== doc.doc_id));
+    setMessagesByDoc((prev) => {
+      const next = { ...prev };
+      delete next[doc.doc_id];
+      return next;
+    });
+    removeHistory(userId, doc.doc_id);
+    if (selectedDoc?.doc_id === doc.doc_id) {
+      ensureHistoryLoaded(ALL_DOCUMENTS_HISTORY_ID);
+      setTimeline(null);
+      setTimelineError("");
+      setTimelineLoading(false);
+      setSelectedDoc(null);
+      setInput("");
+    }
+    setPendingDelete(null);
+    setDeleting(false);
+    refreshDocs();
   };
 
   const handleTimeline = async () => {
@@ -375,11 +435,11 @@ function HomeContent() {
             {docs.map((doc) => {
               const isActive = selectedDoc?.doc_id === doc.doc_id;
               return (
+                <div key={doc.doc_id} className="group relative">
                 <button
-                  key={doc.doc_id}
                   onClick={() => selectDoc(doc)}
                   className={`
-                    w-full text-left px-3 py-2.5 rounded-xl transition-all duration-150
+                    w-full text-left pl-3 pr-9 py-2.5 rounded-xl transition-all duration-150
                     ${isActive
                       ? "bg-indigo-50 border-l-2 border-indigo-500 pl-2.5"
                       : "hover:bg-gray-50 border-l-2 border-transparent"
@@ -413,6 +473,16 @@ function HomeContent() {
                     </div>
                   </div>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => requestDelete(doc)}
+                  aria-label={`Delete ${doc.doc_name}`}
+                  title="Delete document"
+                  className="absolute right-1.5 top-2 p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                </div>
               );
             })}
           </div>
@@ -669,6 +739,16 @@ function HomeContent() {
           </p>
         </div>
       </main>
+
+      {pendingDelete && (
+        <ConfirmDeleteDialog
+          docName={pendingDelete.doc_name}
+          deleting={deleting}
+          error={deleteError}
+          onConfirm={confirmDelete}
+          onCancel={cancelDelete}
+        />
+      )}
     </div>
   );
 }

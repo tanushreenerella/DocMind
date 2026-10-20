@@ -355,6 +355,14 @@ async def index_document(
     _invalidate_bm25_index()
 
 
+def delete_document_chunks(doc_id: str, user_id: str) -> None:
+    """Remove every chunk of one document; filtered on the owner too, never doc_id alone."""
+    collection.delete(
+        where={"$and": [{"doc_id": {"$eq": doc_id}}, {"user_id": {"$eq": user_id}}]}
+    )
+    _invalidate_bm25_index()
+
+
 async def search(
     query: str,
     n_results: int = 5,
