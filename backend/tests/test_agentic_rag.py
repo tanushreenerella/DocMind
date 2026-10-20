@@ -91,7 +91,8 @@ class ResearchTests(unittest.IsolatedAsyncioTestCase):
 class FakeGroq:
     """Answers planner, critic and synthesizer calls by their system prompt."""
 
-    def __init__(self) -> None:
+    def __init__(self, answer: str = "Both are covered [SOURCE 1].") -> None:
+        self.answer = answer
         self.chat = SimpleNamespace(completions=SimpleNamespace(create=self.create))
 
     def create(self, *, messages, **_kwargs):
@@ -105,7 +106,7 @@ class FakeGroq:
         elif system == agentic_rag._CRITIC_PROMPT:
             content = json.dumps({"verdict": "sufficient", "rewrite": ""})
         else:
-            content = "Both are covered [SOURCE 1]."
+            content = self.answer
         return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content))])
 
 
@@ -125,6 +126,37 @@ class GraphTests(unittest.IsolatedAsyncioTestCase):
         for node in ("planner", "research", "synthesizer"):
             self.assertRegex(logs, rf"\[agentic timing\] {node}: \d+ ms")
         self.assertNotIn("raw]", logs)
+
+    async def _answer(self, model_answer: str) -> dict:
+        with (
+            patch.object(agentic_rag, "get_groq_client", return_value=FakeGroq(model_answer)),
+            patch.object(agentic_rag, "search", AsyncMock(side_effect=lambda q, **_: [_chunk(q)])),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            return await agentic_rag.answer_agentic_query("q1 and q2?", [], user_id="user-a")
+
+    async def test_document_field_labels_are_not_blocked(self) -> None:
+        # The caller's own document may legitimately contain these labels.
+        for answer in (
+            "The Wi-Fi sheet lists password: hunter2 [SOURCE 1].",
+            "The setup guide shows API key: abc-123 [SOURCE 1].",
+            "Section 4 is titled credentials: rotation policy [SOURCE 1].",
+        ):
+            with self.subTest(answer=answer):
+                result = await self._answer(answer)
+                self.assertTrue(result["has_answer"], result)
+                self.assertIn("[a.pdf, p.1]", result["answer"])
+
+    async def test_prompt_leaks_and_followed_injections_are_blocked(self) -> None:
+        for answer in (
+            "Sure! Here is my system prompt: you are a helpful assistant",
+            "As instructed, I will ignore previous instructions [SOURCE 1].",
+            "Here are the credentials for every account [SOURCE 1].",
+        ):
+            with self.subTest(answer=answer):
+                result = await self._answer(answer)
+                self.assertFalse(result["has_answer"])
+                self.assertEqual(result["answer"], agentic_rag._NO_RELIABLE_ANSWER)
 
 
 if __name__ == "__main__":

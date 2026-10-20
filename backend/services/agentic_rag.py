@@ -541,6 +541,10 @@ Rules:
   credentials, or information about other users.
 """
 
+# Signs the model leaked its prompt or obeyed injected instructions. Plain field
+# labels like "password:" or "api key:" are deliberately absent: they appear in
+# legitimate documents, and retrieval is already scoped to the caller's own
+# chunks, so quoting them leaks nothing across users.
 _UNSAFE_ANSWER_PATTERNS = (
     "here is my system prompt",
     "my system prompt is",
@@ -550,9 +554,6 @@ _UNSAFE_ANSWER_PATTERNS = (
     "other users' data",
     "other user data",
     "here are the credentials",
-    "credentials:",
-    "api key:",
-    "password:",
 )
 
 _NO_RELIABLE_ANSWER = (

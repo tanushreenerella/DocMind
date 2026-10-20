@@ -158,6 +158,7 @@ async def chat_agentic(
 
 @router.get("/chat/history/{doc_id}")
 async def get_history(doc_id: str, current_user: dict = Depends(get_current_user)):
+    await _require_owned_document(doc_id, current_user["id"])
     pool = get_pool()
     rows = await pool.fetch(
         """
