@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  experimental: {
+    // Without R2 the browser PUTs PDFs through the /api proxy, which otherwise
+    // silently truncates bodies over 10 MB. Keep at or above MAX_UPLOAD_MB.
+    // (With R2 the file goes straight to the bucket and never passes through here.)
+    proxyClientMaxBodySize: "51mb",
+  },
   async rewrites() {
     return [
       // Used by warmupBackend() to wake a cold Render instance.

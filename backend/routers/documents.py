@@ -17,7 +17,7 @@ async def list_documents(current_user: dict = Depends(get_current_user)):
         """
         SELECT doc_id, doc_name, document_type, sensitivity_level
         FROM documents
-        WHERE user_id = $1 AND status = 'complete'
+        WHERE user_id = $1 AND status IN ('complete', 'partial')
         ORDER BY created_at DESC
         """,
         current_user["id"],
@@ -39,7 +39,7 @@ async def list_documents(current_user: dict = Depends(get_current_user)):
 async def document_count(current_user: dict = Depends(get_current_user)):
     pool = get_pool()
     count = await pool.fetchval(
-        "SELECT COUNT(*) FROM documents WHERE user_id = $1 AND status = 'complete'",
+        "SELECT COUNT(*) FROM documents WHERE user_id = $1 AND status IN ('complete', 'partial')",
         current_user["id"],
     )
     return {"count": count}
@@ -50,7 +50,7 @@ async def evidence_timeline(doc_id: str, current_user: dict = Depends(get_curren
     """Produce an evidence-backed timeline only after verifying document ownership."""
     pool = get_pool()
     document = await pool.fetchrow(
-        "SELECT doc_id FROM documents WHERE doc_id = $1 AND user_id = $2 AND status = 'complete'",
+        "SELECT doc_id FROM documents WHERE doc_id = $1 AND user_id = $2 AND status IN ('complete', 'partial')",
         doc_id,
         current_user["id"],
     )

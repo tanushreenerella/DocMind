@@ -2,6 +2,7 @@ import asyncio
 import os
 import threading
 import chromadb
+import httpx
 from rank_bm25 import BM25Okapi
 from core.config import CHROMA_API_KEY, CHROMA_TENANT, CHROMA_DATABASE
 from core.config import HYBRID_SEARCH_ENABLED, RERANK_ENABLED
@@ -10,6 +11,11 @@ from services.embeddings import get_embedding, get_embeddings
 import re
 
 CHUNK_SIZE = 500
+CHROMA_WRITE_ATTEMPTS = 3
+CHROMA_RETRY_BASE_SECONDS = 1.0
+# Network-level failures only. Chroma's HTTP error responses (bad request,
+# quota) arrive as other exception types and would fail the same way again.
+_TRANSIENT_CHROMA_ERRORS = (httpx.TransportError, ConnectionError, TimeoutError)
 CHUNK_OVERLAP = 50
 
 # Monitoring only: suspicious content remains searchable, but is recorded so
@@ -307,6 +313,27 @@ def chunk_text(text: str) -> list[str]:
     return [c for c in chunks if c.strip()]
 
 
+async def _write_chunks_with_retry(**batch) -> None:
+    """Write one batch, retrying transport errors with exponential backoff.
+
+    Uses upsert, not add: a request that times out may still have been applied,
+    and chunk ids are deterministic, so a retried upsert just rewrites the same rows.
+    """
+    for attempt in range(1, CHROMA_WRITE_ATTEMPTS + 1):
+        try:
+            await asyncio.to_thread(collection.upsert, **batch)
+            return
+        except _TRANSIENT_CHROMA_ERRORS as exc:
+            if attempt == CHROMA_WRITE_ATTEMPTS:
+                raise
+            delay = CHROMA_RETRY_BASE_SECONDS * 2 ** (attempt - 1)
+            print(
+                f"[chroma] write attempt {attempt}/{CHROMA_WRITE_ATTEMPTS} failed "
+                f"({type(exc).__name__}: {exc}); retrying in {delay:.0f}s"
+            )
+            await asyncio.sleep(delay)
+
+
 async def index_document(
     doc_id: str,
     user_id: str,
@@ -345,7 +372,7 @@ async def index_document(
     for i in range(0, len(ids), BATCH_SIZE):
         batch_docs = documents[i : i + BATCH_SIZE]
         batch_embeddings = await get_embeddings(batch_docs)
-        collection.add(
+        await _write_chunks_with_retry(
             ids=ids[i : i + BATCH_SIZE],
             documents=batch_docs,
             embeddings=batch_embeddings,

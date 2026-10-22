@@ -1,25 +1,57 @@
+"""Uploads: presign → browser PUTs the PDF → complete → background processing.
+
+With R2 the browser PUTs straight into the bucket through a presigned URL, so
+file bytes never pass through the Next.js proxy or this API. With local disk
+(no R2 configured) the "presigned" URL is PUT /api/uploads/{doc_id}/file, so
+the frontend flow is identical either way.
+"""
+
 import asyncio
 import os
 import re
 import shutil
+import traceback
 import uuid
 from pathlib import Path
-from typing import List
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from core.auth import get_current_user
-from core.config import STORAGE_PATH, RATE_LIMIT_UPLOAD
+from core.config import (
+    MAX_PAGES,
+    MAX_UPLOAD_BYTES,
+    MAX_UPLOAD_MB,
+    RATE_LIMIT_UPLOAD,
+    STORAGE_PATH,
+    UPLOAD_URL_EXPIRES_SECONDS,
+)
 from core.database import get_pool
 from core.rate_limit import limiter
-from core.security import sanitize_filename, validate_file
+from core.security import sanitize_filename, validate_magic_bytes
 from services.classifier import classify_document
 from services.embedder import index_document
 from services import storage
-from services.parser import parse_document
+from services.parser import count_pdf_pages, parse_document
 
 router = APIRouter()
+
+# Statuses a finished job can end in; "partial" = indexed, but some pages' OCR failed.
+TERMINAL_STATUSES = ("complete", "partial", "error")
+# Before /complete: a document row whose original PDF may not be stored yet.
+UPLOADING = "uploading"
+PDF_CONTENT_TYPE = "application/pdf"
+
+
+class PresignRequest(BaseModel):
+    filename: str
+    size: int
+    content_type: str
+
+
+class NothingReadableError(Exception):
+    """OCR failed on every page, so there is nothing to index."""
 
 
 async def _set_status(doc_id: str, **fields) -> None:
@@ -35,17 +67,14 @@ async def _process_document(
     file_path: str,
     filename: str,
 ) -> None:
+    """Parse, classify and index ``file_path``: a temp copy of the stored original."""
     image_dir = os.path.join(STORAGE_PATH, "temp", f"{doc_id}_pages")
     try:
         await _set_status(doc_id, stage="parsing", status="processing", progress=10)
-        if Path(file_path).suffix.lower() == ".pdf":
-            with open(file_path, "rb") as f:
-                pdf_bytes = f.read()
-            await asyncio.to_thread(
-                storage.put, storage.pdf_key(user_id, doc_id), pdf_bytes, "application/pdf"
-            )
-
         pages = await parse_document(file_path, doc_id, image_dir)
+        failed_pages = [p["page_number"] for p in pages if p.get("ocr_failed")]
+        if pages and len(failed_pages) == len(pages):
+            raise NothingReadableError(f"OCR failed on all {len(pages)} pages")
         await _store_page_images(user_id, doc_id, pages)
 
         await _set_status(doc_id, page_count=len(pages), progress=50, stage="classifying")
@@ -70,10 +99,19 @@ async def _process_document(
             classification,
         )
 
-        await _set_status(doc_id, stage="complete", status="complete", progress=100)
+        if failed_pages:
+            print(f"[{doc_id}] indexed without OCR text for pages {failed_pages}")
+        await _set_status(
+            doc_id,
+            stage="complete",
+            status="partial" if failed_pages else "complete",
+            failed_pages=failed_pages,
+            progress=100,
+        )
 
     except Exception as exc:
-        print(f"[{doc_id}] ERROR: {exc}")
+        # Full detail stays server-side (log + error_message); /status never returns it.
+        print(f"[{doc_id}] processing failed:\n{traceback.format_exc()}")
         await _set_status(doc_id, status="error", stage="error", error_message=str(exc))
 
     finally:
@@ -106,55 +144,183 @@ async def _stream_object(key: str, headers: dict[str, str]) -> StreamingResponse
     return StreamingResponse(obj.body, media_type=obj.content_type, headers=headers)
 
 
-@router.post("/upload")
+def _too_large(size: int) -> HTTPException:
+    return HTTPException(
+        413, f"File is too large ({size / (1024 * 1024):.1f} MB); the limit is {MAX_UPLOAD_MB} MB"
+    )
+
+
+async def _pending_upload(doc_id: str, user_id: str) -> dict:
+    """The caller's document row, which must still be waiting for its file."""
+    try:
+        uuid.UUID(doc_id)
+    except ValueError:
+        raise HTTPException(404, "Upload not found")
+    row = await get_pool().fetchrow(
+        "SELECT doc_name, status FROM documents WHERE doc_id = $1 AND user_id = $2",
+        doc_id,
+        user_id,
+    )
+    if not row:
+        raise HTTPException(404, "Upload not found")
+    if row["status"] != UPLOADING:
+        raise HTTPException(409, "This upload has already been completed")
+    return row
+
+
+async def _discard_upload(doc_id: str, user_id: str) -> None:
+    """Drop a rejected upload: its stored file and its (never listed) row."""
+    await asyncio.to_thread(storage.delete_prefix, storage.document_prefix(user_id, doc_id))
+    await get_pool().execute(
+        "DELETE FROM documents WHERE doc_id = $1 AND user_id = $2", doc_id, user_id
+    )
+
+
+@router.post("/uploads/presign")
 @limiter.limit(RATE_LIMIT_UPLOAD)
-async def upload_documents(
+async def presign_upload(
     request: Request,
-    background_tasks: BackgroundTasks,
-    files: List[UploadFile] = File(...),
+    body: PresignRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    pool = get_pool()
-    job_ids = []
+    safe_name = sanitize_filename(body.filename)
+    if Path(safe_name).suffix.lower() != ".pdf" or body.content_type != PDF_CONTENT_TYPE:
+        raise HTTPException(400, "Only PDF files are supported")
+    if body.size <= 0:
+        raise HTTPException(400, "File is empty")
+    if body.size > MAX_UPLOAD_BYTES:
+        raise _too_large(body.size)
 
-    for file in files:
-        if not await validate_file(file):
-            raise HTTPException(400, "Only PDF files are supported")
+    user_id = current_user["id"]
+    doc_id = str(uuid.uuid4())
+    if storage.direct_uploads():
+        upload_url = await asyncio.to_thread(
+            storage.presign_put,
+            storage.pdf_key(user_id, doc_id),
+            PDF_CONTENT_TYPE,
+            UPLOAD_URL_EXPIRES_SECONDS,
+        )
+    else:
+        upload_url = f"/api/uploads/{doc_id}/file"
 
-        doc_id = str(uuid.uuid4())
-        safe_name = sanitize_filename(file.filename or "upload")
+    await get_pool().execute(
+        """
+        INSERT INTO documents (doc_id, user_id, doc_name, status, stage, progress)
+        VALUES ($1, $2, $3, 'uploading', 'uploading', 0)
+        """,
+        doc_id,
+        user_id,
+        safe_name,
+    )
+    return {
+        "doc_id": doc_id,
+        "filename": safe_name,
+        "upload_url": upload_url,
+        "method": "PUT",
+        "headers": {"Content-Type": PDF_CONTENT_TYPE},
+        "expires_in": UPLOAD_URL_EXPIRES_SECONDS,
+    }
 
-        temp_dir = os.path.join(STORAGE_PATH, "temp")
-        os.makedirs(temp_dir, exist_ok=True)
-        temp_path = os.path.join(temp_dir, f"{doc_id}_{safe_name}")
 
-        content = await file.read()
-        with open(temp_path, "wb") as f:
-            f.write(content)
+@router.put("/uploads/{doc_id}/file", status_code=204)
+async def put_upload_file(
+    doc_id: str,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """Local-disk stand-in for the presigned PUT; R2 deployments never hand it out."""
+    if storage.direct_uploads():
+        raise HTTPException(404, "Not found")
+    await _pending_upload(doc_id, current_user["id"])
+    if request.headers.get("content-type") != PDF_CONTENT_TYPE:
+        raise HTTPException(400, "Only PDF files are supported")
 
-        await pool.execute(
+    data = bytearray()
+    async for chunk in request.stream():
+        data += chunk
+        if len(data) > MAX_UPLOAD_BYTES:
+            raise _too_large(len(data))
+    await asyncio.to_thread(
+        storage.put, storage.pdf_key(current_user["id"], doc_id), bytes(data), PDF_CONTENT_TYPE
+    )
+    return Response(status_code=204)
+
+
+@router.post("/uploads/{doc_id}/complete")
+async def complete_upload(
+    doc_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user),
+):
+    """Check the stored file (size, PDF header, page count), then start processing.
+
+    Rejected files are deleted with their row. Unexpected failures (storage
+    unreachable...) leave both in place so the call can be retried.
+    """
+    user_id = current_user["id"]
+    row = await _pending_upload(doc_id, user_id)
+    key = storage.pdf_key(user_id, doc_id)
+
+    size = await asyncio.to_thread(storage.size, key)
+    if size is None:
+        raise HTTPException(400, "The file was not uploaded; please try again")
+    if size > MAX_UPLOAD_BYTES:
+        await _discard_upload(doc_id, user_id)
+        raise _too_large(size)
+
+    temp_dir = os.path.join(STORAGE_PATH, "temp")
+    os.makedirs(temp_dir, exist_ok=True)
+    temp_path = os.path.join(temp_dir, f"{doc_id}_{row['doc_name']}")
+    try:
+        await asyncio.to_thread(storage.download, key, temp_path)
+        with open(temp_path, "rb") as f:
+            if not validate_magic_bytes(f.read(8), ".pdf"):
+                raise HTTPException(400, "This file is not a PDF")
+        try:
+            page_count = await asyncio.to_thread(count_pdf_pages, temp_path)
+        except Exception:
+            raise HTTPException(
+                400, "This PDF could not be read; it may be damaged or password-protected"
+            )
+        if page_count > MAX_PAGES:
+            raise HTTPException(
+                422,
+                f"This PDF has {page_count} pages; the limit is {MAX_PAGES}. "
+                "Split it into smaller files and upload them separately.",
+            )
+
+        # Conditional, so a repeated or concurrent /complete starts one job only.
+        claimed = await get_pool().execute(
             """
-            INSERT INTO documents (doc_id, user_id, doc_name, status, stage, progress)
-            VALUES ($1, $2, $3, 'queued', 'queued', 0)
+            UPDATE documents SET status = 'queued', stage = 'queued', page_count = $3
+            WHERE doc_id = $1 AND user_id = $2 AND status = 'uploading'
             """,
             doc_id,
-            current_user["id"],
-            safe_name,
+            user_id,
+            page_count,
         )
+        if claimed != "UPDATE 1":
+            raise HTTPException(409, "This upload has already been completed")
+    except HTTPException as exc:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        if exc.status_code != 409:
+            await _discard_upload(doc_id, user_id)
+        raise
+    except BaseException:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        raise
 
-        background_tasks.add_task(
-            _process_document,
-            doc_id,
-            current_user["id"],
-            temp_path,
-            safe_name,
-        )
-        job_ids.append({"doc_id": doc_id, "filename": safe_name})
-
-    return {"jobs": job_ids}
+    # The job owns temp_path from here and removes it when done.
+    background_tasks.add_task(_process_document, doc_id, user_id, temp_path, row["doc_name"])
+    return {"doc_id": doc_id, "filename": row["doc_name"], "page_count": page_count}
 
 
 @router.get("/status/{doc_id}")
+# Polled every few seconds per uploading document; a cheap, owner-scoped read
+# that must not eat the general per-minute budget the rest of the app shares.
+@limiter.exempt
 async def get_status(doc_id: str, current_user: dict = Depends(get_current_user)):
     pool = get_pool()
     row = await pool.fetchrow(
@@ -166,7 +332,7 @@ async def get_status(doc_id: str, current_user: dict = Depends(get_current_user)
         raise HTTPException(404, "Job not found")
 
     classification = None
-    if row["status"] == "complete":
+    if row["status"] in ("complete", "partial"):
         classification = {
             "document_type": row["document_type"] or "other",
             "primary_topic": row["summary"] or "",
@@ -179,9 +345,9 @@ async def get_status(doc_id: str, current_user: dict = Depends(get_current_user)
         "filename": row["doc_name"],
         "stage": row["stage"],
         "progress": row["progress"],
-        "error": row["error_message"],
         "classification": classification,
         "page_count": row["page_count"],
+        "failed_pages": list(row.get("failed_pages") or []),
     }
 
 

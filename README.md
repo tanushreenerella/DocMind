@@ -24,7 +24,8 @@ A production-quality web application that ingests messy real-world documents (sc
 │  (Vercel)               │        │  (Render)                            │
 │                         │        │                                      │
 │  /           ChatWindow ├──POST──▶  /api/chat   → RAG service           │
-│  /upload     UploadZone ├──POST──▶  /api/upload → Parser + Embedder     │
+│  /upload     UploadZone ├──POST──▶  /api/uploads/presign, …/complete    │
+│                         │        │      → Parser + Embedder             │
 │              CitationCard│        │  /api/status/{id}                   │
 │              PageViewer  ├──GET───▶  /api/page-image/{file}             │
 │              VoiceInput  ├──POST──▶  /api/transcribe → Groq Whisper     │
@@ -124,7 +125,8 @@ python scripts/create_sample_docs.py
 |----------|----------|---------|-------------|
 | `GROQ_API_KEY` | ✅ | — | Groq API key for LLaMA-3 & Whisper |
 | `ALLOWED_ORIGINS` | | `["http://localhost:3000"]` | CORS whitelist (JSON array) |
-| `MAX_FILE_SIZE_MB` | | `20` | Max upload size per file |
+| `MAX_UPLOAD_MB` | | `50` | Max PDF size per file (checked at presign and again on the stored object) |
+| `MAX_PAGES` | | `150` | PDFs with more pages are rejected at `/complete` |
 | `STORAGE_PATH` | | `./storage` | Base storage directory |
 | `CHROMA_API_KEY` | ✅ | — | Chroma Cloud API key (startup fails if missing) |
 | `CHROMA_TENANT` | ✅ | — | Chroma Cloud tenant ID |

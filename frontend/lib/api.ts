@@ -34,8 +34,15 @@ export interface UploadJob {
   filename: string;
 }
 
-export interface UploadResponse {
-  jobs: UploadJob[];
+/** From POST /api/uploads/presign: where and how to PUT the file. */
+export interface PresignedUpload {
+  doc_id: string;
+  filename: string;
+  /** A presigned R2 URL, or /api/uploads/{doc_id}/file when the backend stores on local disk. */
+  upload_url: string;
+  method: "PUT";
+  headers: Record<string, string>;
+  expires_in: number;
 }
 
 export interface Classification {
@@ -56,13 +63,14 @@ export interface Classification {
 }
 
 export interface JobStatus {
-  status: "queued" | "processing" | "complete" | "error";
+  /** "partial": indexed, but OCR failed on `failed_pages`. */
+  status: "queued" | "processing" | "complete" | "partial" | "error";
   filename: string;
   stage: string;
   progress: number;
-  error: string | null;
   classification: Classification | null;
   page_count: number;
+  failed_pages: number[];
 }
 
 export interface IndexedDocument {
@@ -257,14 +265,70 @@ export async function sendAgenticMessage(
   return handleResponse<ChatResponse>(res);
 }
 
-export async function uploadFiles(files: File[]): Promise<UploadResponse> {
-  const form = new FormData();
-  files.forEach((f) => form.append("files", f));
-  const res = await fetchWithRetry("/api/upload", {
+/** Mirrors the backend's MAX_UPLOAD_MB default; the server enforces the real limit. */
+export const MAX_UPLOAD_MB = 50;
+export const FILE_TOO_LARGE_MESSAGE = `File is too large — the limit is ${MAX_UPLOAD_MB} MB.`;
+export const NETWORK_ERROR_MESSAGE = "Network error — check your connection and try again.";
+
+/** Sending the file bytes failed (the PUT, not an API call). */
+export class UploadError extends Error {
+  constructor(message: string, readonly status?: number) {
+    super(message);
+  }
+}
+
+async function putFile(ticket: PresignedUpload, file: File): Promise<void> {
+  let res: Response;
+  try {
+    // One attempt: retrying a large body on a flaky connection rarely helps.
+    res = await fetch(ticket.upload_url, { method: ticket.method, headers: ticket.headers, body: file });
+  } catch {
+    throw new UploadError(NETWORK_ERROR_MESSAGE);
+  }
+  if (res.ok) return;
+  if (res.status === 413) throw new UploadError(FILE_TOO_LARGE_MESSAGE, 413);
+  if (res.status === 403) {
+    throw new UploadError("The upload link expired or was rejected — please try again.", 403);
+  }
+  if (res.status === 401) redirectToLogin(); // session ended (local-disk route only)
+  // The local-disk route answers JSON like the rest of the API; R2 answers XML.
+  const body = await res.json().catch(() => null);
+  const detail = (body as { detail?: string } | null)?.detail;
+  throw new UploadError(detail ?? `Upload failed (HTTP ${res.status}) — please try again.`, res.status);
+}
+
+/**
+ * presign → PUT the file (straight to R2, or through the API on local disk) →
+ * complete, which checks it and starts processing. Throws ApiError/UploadError.
+ */
+export async function uploadFile(file: File): Promise<UploadJob> {
+  const presign = await fetchWithRetry("/api/uploads/presign", {
     method: "POST",
-    body: form,
+    headers: { "Content-Type": "application/json" },
+    // file.type is empty on some systems; the extension was checked already.
+    body: JSON.stringify({ filename: file.name, size: file.size, content_type: "application/pdf" }),
   });
-  return handleResponse<UploadResponse>(res);
+  const ticket = await handleResponse<PresignedUpload>(presign);
+
+  await putFile(ticket, file);
+
+  const res = await fetchWithRetry(`/api/uploads/${encodeURIComponent(ticket.doc_id)}/complete`, {
+    method: "POST",
+  });
+  const done = await handleResponse<UploadJob & { page_count: number }>(res);
+  return { doc_id: done.doc_id, filename: done.filename };
+}
+
+/** What to tell the user when uploadFile fails. */
+export function uploadErrorMessage(err: unknown): string {
+  if ((err instanceof ApiError || err instanceof UploadError) && err.status === 413) {
+    return FILE_TOO_LARGE_MESSAGE;
+  }
+  if (err instanceof UploadError) return err.message;
+  // fetch rejects with a TypeError when the request never got a response.
+  if (err instanceof TypeError) return NETWORK_ERROR_MESSAGE;
+  // 400/409/422 details are written for users (not a PDF, too many pages...).
+  return userFacingError(err, "Upload failed — please try again.", [400, 409, 422]);
 }
 
 export async function getStatus(docId: string): Promise<JobStatus> {

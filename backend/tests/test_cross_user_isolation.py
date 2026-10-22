@@ -29,8 +29,8 @@ B_IMAGE = b"\xff\xd8\xff user B's page image"
 class FakeDB:
     """In-memory stand-in for the users/documents/chat_history tables.
 
-    WHERE clauses are evaluated from the query text itself (``col = $n`` and
-    ``col = 'literal'``), so a route that forgets its ``user_id`` filter really
+    WHERE clauses are evaluated from the query text itself (``col = $n``,
+    ``col = 'literal'`` and ``col IN ('a', 'b')``), so a route that forgets its ``user_id`` filter really
     does see other users' rows here, just as it would against Postgres.
     """
 
@@ -54,11 +54,16 @@ class FakeDB:
         where = q.split(" WHERE ", 1)[1].split(" ORDER BY ")[0] if " WHERE " in q else ""
         params = re.findall(r"(\w+) = \$(\d+)", where)
         literals = re.findall(r"(\w+) = '([^']*)'", where)
+        in_lists = [
+            (col, re.findall(r"'([^']*)'", values))
+            for col, values in re.findall(r"(\w+) IN \(([^)]*)\)", where)
+        ]
         return [
             row
             for row in self.tables[table]
             if all(row.get(col) == args[int(n) - 1] for col, n in params)
             and all(row.get(col) == value for col, value in literals)
+            and all(row.get(col) in values for col, values in in_lists)
         ]
 
     async def fetchrow(self, query: str, *args: object):
@@ -80,18 +85,21 @@ class FakeDB:
         q = self._normalize(query)
         if q.startswith("INSERT INTO documents"):
             doc_id, user_id, doc_name = args
+            status, stage = re.search(r"VALUES \(\$1, \$2, \$3, '(\w+)', '(\w+)', 0\)", q).groups()
             self.tables["documents"].append({
                 "doc_id": doc_id, "user_id": user_id, "doc_name": doc_name,
-                "status": "queued", "stage": "queued", "progress": 0,
+                "status": status, "stage": stage, "progress": 0,
                 "document_type": None, "sensitivity_level": None, "summary": None,
                 "page_count": None, "error_message": None,
             })
         elif q.startswith("UPDATE documents SET"):
-            doc_id, *values = args
-            columns = re.findall(r"(\w+) = \$\d+", q.split(" WHERE ")[0])
-            for row in self.tables["documents"]:
-                if row["doc_id"] == doc_id:
-                    row.update(zip(columns, values))
+            set_part, where = q[len("UPDATE documents SET "):].split(" WHERE ", 1)
+            changes = {col: args[int(n) - 1] for col, n in re.findall(r"(\w+) = \$(\d+)", set_part)}
+            changes.update(re.findall(r"(\w+) = '([^']*)'", set_part))
+            rows = self._select(f"SELECT * FROM documents WHERE {where}", args)
+            for row in rows:
+                row.update(changes)
+            return f"UPDATE {len(rows)}"
         elif q.startswith("INSERT INTO chat_history"):
             user_id, doc_id, content = args
             role = re.search(r"'(user|assistant)'", q).group(1)
@@ -140,6 +148,8 @@ class CrossUserIsolationTests(unittest.TestCase):
             patch.object(storage, "_storage", self.storage),
             patch("routers.upload.STORAGE_PATH", self.temp_root),
             patch("routers.upload.parse_document", parse),
+            # The test PDFs are just a header; real page counting is tested elsewhere.
+            patch("routers.upload.count_pdf_pages", return_value=1),
             patch("routers.upload.classify_document", AsyncMock(return_value={})),
             patch("routers.upload.index_document", AsyncMock()),
             patch("routers.chat.answer_query", self.answer),
@@ -153,11 +163,7 @@ class CrossUserIsolationTests(unittest.TestCase):
         self.client_a = self._client(USER_A)
         self.client_b = self._client(USER_B)
 
-        upload = self.client_b.post(
-            "/api/upload", files={"files": (B_FILENAME, B_PDF, "application/pdf")}
-        )
-        self.assertEqual(upload.status_code, 200, upload.text)
-        self.doc_id = upload.json()["jobs"][0]["doc_id"]
+        self.doc_id = self._upload(self.client_b, B_FILENAME, B_PDF)
         self.assertEqual(self.db.tables["documents"][0]["status"], "complete")
         self.b_prefix = storage.document_prefix(USER_B, self.doc_id)
         self.assertEqual(len(self.storage.keys(self.b_prefix)), 2)
@@ -167,6 +173,22 @@ class CrossUserIsolationTests(unittest.TestCase):
             p.stop()
         shutil.rmtree(self.temp_root, ignore_errors=True)
         limiter.reset()
+
+    def _presign(self, client: TestClient, filename: str, data: bytes) -> dict:
+        response = client.post("/api/uploads/presign", json={
+            "filename": filename, "size": len(data), "content_type": "application/pdf",
+        })
+        self.assertEqual(response.status_code, 200, response.text)
+        return response.json()
+
+    def _upload(self, client: TestClient, filename: str, data: bytes) -> str:
+        """presign → PUT (local-disk route) → complete; returns the doc_id."""
+        ticket = self._presign(client, filename, data)
+        put = client.put(ticket["upload_url"], content=data, headers=ticket["headers"])
+        self.assertEqual(put.status_code, 204, put.text)
+        complete = client.post(f"/api/uploads/{ticket['doc_id']}/complete")
+        self.assertEqual(complete.status_code, 200, complete.text)
+        return ticket["doc_id"]
 
     @staticmethod
     def _client(user_id: str) -> TestClient:
@@ -251,6 +273,47 @@ class CrossUserIsolationTests(unittest.TestCase):
         self.assertEqual([d["doc_id"] for d in listed_b], [self.doc_id])
         self.assertEqual(self.client_b.get("/api/documents/count").json(), {"count": 1})
 
+    # ── status values ───────────────────────────────────────────────────────
+
+    def _set_doc(self, **fields) -> None:
+        self.db.tables["documents"][0].update(fields)
+
+    def test_partial_documents_are_listed_and_usable(self) -> None:
+        self._set_doc(status="partial", failed_pages=[2, 5])
+
+        listed = self.client_b.get("/api/documents").json()["documents"]
+        self.assertEqual([d["doc_id"] for d in listed], [self.doc_id])
+        self.assertEqual(self.client_b.get("/api/documents/count").json(), {"count": 1})
+        timeline = self.client_b.post(f"/api/documents/{self.doc_id}/evidence-timeline")
+        self.assertEqual(timeline.status_code, 200)
+
+        status = self.client_b.get(f"/api/status/{self.doc_id}").json()
+        self.assertEqual(status["status"], "partial")
+        self.assertEqual(status["failed_pages"], [2, 5])
+        self.assertIsNotNone(status["classification"])
+
+    def test_unfinished_and_failed_documents_are_not_listed(self) -> None:
+        for state in ("queued", "processing", "error"):
+            with self.subTest(status=state):
+                self._set_doc(status=state)
+                self.assertEqual(self.client_b.get("/api/documents").json(), {"documents": []})
+                self.assertEqual(self.client_b.get("/api/documents/count").json(), {"count": 0})
+
+    def test_status_never_returns_the_internal_error(self) -> None:
+        self._set_doc(
+            status="error", stage="error",
+            error_message="ConnectError: https://internal-host:8443 refused (key=abc123)",
+        )
+
+        response = self.client_b.get(f"/api/status/{self.doc_id}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "error")
+        self.assertNotIn("error", response.json())
+        self.assertNotIn(b"internal-host", response.content)
+        self.assertNotIn(b"abc123", response.content)
+        self.assertEqual(response.json()["failed_pages"], [])
+
     # ── delete ──────────────────────────────────────────────────────────────
 
     def test_other_user_cannot_delete(self) -> None:
@@ -291,9 +354,7 @@ class CrossUserIsolationTests(unittest.TestCase):
         self.assertEqual(self.client_b.delete(f"/api/documents/{self.doc_id}").status_code, 404)
 
     def test_delete_leaves_other_documents_alone(self) -> None:
-        second = self.client_b.post(
-            "/api/upload", files={"files": ("second.pdf", b"%PDF-1.4 second", "application/pdf")}
-        ).json()["jobs"][0]["doc_id"]
+        second = self._upload(self.client_b, "second.pdf", b"%PDF-1.4 second")
 
         self.assertEqual(self.client_b.delete(f"/api/documents/{self.doc_id}").status_code, 204)
 
@@ -311,6 +372,32 @@ class CrossUserIsolationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 409)
         self.delete_chunks.assert_not_called()
         self.assertEqual(len(self.storage.keys(self.b_prefix)), 2)
+
+    # ── pending uploads ─────────────────────────────────────────────────────
+
+    def test_other_user_cannot_fill_or_complete_a_pending_upload(self) -> None:
+        ticket = self._presign(self.client_b, "pending.pdf", b"%PDF-1.4 pending")
+        doc_id = ticket["doc_id"]
+        unknown = str(uuid.uuid4())
+
+        for path, send in (
+            ("/api/uploads/{}/file", lambda p: self.client_a.put(
+                p, content=b"%PDF-1.4 from A", headers={"Content-Type": "application/pdf"})),
+            ("/api/uploads/{}/complete", lambda p: self.client_a.post(p)),
+        ):
+            with self.subTest(path=path):
+                foreign = send(path.format(doc_id))
+                expected = send(path.format(unknown))
+                self.assertEqual(foreign.status_code, 404, foreign.text)
+                self.assertEqual(
+                    (foreign.status_code, foreign.json()), (expected.status_code, expected.json())
+                )
+
+        # Nothing landed under either user, and B's upload is still waiting for B.
+        self.assertEqual(self.storage.keys(storage.document_prefix(USER_B, doc_id)), [])
+        self.assertEqual(self.storage.keys(f"users/{USER_A}/"), [])
+        put = self.client_b.put(ticket["upload_url"], content=b"%PDF-1.4 pending", headers=ticket["headers"])
+        self.assertEqual(put.status_code, 204)
 
     def test_owner_history_is_not_visible_to_other_user(self) -> None:
         chat_body = {"question": "secret question", "conversation_history": [], "doc_id": self.doc_id}

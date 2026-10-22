@@ -1,8 +1,5 @@
 import re
 import os
-from pathlib import Path
-from fastapi import UploadFile
-from core.config import ALLOWED_EXTENSIONS, MAX_FILE_SIZE_MB
 
 # Magic bytes for supported file types
 MAGIC_BYTES: dict[str, list[bytes]] = {
@@ -46,42 +43,3 @@ def validate_magic_bytes(content: bytes, extension: str) -> bool:
     if not expected:
         return False
     return any(content.startswith(magic) for magic in expected)
-
-
-async def validate_file(file: UploadFile) -> bool:
-    """
-    Validate extension, content-type, file size, and magic bytes.
-    Rewinds the file stream before returning.
-    """
-    if not file.filename:
-        return False
-
-    ext = Path(file.filename).suffix.lower()
-    if ext != ".pdf":
-        return False
-
-    # Content-type check (browsers send this; don't rely solely on it)
-    if file.content_type:
-        allowed_types = ALLOWED_MIME_TYPES.get(ext, set())
-        if allowed_types and file.content_type not in allowed_types:
-            # Tolerate application/octet-stream fallback
-            if file.content_type != "application/octet-stream":
-                return False
-
-    # Read header bytes for magic check + measure total size
-    content = await file.read()
-
-    # Size check
-    max_bytes = MAX_FILE_SIZE_MB * 1024 * 1024
-    if len(content) > max_bytes:
-        await file.seek(0)
-        return False
-
-    # Magic bytes check
-    if not validate_magic_bytes(content, ext):
-        await file.seek(0)
-        return False
-
-    # Rewind so downstream code can read the full content
-    await file.seek(0)
-    return True

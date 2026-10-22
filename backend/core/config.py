@@ -6,8 +6,14 @@ load_dotenv()
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_OCR_MODEL = os.environ.get("GEMINI_OCR_MODEL", "gemini-3.6-flash")
-MAX_FILE_SIZE_MB = int(os.environ.get("MAX_FILE_SIZE_MB", "20"))
-ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".tiff"}
+# Process-wide cap on Gemini OCR requests (retries included), to stay inside quota.
+OCR_MAX_PER_MINUTE = max(1, int(os.environ.get("OCR_MAX_PER_MINUTE", "5")))
+MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "50"))
+MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
+# PDFs with more pages are rejected before processing starts.
+MAX_PAGES = int(os.environ.get("MAX_PAGES", "150"))
+# Lifetime of the presigned PUT URL handed to the browser.
+UPLOAD_URL_EXPIRES_SECONDS = 600
 STORAGE_PATH = os.environ.get("STORAGE_PATH", "./storage")
 CHROMA_PATH = os.environ.get("CHROMA_PATH", "./storage/chroma_db")
 # PDFs and page images go to Cloudflare R2 when all four R2_* vars are set

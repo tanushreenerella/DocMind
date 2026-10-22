@@ -33,7 +33,7 @@ from core.config import (
     STORAGE_PATH,
 )
 from core.auth import require_allowed_origin, require_proxy_secret
-from core.database import connect, disconnect
+from core.database import connect, disconnect, ensure_schema
 from core.rate_limit import CLIENT_IP_HEADER, limiter, rate_limit_exceeded_handler
 from routers import chat, documents, upload
 from routers import auth
@@ -49,6 +49,7 @@ async def lifespan(app: FastAPI):
     storage.get_storage()
     # Open DB pool
     await connect()
+    await ensure_schema()
     yield
     # Close DB pool on shutdown
     await disconnect()

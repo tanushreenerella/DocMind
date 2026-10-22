@@ -4,10 +4,27 @@ from services.storage import StoredObject
 
 
 class FakeStorage:
-    """In-memory stand-in for services.storage backends (R2 or local disk)."""
+    """In-memory stand-in for services.storage backends (R2 or local disk).
 
-    def __init__(self) -> None:
+    Behaves like local disk (uploads go through the API) unless built with
+    ``direct_uploads=True``, which makes it hand out presigned URLs like R2.
+    """
+
+    def __init__(self, direct_uploads: bool = False) -> None:
         self.objects: dict[str, tuple[bytes, str]] = {}
+        self.direct_uploads = direct_uploads
+
+    def size(self, key: str) -> int | None:
+        return len(self.objects[key][0]) if key in self.objects else None
+
+    def download(self, key: str, path: str) -> None:
+        with open(path, "wb") as f:
+            f.write(self.objects[key][0])
+
+    def presign_put(self, key: str, content_type: str, expires_seconds: int) -> str:
+        if not self.direct_uploads:
+            raise NotImplementedError("local storage has no presigned URLs")
+        return f"https://r2.example/{key}?ct={content_type}&expires={expires_seconds}&sig=x"
 
     def put(self, key: str, data: bytes, content_type: str) -> None:
         self.objects[key] = (data, content_type)

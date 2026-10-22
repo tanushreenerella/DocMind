@@ -2,10 +2,10 @@
 
 import { useState, useCallback, useRef } from "react";
 import { Upload, File, X, AlertCircle } from "lucide-react";
+import { MAX_UPLOAD_MB as MAX_MB } from "@/lib/api";
 
-const ACCEPTED = ".pdf,.png,.jpg,.jpeg,.tiff";
-const ACCEPTED_TYPES = new Set(["application/pdf", "image/png", "image/jpeg", "image/tiff"]);
-const MAX_MB = 20;
+// The backend accepts PDFs only.
+const ACCEPTED = ".pdf";
 
 interface UploadZoneProps {
   files: File[];
@@ -34,10 +34,8 @@ export default function UploadZone({ files, onChange }: UploadZoneProps) {
     const valid: File[] = [];
     const errors: string[] = [];
     for (const f of incoming) {
-      const ext = "." + (f.name.split(".").pop() ?? "").toLowerCase();
-      const acceptedExts = new Set([".pdf", ".png", ".jpg", ".jpeg", ".tiff"]);
-      if (!acceptedExts.has(ext) && !ACCEPTED_TYPES.has(f.type)) {
-        errors.push(`${f.name}: unsupported type`);
+      if (!f.name.toLowerCase().endsWith(".pdf")) {
+        errors.push(`${f.name}: only PDF files are supported`);
         continue;
       }
       if (f.size > MAX_MB * 1024 * 1024) {
@@ -110,10 +108,10 @@ export default function UploadZone({ files, onChange }: UploadZoneProps) {
         </div>
         <div className="text-center">
           <p className="text-base font-semibold text-gray-700">
-            Drop PDFs or images here, or <span className="text-indigo-600">click to browse</span>
+            Drop PDFs here, or <span className="text-indigo-600">click to browse</span>
           </p>
           <p className="text-sm text-gray-400 mt-1">
-            PDF, PNG, JPG, JPEG, TIFF — max {MAX_MB} MB each
+            PDF only — max {MAX_MB} MB each
           </p>
         </div>
       </div>

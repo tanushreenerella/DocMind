@@ -28,3 +28,17 @@ def get_pool() -> asyncpg.Pool:
     if _pool is None:
         raise RuntimeError("Database pool not initialised")
     return _pool
+
+
+# Additive, idempotent schema changes, applied at startup (there is no
+# migration tool). Each must be safe to run any number of times.
+SCHEMA_UPDATES = (
+    # Pages whose OCR failed for a "partial" document.
+    "ALTER TABLE documents ADD COLUMN IF NOT EXISTS failed_pages INTEGER[] NOT NULL DEFAULT '{}'",
+)
+
+
+async def ensure_schema() -> None:
+    pool = get_pool()
+    for statement in SCHEMA_UPDATES:
+        await pool.execute(statement)

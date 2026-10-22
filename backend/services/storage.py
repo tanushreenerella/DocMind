@@ -4,8 +4,10 @@ Cloudflare R2 (S3 API, private bucket) when all four R2_* vars are set, else a
 local directory with the same key layout. Every key lives under
 ``users/{user_id}/{doc_id}/`` so one prefix delete removes a whole document.
 
-Objects are never exposed by URL: routes check ownership, then stream them
-through ``get``. All calls block; run them via ``asyncio.to_thread``.
+Objects are never exposed for reading by URL: routes check ownership, then
+stream them through ``get``. The one URL handed out is a short-lived presigned
+PUT for a new document's original PDF (R2 only; ``direct_uploads``). All calls
+block; run them via ``asyncio.to_thread``.
 """
 
 import os
@@ -13,6 +15,8 @@ import re
 import shutil
 from dataclasses import dataclass
 from typing import Iterator, Protocol
+
+from botocore.exceptions import ClientError
 
 from core import config
 
@@ -29,8 +33,14 @@ class StoredObject:
 
 
 class Storage(Protocol):
+    # True when browsers PUT straight into the bucket via presign_put.
+    direct_uploads: bool
+
     def put(self, key: str, data: bytes, content_type: str) -> None: ...
     def get(self, key: str) -> StoredObject | None: ...
+    def size(self, key: str) -> int | None: ...
+    def download(self, key: str, path: str) -> None: ...
+    def presign_put(self, key: str, content_type: str, expires_seconds: int) -> str: ...
     def delete(self, key: str) -> None: ...
     def delete_prefix(self, prefix: str) -> None: ...
 
@@ -58,6 +68,8 @@ def page_image_key(user_id: str, doc_id: str, image_filename: str) -> str:
 # ── backends ────────────────────────────────────────────────────────────────
 
 class R2Storage:
+    direct_uploads = True
+
     def __init__(self, client, bucket: str) -> None:
         self._client = client
         self._bucket = bucket
@@ -76,6 +88,27 @@ class R2Storage:
             content_type=obj.get("ContentType") or "application/octet-stream",
         )
 
+    def size(self, key: str) -> int | None:
+        try:
+            head = self._client.head_object(Bucket=self._bucket, Key=key)
+        except ClientError as exc:
+            # HEAD has no body, so a missing key is a bare 404, not NoSuchKey.
+            if exc.response.get("Error", {}).get("Code") in ("404", "NoSuchKey", "NotFound"):
+                return None
+            raise
+        return head["ContentLength"]
+
+    def download(self, key: str, path: str) -> None:
+        self._client.download_file(self._bucket, key, path)
+
+    def presign_put(self, key: str, content_type: str, expires_seconds: int) -> str:
+        # Content-Type is signed, so the browser must send exactly this one.
+        return self._client.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": self._bucket, "Key": key, "ContentType": content_type},
+            ExpiresIn=expires_seconds,
+        )
+
     def delete(self, key: str) -> None:
         self._client.delete_object(Bucket=self._bucket, Key=key)
 
@@ -90,6 +123,8 @@ class R2Storage:
 
 
 class LocalStorage:
+    # Uploads come through the API instead (PUT /api/uploads/{doc_id}/file).
+    direct_uploads = False
     _CONTENT_TYPES = {".pdf": "application/pdf", ".jpg": "image/jpeg"}
 
     def __init__(self, root: str) -> None:
@@ -123,6 +158,16 @@ class LocalStorage:
             size=os.path.getsize(path),
             content_type=content_type or "application/octet-stream",
         )
+
+    def size(self, key: str) -> int | None:
+        path = self._path(key)
+        return os.path.getsize(path) if os.path.isfile(path) else None
+
+    def download(self, key: str, path: str) -> None:
+        shutil.copyfile(self._path(key), path)
+
+    def presign_put(self, key: str, content_type: str, expires_seconds: int) -> str:
+        raise NotImplementedError("local storage has no presigned URLs")
 
     def delete(self, key: str) -> None:
         try:
@@ -181,6 +226,22 @@ def put(key: str, data: bytes, content_type: str) -> None:
 
 def get(key: str) -> StoredObject | None:
     return get_storage().get(key)
+
+
+def size(key: str) -> int | None:
+    return get_storage().size(key)
+
+
+def download(key: str, path: str) -> None:
+    get_storage().download(key, path)
+
+
+def direct_uploads() -> bool:
+    return get_storage().direct_uploads
+
+
+def presign_put(key: str, content_type: str, expires_seconds: int) -> str:
+    return get_storage().presign_put(key, content_type, expires_seconds)
 
 
 def delete(key: str) -> None:

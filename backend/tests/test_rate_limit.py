@@ -130,8 +130,8 @@ class RateLimitTests(unittest.TestCase):
             "upload": (
                 config.RATE_LIMIT_UPLOAD,
                 lambda: self.client.post(
-                    "/api/upload",
-                    files={"files": ("notes.txt", b"not a pdf", "text/plain")},
+                    "/api/uploads/presign",
+                    json={"filename": "notes.txt", "size": 9, "content_type": "text/plain"},
                     headers=cookie,
                 ),
                 3600,
@@ -147,6 +147,17 @@ class RateLimitTests(unittest.TestCase):
 
     def test_default_limit_applies_to_undecorated_routes(self) -> None:
         cookie = {"Cookie": _cookie(USER_A)}
+        send = lambda: self.client.get("/api/documents/count", headers=cookie)  # noqa: E731
+        self._exhaust(send, f"{config.RATE_LIMIT_PER_MINUTE}/minute")
+        self._assert_limited(send())
+
+    def test_status_polling_is_exempt_and_spends_no_budget(self) -> None:
+        cookie = {"Cookie": _cookie(USER_A)}
+        for _ in range(config.RATE_LIMIT_PER_MINUTE + 5):
+            response = self.client.get(f"/api/status/{USER_B}", headers=cookie)
+            self.assertNotEqual(response.status_code, 429)
+
+        # The general budget is untouched: other routes still get their full allowance.
         send = lambda: self.client.get("/api/documents/count", headers=cookie)  # noqa: E731
         self._exhaust(send, f"{config.RATE_LIMIT_PER_MINUTE}/minute")
         self._assert_limited(send())
