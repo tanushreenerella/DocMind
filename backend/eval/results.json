@@ -1,0 +1,1649 @@
+{
+  "meta": {
+    "timestamp": "2026-10-22T13:09:34+00:00",
+    "duration_s": 123.4,
+    "git": {
+      "commit": "7a9cad2768f438c8ef296bef13f2f6cf98ba29ff",
+      "dirty": true
+    }
+  },
+  "config": {
+    "questions_file": "C:\\Users\\tanus\\OneDrive - Manipal University Jaipur\\BFAI Assignment\\bfai-assessment\\backend\\eval\\questions.json",
+    "questions_sha256": "ae5c3551127d8b9db54cff61e2542ef78b9d9bdc1a1c440cdb13e28602d6aecc",
+    "questions": 5,
+    "questions_by_type": {
+      "factual": 5
+    },
+    "limit": 5,
+    "scope": "all",
+    "user_id": "e36d9dd4-cf9f-4e43-a321-88702b23297d",
+    "chroma_database": "docmind-dev",
+    "retrieval": {
+      "modes": [
+        "vector",
+        "bm25",
+        "hybrid",
+        "hybrid_rerank"
+      ],
+      "recall_k": 5,
+      "rank_k": 10,
+      "relevance": "page-level: doc_name matches and page in expected_pages",
+      "embedding_model": "models/gemini-embedding-001",
+      "chunk_size": 500,
+      "chunk_overlap": 50,
+      "rrf_k": 60,
+      "rerank_model": "ms-marco-TinyBERT-L-2-v2",
+      "rerank_candidates": 10
+    },
+    "answers": {
+      "pipelines": [
+        "basic",
+        "agentic"
+      ],
+      "retrieval_mode": "hybrid_rerank",
+      "answer_models": [
+        "qwen/qwen3.8-27b"
+      ],
+      "judge_model": null,
+      "ragas_metrics": []
+    },
+    "versions": {
+      "python": "3.11.0",
+      "ragas": "0.4.3",
+      "langchain-groq": "0.3.8",
+      "groq": "0.37.1",
+      "chromadb": "1.5.9",
+      "flashrank": "0.2.10"
+    }
+  },
+  "retrieval": {
+    "vector": {
+      "n": 5,
+      "recall@5": 1.0,
+      "mrr@10": 0.6333333333333333,
+      "ndcg@10": 0.7101301085439291,
+      "latency": {
+        "p50_ms": 830.7,
+        "p95_ms": 1583.8799999999997
+      },
+      "errors": 0
+    },
+    "bm25": {
+      "n": 5,
+      "recall@5": 1.0,
+      "mrr@10": 0.7,
+      "ndcg@10": 0.7423396043363082,
+      "latency": {
+        "p50_ms": 5.5,
+        "p95_ms": 6.74
+      },
+      "errors": 0
+    },
+    "hybrid": {
+      "n": 5,
+      "recall@5": 1.0,
+      "mrr@10": 0.7166666666666666,
+      "ndcg@10": 0.7615783746822885,
+      "latency": {
+        "p50_ms": 836.4,
+        "p95_ms": 1590.3199999999997
+      },
+      "errors": 0
+    },
+    "hybrid_rerank": {
+      "n": 5,
+      "recall@5": 1.0,
+      "mrr@10": 0.5666666666666667,
+      "ndcg@10": 0.6486268332498254,
+      "latency": {
+        "p50_ms": 907.3,
+        "p95_ms": 1679.4799999999998
+      },
+      "errors": 0
+    }
+  },
+  "answers": {
+    "basic": {
+      "n": 5,
+      "faithfulness": null,
+      "faithfulness_scored": 0,
+      "answer_relevancy": null,
+      "answer_relevancy_scored": 0,
+      "unanswerable": {
+        "n": 0,
+        "declined": 0,
+        "decline_rate": null
+      },
+      "answerable_declined": {
+        "n": 5,
+        "declined": 1,
+        "rate": 0.2
+      },
+      "latency_end_to_end": {
+        "p50_ms": 7458.5,
+        "p95_ms": 9272.279999999999
+      },
+      "latency_retrieval": {
+        "p50_ms": 1081.0,
+        "p95_ms": 1107.44
+      },
+      "llm_calls": {
+        "total": 5,
+        "per_question": 1.0
+      },
+      "prompt_tokens": {
+        "total": 5430,
+        "per_question": 1086.0
+      },
+      "completion_tokens": {
+        "total": 163,
+        "per_question": 32.6
+      },
+      "errors": {
+        "questions_with_errors": 0,
+        "total": 0,
+        "failed_runs": 0
+      }
+    },
+    "agentic": {
+      "n": 5,
+      "faithfulness": null,
+      "faithfulness_scored": 0,
+      "answer_relevancy": null,
+      "answer_relevancy_scored": 0,
+      "unanswerable": {
+        "n": 0,
+        "declined": 0,
+        "decline_rate": null
+      },
+      "answerable_declined": {
+        "n": 5,
+        "declined": 0,
+        "rate": 0.0
+      },
+      "latency_end_to_end": {
+        "p50_ms": 22345.4,
+        "p95_ms": 29795.559999999998
+      },
+      "latency_retrieval": {
+        "p50_ms": 1141.9,
+        "p95_ms": 2112.2799999999997
+      },
+      "llm_calls": {
+        "total": 16,
+        "per_question": 3.2
+      },
+      "prompt_tokens": {
+        "total": 14742,
+        "per_question": 2948.4
+      },
+      "completion_tokens": {
+        "total": 732,
+        "per_question": 146.4
+      },
+      "errors": {
+        "questions_with_errors": 0,
+        "total": 0,
+        "failed_runs": 0
+      }
+    }
+  },
+  "per_question": [
+    {
+      "question": "Which specific Java version range is highlighted in the backend engineering learning area of the Java Full Stack Engineer Trainee job description?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        1
+      ],
+      "reference_answer": "Java 8–21 features",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1760.1,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 7.0,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1767.1,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 1871.0,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "The backend engineering learning area highlights Java versions 8 through 21 [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 1850.6,
+          "retrieval_ms": 1112.5,
+          "llm_calls": 1,
+          "prompt_tokens": 1091,
+          "completion_tokens": 20,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "The backend engineering learning area in the Java Full Stack Engineer Trainee job description highlights the Java version range of 8 to 21 [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 2847.5,
+          "retrieval_ms": 1309.0,
+          "llm_calls": 3,
+          "prompt_tokens": 2731,
+          "completion_tokens": 112,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "question": "What tool is specified for code coverage analysis in the Engineering Practices & Code Quality section of the Java Full Stack Engineer Trainee role?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        2
+      ],
+      "reference_answer": "JaCoCo",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 731.3,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 5.5,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 736.8,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 802.3,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "The tool specified for code coverage analysis in the Engineering Practices & Code Quality section is JaCoCo [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.2].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 1300.6,
+          "retrieval_ms": 1075.7,
+          "llm_calls": 1,
+          "prompt_tokens": 1068,
+          "completion_tokens": 25,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "The tool specified for code coverage analysis in the Engineering Practices & Code Quality section is JaCoCo [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.2].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 1770.3,
+          "retrieval_ms": 1055.9,
+          "llm_calls": 3,
+          "prompt_tokens": 2687,
+          "completion_tokens": 106,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "question": "According to the Secure Coding & Responsible AI Usage section, which specific AI tool is mentioned for usage in the Java Full Stack Engineer Trainee program?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        2
+      ],
+      "reference_answer": "GitHub Copilot",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 758.9,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 3.6,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 762.5,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 798.1,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "According to the Secure Coding & Responsible AI Usage section, the specific AI tool mentioned for usage in the program is GitHub Copilot [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.2].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 7458.5,
+          "retrieval_ms": 1087.2,
+          "llm_calls": 1,
+          "prompt_tokens": 1166,
+          "completion_tokens": 31,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "According to the Secure Coding & Responsible AI Usage section, the specific AI tool mentioned for usage in the Java Full Stack Engineer Trainee program is GitHub Copilot [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.2].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 24775.4,
+          "retrieval_ms": 1133.3,
+          "llm_calls": 3,
+          "prompt_tokens": 2886,
+          "completion_tokens": 121,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "question": "What specific authentication and authorization technology is required for implementation in the Java Full Stack Engineer Trainee role?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        1,
+        2
+      ],
+      "reference_answer": "JWT-based authentication and authorization",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.9197207891481876,
+          "latency_ms": 879.0,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.8503449055347546,
+          "latency_ms": 4.1,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.8772153153380493,
+          "latency_ms": 883.2,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.8503449055347546,
+          "latency_ms": 907.3,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "Based on the provided documents, there is no mention of a specific authentication or authorization technology (such as OAuth2, JWT, or Spring Security) required for the role. The job description only states that trainees are expected to \"manage authentication flows\" as part of full-stack integration [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
+          "has_answer": true,
+          "declined": true,
+          "decline_reason": "matched: 'no mention'",
+          "latency_ms": 8723.8,
+          "retrieval_ms": 1081.0,
+          "llm_calls": 1,
+          "prompt_tokens": 1024,
+          "completion_tokens": 62,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "For the Java Full Stack Engineer Trainee role, the specific authentication and authorization technology required is Spring Security combined with JWT (JSON Web Token)-based authentication and authorization [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1]. The job description explicitly lists the need to apply basic authentication and authorization using these two technologies as a key learning outcome [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.2]. Additionally, the training involves managing authentication flows as part of full-stack integration [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 31050.6,
+          "retrieval_ms": 2313.1,
+          "llm_calls": 4,
+          "prompt_tokens": 3730,
+          "completion_tokens": 194,
+          "search_calls": 2,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "question": "Which frontend framework is explicitly listed as a key learning area for the Java Full Stack Engineer Trainee position?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        1
+      ],
+      "reference_answer": "React.js",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 830.7,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 5.7,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 836.4,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 913.4,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "React.js is explicitly listed as a key learning area for the Java Full Stack Engineer Trainee position [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 9409.4,
+          "retrieval_ms": 1062.2,
+          "llm_calls": 1,
+          "prompt_tokens": 1081,
+          "completion_tokens": 25,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "Based on the provided documents, the frontend framework explicitly listed as a key learning area for the Java Full Stack Engineer Trainee position is React.js [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].\n\nThe job description outlines that trainees will be trained in frontend technologies, specifically mentioning React.js alongside other skills like routing, state management, and hooks [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1]. While other frontend technologies such as HTML, CSS, Bootstrap, and JavaScript are also mentioned in the context of creating responsive applications [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.2], React.js is the specific framework named in the detailed key learning areas for frontend development [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 22345.4,
+          "retrieval_ms": 1141.9,
+          "llm_calls": 3,
+          "prompt_tokens": 2708,
+          "completion_tokens": 199,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    }
+  ]
+}

@@ -16,6 +16,9 @@ questions are scored on whether the pipeline declined. For every run it also
 records p50/p95 latency (end to end, and time spent in retrieval), LLM calls,
 tokens and errors, by wrapping the Groq client and search() both pipelines
 use. Retrieval errors the app hides (search() returns []) are counted here.
+Groq 429s the SDK retried, and the time spent waiting on them, are recorded
+too; end-to-end latency is reported with and without that wait. Use --sleep
+to space questions out when the rate limit is the bottleneck.
 
 Writes results.json (everything, per question) and results.md (tables), with
 the config and git commit they came from.
@@ -78,7 +81,10 @@ class RunStats:
     completion_tokens: int = 0
     search_calls: int = 0
     retrieval_s: float = 0.0
+    rate_limit_retries: int = 0
     errors: list[str] = field(default_factory=list)
+    # (start, end) perf_counter times the Groq client slept before retrying a 429.
+    _rate_limit_waits: list[tuple[float, float]] = field(default_factory=list, repr=False)
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
     def add(self, **amounts: float) -> None:
@@ -90,6 +96,26 @@ class RunStats:
         with self._lock:
             self.errors.append(f"{where}: {type(exc).__name__}: {exc}"[:500])
 
+    def rate_limited(self, started: float, ended: float) -> None:
+        with self._lock:
+            self.rate_limit_retries += 1
+            self._rate_limit_waits.append((started, ended))
+
+    @property
+    def rate_limit_wait_s(self) -> float:
+        """Wall-clock time with at least one call waiting on a 429.
+
+        Concurrent waits (agentic sub-questions) overlap, so they are merged,
+        not summed: the result never exceeds the run's own duration.
+        """
+        total, covered_until = 0.0, float("-inf")
+        for started, ended in sorted(self._rate_limit_waits):
+            started = max(started, covered_until)
+            if ended > started:
+                total += ended - started
+                covered_until = ended
+        return total
+
 
 # Set while a pipeline runs; asyncio tasks and to_thread calls inherit it.
 _current_run: contextvars.ContextVar[RunStats | None] = contextvars.ContextVar("eval_run", default=None)
@@ -97,8 +123,25 @@ _answer_models: set[str] = set()
 
 
 def _install_instrumentation() -> None:
-    """Count every Groq call and search() made by the basic and agentic pipelines."""
-    completions = rag.get_groq_client().chat.completions
+    """Count every Groq call, 429 retry and search() made by the basic and agentic pipelines."""
+    client = rag.get_groq_client()
+    # The Groq SDK retries 429s itself (client.max_retries times), sleeping in
+    # _sleep_for_retry first, so the wrapper around create() can't see them.
+    original_sleep_for_retry = client._sleep_for_retry
+
+    def sleep_for_retry(*, response=None, **kwargs):
+        stats = _current_run.get()
+        if stats is None or response is None or response.status_code != 429:
+            return original_sleep_for_retry(response=response, **kwargs)
+        started = time.perf_counter()
+        try:
+            return original_sleep_for_retry(response=response, **kwargs)
+        finally:
+            stats.rate_limited(started, time.perf_counter())
+
+    client._sleep_for_retry = sleep_for_retry
+
+    completions = client.chat.completions
     original_create = completions.create
 
     def create(*args, **kwargs):
@@ -275,7 +318,10 @@ async def _run_pipeline(pipeline: str, question: dict, user_id: str, doc_id: str
         "declined": reason is not None,
         "decline_reason": reason,
         "latency_ms": round(elapsed * 1000, 1),
+        "latency_excl_rate_limit_ms": round((elapsed - stats.rate_limit_wait_s) * 1000, 1),
         "retrieval_ms": round(stats.retrieval_s * 1000, 1),
+        "rate_limit_retries": stats.rate_limit_retries,
+        "rate_limit_wait_ms": round(stats.rate_limit_wait_s * 1000, 1),
         "llm_calls": stats.llm_calls,
         "prompt_tokens": stats.prompt_tokens,
         "completion_tokens": stats.completion_tokens,
@@ -415,8 +461,15 @@ def _summarize_answers(per_question: list[dict], pipelines: tuple[str, ...]) -> 
                 "rate": mean(float(r["declined"]) for r in answerable if r["answer"] is not None),
             },
             "latency_end_to_end": _latency([r["latency_ms"] for r in answered]),
+            "latency_end_to_end_excl_rate_limit": _latency([r["latency_excl_rate_limit_ms"] for r in answered]),
+            # Retrieval makes no Groq calls, so it has no rate-limit wait to exclude.
             "latency_retrieval": _latency([r["retrieval_ms"] for r in answered]),
-            "llm_calls": {"total": sum(r["llm_calls"] for _, r in runs), "per_question": _per(runs, "llm_calls")},
+            "rate_limit": {
+                "retries": sum(r["rate_limit_retries"] for _, r in runs),
+                "questions_with_retries": sum(r["rate_limit_retries"] > 0 for _, r in runs),
+                "wait_total_ms": round(sum(r["rate_limit_wait_ms"] for _, r in runs), 1),
+            },
+            "llm_calls":{"total": sum(r["llm_calls"] for _, r in runs), "per_question": _per(runs, "llm_calls")},
             "prompt_tokens": {"total": sum(r["prompt_tokens"] for _, r in runs), "per_question": _per(runs, "prompt_tokens")},
             "completion_tokens": {
                 "total": sum(r["completion_tokens"] for _, r in runs),
@@ -464,6 +517,11 @@ def _config(args: argparse.Namespace, questions: list[dict], questions_bytes: by
         "questions_by_type": dict(Counter(q["type"] for q in questions)),
         "limit": args.limit,
         "scope": args.scope,
+        "pacing": {
+            "sleep_between_questions_s": args.sleep,
+            "delay_after_pipeline_s": args.delay,
+            "groq_max_retries": rag.get_groq_client().max_retries,
+        },
         "user_id": args.user_id,
         "chroma_database": config.CHROMA_DATABASE,
         "retrieval": {
@@ -536,27 +594,44 @@ def _markdown(results: dict) -> str:
             f"## Answers (retrieval: {cfg['answers']['retrieval_mode']}, "
             f"judge: {cfg['answers']['judge_model'] or 'RAGAS skipped'})",
             "",
-            "| Pipeline | Faithfulness | Answer relevancy | Unanswerable declined | Answerable declined "
-            "| p50 / p95 end-to-end ms | p50 / p95 retrieval ms | Tokens/q in / out | LLM calls/q | Errors |",
-            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+            "| Pipeline | Faithfulness | Answer relevancy | Unanswerable declined | Answerable declined | Errors |",
+            "|---|---:|---:|---:|---:|---:|",
         ]
         for pipeline, s in answers.items():
             una, ans = s["unanswerable"], s["answerable_declined"]
-            e2e, ret = s["latency_end_to_end"], s["latency_retrieval"]
             lines.append(
                 f"| {pipeline} | {_fmt(s['faithfulness'])} (n={s['faithfulness_scored']}) "
                 f"| {_fmt(s['answer_relevancy'])} (n={s['answer_relevancy_scored']}) "
                 f"| {una['declined']}/{una['n']} | {ans['declined']}/{ans['n']} "
-                f"| {_ms(e2e['p50_ms'])} / {_ms(e2e['p95_ms'])} | {_ms(ret['p50_ms'])} / {_ms(ret['p95_ms'])} "
-                f"| {_fmt(s['prompt_tokens']['per_question'], 0)} / {_fmt(s['completion_tokens']['per_question'], 0)} "
-                f"| {_fmt(s['llm_calls']['per_question'], 1)} "
                 f"| {s['errors']['questions_with_errors']} q ({s['errors']['total']}) |"
+            )
+        lines += [
+            "",
+            "### Latency and cost",
+            "",
+            "| Pipeline | p50 / p95 end-to-end ms | … excl. 429 wait | p50 / p95 retrieval ms "
+            "| 429 retries (questions) | 429 wait total s | Tokens/q in / out | LLM calls/q |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+        for pipeline, s in answers.items():
+            e2e, net, ret = s["latency_end_to_end"], s["latency_end_to_end_excl_rate_limit"], s["latency_retrieval"]
+            limit = s["rate_limit"]
+            lines.append(
+                f"| {pipeline} | {_ms(e2e['p50_ms'])} / {_ms(e2e['p95_ms'])} "
+                f"| {_ms(net['p50_ms'])} / {_ms(net['p95_ms'])} "
+                f"| {_ms(ret['p50_ms'])} / {_ms(ret['p95_ms'])} "
+                f"| {limit['retries']} ({limit['questions_with_retries']}) "
+                f"| {_fmt(limit['wait_total_ms'] / 1000, 1)} "
+                f"| {_fmt(s['prompt_tokens']['per_question'], 0)} / {_fmt(s['completion_tokens']['per_question'], 0)} "
+                f"| {_fmt(s['llm_calls']['per_question'], 1)} |"
             )
         lines += [
             "",
             "Declines are detected from has_answer=false or refusal phrasing (see decline_reason "
             "per question in results.json). Retrieval time is summed over a run's search calls; "
-            "agentic searches run concurrently, so it can exceed wall-clock time.",
+            "agentic searches run concurrently, so it can exceed wall-clock time. 429 wait is the "
+            "wall-clock time the Groq client spent sleeping before retrying rate-limited calls "
+            "(overlapping waits counted once); \"excl. 429 wait\" subtracts it from each run.",
             "",
         ]
 
@@ -596,6 +671,9 @@ async def _collect(args: argparse.Namespace, questions: list[dict]) -> list[dict
             if args.delay:
                 await asyncio.sleep(args.delay)
         per_question.append(record)
+        # Between questions only: outside every timed run, so it never counts as latency.
+        if args.sleep and index < len(questions):
+            await asyncio.sleep(args.sleep)
     return per_question
 
 
@@ -635,6 +713,10 @@ def main() -> None:
     parser.add_argument("--judge-workers", type=int, default=2, help="concurrent RAGAS judge calls (Groq rate limits)")
     parser.add_argument("--judge-timeout", type=int, default=180)
     parser.add_argument("--delay", type=float, default=0.0, help="seconds to wait after each pipeline run")
+    parser.add_argument(
+        "--sleep", type=float, default=0.0, metavar="SECONDS",
+        help="seconds to wait between questions, to stay under Groq rate limits",
+    )
     args = parser.parse_args()
     if not args.user_id:
         parser.error("provide --user-id or set RAG_EVAL_USER_ID")

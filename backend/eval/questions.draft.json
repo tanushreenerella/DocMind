@@ -1,0 +1,361 @@
+[
+  {
+    "question": "Which specific Java version range is highlighted in the backend engineering learning area of the Java Full Stack Engineer Trainee job description?",
+    "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+    "expected_pages": [
+      1
+    ],
+    "reference_answer": "Java 8–21 features",
+    "type": "factual"
+  },
+  {
+    "question": "What tool is specified for code coverage analysis in the Engineering Practices & Code Quality section of the Java Full Stack Engineer Trainee role?",
+    "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+    "expected_pages": [
+      2
+    ],
+    "reference_answer": "JaCoCo",
+    "type": "factual"
+  },
+  {
+    "question": "According to the Secure Coding & Responsible AI Usage section, which specific AI tool is mentioned for usage in the Java Full Stack Engineer Trainee program?",
+    "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+    "expected_pages": [
+      2
+    ],
+    "reference_answer": "GitHub Copilot",
+    "type": "factual"
+  },
+  {
+    "question": "What specific authentication and authorization technology is required for implementation in the Java Full Stack Engineer Trainee role?",
+    "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+    "expected_pages": [
+      1,
+      2
+    ],
+    "reference_answer": "JWT-based authentication and authorization",
+    "type": "factual"
+  },
+  {
+    "question": "Which frontend framework is explicitly listed as a key learning area for the Java Full Stack Engineer Trainee position?",
+    "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+    "expected_pages": [
+      1
+    ],
+    "reference_answer": "React.js",
+    "type": "factual"
+  },
+  {
+    "question": "What is the primary deliverable that the trainee is expected to demonstrate by the end of the Java Full Stack Engineer Trainee program?",
+    "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+    "expected_pages": [
+      1
+    ],
+    "reference_answer": "A working full-stack application through a capstone project",
+    "type": "factual"
+  },
+  {
+    "question": "In the context of the Java Full Stack Engineer Trainee role, which build management tool is paired with Git for version control in the engineering practices?",
+    "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+    "expected_pages": [
+      2,
+      3
+    ],
+    "reference_answer": "Maven",
+    "type": "multi_part"
+  },
+  {
+    "question": "What two specific security frameworks or standards are mentioned in the Java Full Stack Engineer Trainee job description for secure coding and vulnerability awareness?",
+    "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+    "expected_pages": [
+      1,
+      2
+    ],
+    "reference_answer": "Spring Security and OWASP Top 10",
+    "type": "multi_part"
+  },
+  {
+    "question": "What is the monthly stipend amount provided to trainees in the Java Full Stack Engineer Trainee campus hire program?",
+    "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+    "expected_pages": [],
+    "reference_answer": "The document does not contain this information.",
+    "type": "unanswerable"
+  },
+  {
+    "question": "How many years of prior professional experience are required for candidates applying to the Java Full Stack Engineer Trainee role?",
+    "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+    "expected_pages": [],
+    "reference_answer": "The document does not contain this information.",
+    "type": "unanswerable"
+  },
+  {
+    "question": "According to the SVM notes, what is the core idea of Support Vector Machines regarding the selection of the hyperplane?",
+    "doc_name": "SVM_Notes.pdf",
+    "expected_pages": [
+      1
+    ],
+    "reference_answer": "SVM tries to maximize the gap (margin) between points and the line so that the highest margin hyperplane performs best on unseen data.",
+    "type": "factual"
+  },
+  {
+    "question": "In the context of the SVM notes, what condition must be met for the hard margin SVM formulation to work?",
+    "doc_name": "SVM_Notes.pdf",
+    "expected_pages": [
+      4
+    ],
+    "reference_answer": "The data must be perfectly linearly separable.",
+    "type": "factual"
+  },
+  {
+    "question": "What is the value of the slack variable xi_i for correctly classified points in the soft margin SVM formulation described in the notes?",
+    "doc_name": "SVM_Notes.pdf",
+    "expected_pages": [
+      4
+    ],
+    "reference_answer": "0",
+    "type": "factual"
+  },
+  {
+    "question": "According to the SVM notes, what happens to the model's focus when the hyperparameter C is set to a very small value?",
+    "doc_name": "SVM_Notes.pdf",
+    "expected_pages": [
+      5
+    ],
+    "reference_answer": "The model ignores classification error and focuses more on maximizing the margin.",
+    "type": "factual"
+  },
+  {
+    "question": "What is the mathematical function defined for the RBF kernel in the SVM notes?",
+    "doc_name": "SVM_Notes.pdf",
+    "expected_pages": [
+      6
+    ],
+    "reference_answer": "f(x) = e^(-x^2)",
+    "type": "factual"
+  },
+  {
+    "question": "In the code example provided in the SVM notes, what was the accuracy score achieved by the linear SVM classifier?",
+    "doc_name": "SVM_Notes.pdf",
+    "expected_pages": [
+      6
+    ],
+    "reference_answer": "0.55",
+    "type": "factual"
+  },
+  {
+    "question": "How does the SVM notes describe the relationship between the hyperparameter C and the regularization parameter lambda?",
+    "doc_name": "SVM_Notes.pdf",
+    "expected_pages": [
+      5
+    ],
+    "reference_answer": "C is proportional to 1/lambda (C ∝ 1/λ).",
+    "type": "factual"
+  },
+  {
+    "question": "Based on the SVM notes, what is the total SVM loss composed of, and how is the hyperparameter C related to the regularization parameter lambda?",
+    "doc_name": "SVM_Notes.pdf",
+    "expected_pages": [
+      5
+    ],
+    "reference_answer": "The SVM loss is composed of the Regularization term and Hinge loss, and C is proportional to 1/lambda.",
+    "type": "multi_part"
+  },
+  {
+    "question": "According to the code examples in the SVM notes, how did the accuracy of the SVM with RBF kernel compare to the linear SVM, and what method is suggested for tuning the kernel transformation?",
+    "doc_name": "SVM_Notes.pdf",
+    "expected_pages": [
+      6
+    ],
+    "reference_answer": "The RBF kernel achieved 100% accuracy compared to the linear SVM's 55%, and Grid Search CV is suggested for tuning.",
+    "type": "multi_part"
+  },
+  {
+    "question": "What specific value for the hyperparameter C is recommended in the SVM notes as the optimal choice for balancing margin and classification error?",
+    "doc_name": "SVM_Notes.pdf",
+    "expected_pages": [],
+    "reference_answer": "The document does not contain this.",
+    "type": "unanswerable"
+  },
+  {
+    "question": "Which specific dataset was used to demonstrate the kernel trick in the code example provided in the SVM notes?",
+    "doc_name": "SVM_Notes.pdf",
+    "expected_pages": [],
+    "reference_answer": "The document does not contain this.",
+    "type": "unanswerable"
+  },
+  {
+    "question": "How many distinct terms are stored in the inverted index of the SciFact search system described in the project report?",
+    "doc_name": "information_retrival-1.pdf",
+    "expected_pages": [
+      2
+    ],
+    "reference_answer": "40,669",
+    "type": "factual"
+  },
+  {
+    "question": "What is the dimensionality of the embeddings produced by the all-MiniLM-L6-v2 sentence transformer model used in the SciFact project?",
+    "doc_name": "information_retrival-1.pdf",
+    "expected_pages": [
+      3
+    ],
+    "reference_answer": "384",
+    "type": "factual"
+  },
+  {
+    "question": "What value is used for the constant k in the Reciprocal Rank Fusion (RRF) formula for the SciFact hybrid model?",
+    "doc_name": "information_retrival-1.pdf",
+    "expected_pages": [
+      3
+    ],
+    "reference_answer": "60",
+    "type": "factual"
+  },
+  {
+    "question": "According to the results table in the SciFact project report, what is the Precision@10 (P@10) score for the BM25 retrieval model?",
+    "doc_name": "information_retrival-1.pdf",
+    "expected_pages": [
+      4
+    ],
+    "reference_answer": "0.0923",
+    "type": "factual"
+  },
+  {
+    "question": "What is the average search time per query for the Sentence Transformer model in the SciFact search system?",
+    "doc_name": "information_retrival-1.pdf",
+    "expected_pages": [
+      4
+    ],
+    "reference_answer": "4.9 ms",
+    "type": "factual"
+  },
+  {
+    "question": "In the statistical significance analysis of the SciFact project, how many queries showed a better nDCG@10 score for the Hybrid (BM25 + ST) model compared to the standalone BM25 model?",
+    "doc_name": "information_retrival-1.pdf",
+    "expected_pages": [
+      5
+    ],
+    "reference_answer": "80",
+    "type": "factual"
+  },
+  {
+    "question": "What is the difference in nDCG@10 performance between the Hybrid (BM25 + ST) model and the standalone Sentence Transformer model in the SciFact evaluation?",
+    "doc_name": "information_retrival-1.pdf",
+    "expected_pages": [
+      4,
+      5
+    ],
+    "reference_answer": "0.0702 (0.7186 - 0.6484)",
+    "type": "multi_part"
+  },
+  {
+    "question": "How does the average search time per query for the Hybrid (BM25 + ST) model compare to that of the standalone BM25 model in the SciFact system?",
+    "doc_name": "information_retrival-1.pdf",
+    "expected_pages": [
+      4
+    ],
+    "reference_answer": "The Hybrid model takes 3.9 ms per query, which is 2.9 ms slower than the BM25 model's 1.0 ms.",
+    "type": "multi_part"
+  },
+  {
+    "question": "What specific cross-encoder architecture was used to re-rank the top results in the final stage of the SciFact search pipeline?",
+    "doc_name": "information_retrival-1.pdf",
+    "expected_pages": [],
+    "reference_answer": "The document does not contain this information; it mentions using a cross-encoder as future work.",
+    "type": "unanswerable"
+  },
+  {
+    "question": "What was the F1-score achieved by the Hybrid (BM25 + ST) model on the SciFact test set?",
+    "doc_name": "information_retrival-1.pdf",
+    "expected_pages": [],
+    "reference_answer": "The document does not contain this information; F1-score is not reported in the results.",
+    "type": "unanswerable"
+  },
+  {
+    "question": "According to the MCP explained notes, how many custom integrations are required to connect 3 models and 5 tools without using MCP?",
+    "doc_name": "mcp-explained-notes-compressed.pdf",
+    "expected_pages": [
+      1
+    ],
+    "reference_answer": "15 integrations",
+    "type": "factual"
+  },
+  {
+    "question": "In the MCP architecture, which component is responsible for holding the API keys and secrets for the tools?",
+    "doc_name": "mcp-explained-notes-compressed.pdf",
+    "expected_pages": [
+      3
+    ],
+    "reference_answer": "The MCP Server",
+    "type": "factual"
+  },
+  {
+    "question": "What specific method does the MCP Client use to discover the available tools and their input schemas from an MCP Server at startup?",
+    "doc_name": "mcp-explained-notes-compressed.pdf",
+    "expected_pages": [
+      3
+    ],
+    "reference_answer": "tools/list",
+    "type": "factual"
+  },
+  {
+    "question": "According to the quick reference section, what is the definition of 'Intent' in the context of MCP?",
+    "doc_name": "mcp-explained-notes-compressed.pdf",
+    "expected_pages": [
+      6
+    ],
+    "reference_answer": "The LLM's decision about which tool to call with which arguments; the host executes it",
+    "type": "factual"
+  },
+  {
+    "question": "Which three third-party aggregators are mentioned in the MCP notes as examples of services that expose thousands of tools through a single MCP server?",
+    "doc_name": "mcp-explained-notes-compressed.pdf",
+    "expected_pages": [
+      5
+    ],
+    "reference_answer": "Zapier, Pipedream, and Make",
+    "type": "factual"
+  },
+  {
+    "question": "What are the two common transports for MCP messages mentioned in the quick reference section?",
+    "doc_name": "mcp-explained-notes-compressed.pdf",
+    "expected_pages": [
+      6
+    ],
+    "reference_answer": "stdio (local) and Streamable HTTP (remote)",
+    "type": "factual"
+  },
+  {
+    "question": "How does the total number of connections change when moving from a non-MCP setup to an MCP setup for 3 models and 5 tools, and what is the resulting count with MCP?",
+    "doc_name": "mcp-explained-notes-compressed.pdf",
+    "expected_pages": [
+      1,
+      4
+    ],
+    "reference_answer": "It changes from N*M (15) to N+M (8), resulting in 8 connections.",
+    "type": "multi_part"
+  },
+  {
+    "question": "In the end-to-end support conversation example, why does the LLM not need to query the database again when the user asks for a refund after asking about their order status?",
+    "doc_name": "mcp-explained-notes-compressed.pdf",
+    "expected_pages": [
+      3,
+      4
+    ],
+    "reference_answer": "Because the order and product details from the previous query are already in the context, allowing the LLM to call the refund tool directly.",
+    "type": "multi_part"
+  },
+  {
+    "question": "What is the maximum number of concurrent connections an MCP Server can handle according to the performance benchmarks in the notes?",
+    "doc_name": "mcp-explained-notes-compressed.pdf",
+    "expected_pages": [],
+    "reference_answer": "The document does not contain this information.",
+    "type": "unanswerable"
+  },
+  {
+    "question": "Which specific version of the JSON-RPC protocol is mandated for MCP communication in the current production release?",
+    "doc_name": "mcp-explained-notes-compressed.pdf",
+    "expected_pages": [],
+    "reference_answer": "The document does not contain this information.",
+    "type": "unanswerable"
+  }
+]

@@ -7,6 +7,9 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import groq
+import httpx
+
 from eval import generate_questions as gen
 from eval import run_eval
 from eval.corpus import IndexedDoc
@@ -203,6 +206,8 @@ class FakeGroq:
             )
 
         self.chat = SimpleNamespace(completions=SimpleNamespace(create=create))
+        self.max_retries = 2
+        self._sleep_for_retry = lambda **kwargs: None
 
 
 class InstrumentationTests(unittest.TestCase):
@@ -252,6 +257,57 @@ class InstrumentationTests(unittest.TestCase):
         self.assertEqual(result["llm_calls"], 0)
         self.assertTrue(result["declined"])
 
+    def groq_with_responses(self, *responses: tuple[int, dict]) -> groq.Groq:
+        """A real Groq client whose HTTP calls get ``responses`` in order."""
+        queue = list(responses)
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            status, headers = queue.pop(0)
+            if status != 200:
+                return httpx.Response(status, headers=headers, json={"error": {"message": "slow down"}})
+            return httpx.Response(200, json={
+                "id": "c1", "object": "chat.completion", "created": 0, "model": "qwen/qwen3.8-27b",
+                "choices": [{"index": 0, "finish_reason": "stop",
+                             "message": {"role": "assistant", "content": "The total is $5 [SOURCE 1]."}}],
+                "usage": {"prompt_tokens": 120, "completion_tokens": 30, "total_tokens": 150},
+            })
+
+        return groq.Groq(
+            api_key="test", max_retries=2,
+            http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        )
+
+    def test_rate_limit_retries_and_wait_are_recorded(self) -> None:
+        # The SDK honours retry-after-ms, so the waits are short but real.
+        client = self.groq_with_responses((429, {"retry-after-ms": "60"}), (429, {"retry-after-ms": "60"}), (200, {}))
+
+        result = self.run_basic(client, AsyncMock(return_value=[hit(2)]))
+
+        self.assertEqual(result["answer"], "The total is $5 [a.pdf, p.2].")
+        self.assertEqual(result["rate_limit_retries"], 2)
+        self.assertEqual(result["llm_calls"], 1)  # retries happen inside one create() call
+        self.assertGreaterEqual(result["rate_limit_wait_ms"], 100)
+        self.assertAlmostEqual(
+            result["latency_excl_rate_limit_ms"], result["latency_ms"] - result["rate_limit_wait_ms"], delta=0.2
+        )
+        self.assertEqual(result["errors"], [])
+
+    def test_other_retries_are_not_rate_limits(self) -> None:
+        client = self.groq_with_responses((503, {"retry-after-ms": "10"}), (200, {}))
+
+        result = self.run_basic(client, AsyncMock(return_value=[hit(2)]))
+
+        self.assertEqual((result["rate_limit_retries"], result["rate_limit_wait_ms"]), (0, 0.0))
+        self.assertEqual(result["latency_excl_rate_limit_ms"], result["latency_ms"])
+
+    def test_rate_limit_that_never_clears_is_an_error(self) -> None:
+        client = self.groq_with_responses(*[(429, {"retry-after-ms": "10"})] * 3)
+
+        result = self.run_basic(client, AsyncMock(return_value=[hit(2)]))
+
+        self.assertEqual(result["rate_limit_retries"], 2)
+        self.assertIn("llm: RateLimitError", result["errors"][0])
+
     def test_calls_outside_a_run_are_not_counted(self) -> None:
         with patch.object(rag, "_client", FakeGroq()):
             run_eval._install_instrumentation()
@@ -259,10 +315,25 @@ class InstrumentationTests(unittest.TestCase):
         self.assertIsNone(run_eval._current_run.get())
 
 
+class RateLimitWaitTests(unittest.TestCase):
+    def test_overlapping_waits_are_counted_once(self) -> None:
+        stats = run_eval.RunStats()
+        for started, ended in ((10.0, 12.0), (11.0, 13.0), (20.0, 21.0), (20.5, 20.8)):
+            stats.rate_limited(started, ended)
+
+        self.assertEqual(stats.rate_limit_retries, 4)
+        self.assertAlmostEqual(stats.rate_limit_wait_s, 4.0)  # 10–13 and 20–21
+
+    def test_no_waits(self) -> None:
+        self.assertEqual(run_eval.RunStats().rate_limit_wait_s, 0.0)
+
+
 class SummaryTests(unittest.TestCase):
-    def answers(self, declined: bool, faithfulness=None, latency=1000.0, errors=()):
+    def answers(self, declined: bool, faithfulness=None, latency=1000.0, errors=(), wait=0.0, retries=0):
         return {
             "answer": "x", "declined": declined, "latency_ms": latency, "retrieval_ms": 200.0,
+            "latency_excl_rate_limit_ms": latency - wait, "rate_limit_wait_ms": wait,
+            "rate_limit_retries": retries,
             "llm_calls": 3, "prompt_tokens": 1000, "completion_tokens": 100, "errors": list(errors),
             "faithfulness": faithfulness, "answer_relevancy": faithfulness,
         }
@@ -272,7 +343,7 @@ class SummaryTests(unittest.TestCase):
             {**question(), "retrieval": {"vector": {"recall@5": 1.0, "mrr@10": 1.0, "ndcg@10": 1.0, "latency_ms": 100.0, "error": None}},
              "answers": {"basic": self.answers(False, 0.9)}},
             {**question(), "retrieval": {"vector": {"recall@5": 0.0, "mrr@10": 0.0, "ndcg@10": 0.0, "latency_ms": None, "error": "x"}},
-             "answers": {"basic": self.answers(True, None, latency=3000.0, errors=["search: down"])}},
+             "answers": {"basic": self.answers(True, None, latency=3000.0, errors=["search: down"], wait=2000.0, retries=2)}},
             {**question(type="unanswerable", expected_pages=[]), "retrieval": {},
              "answers": {"basic": self.answers(True)}},
         ]
@@ -289,6 +360,10 @@ class SummaryTests(unittest.TestCase):
         self.assertEqual((basic["answerable_declined"]["declined"], basic["answerable_declined"]["n"]), (1, 2))
         self.assertEqual(basic["llm_calls"], {"total": 9, "per_question": 3.0})
         self.assertEqual(basic["errors"]["questions_with_errors"], 1)
+        # Latencies 1000/3000/1000 ms; without the 2 s wait the slow one is 1000 too.
+        self.assertEqual(basic["latency_end_to_end"], {"p50_ms": 1000.0, "p95_ms": 2800.0})
+        self.assertEqual(basic["latency_end_to_end_excl_rate_limit"], {"p50_ms": 1000.0, "p95_ms": 1000.0})
+        self.assertEqual(basic["rate_limit"], {"retries": 2, "questions_with_retries": 1, "wait_total_ms": 2000.0})
 
         markdown = run_eval._markdown({
             "meta": {"timestamp": "2026-10-22T10:00:00+00:00", "git": {"commit": "414f7f42adcd3dd4", "dirty": True}},
@@ -299,7 +374,8 @@ class SummaryTests(unittest.TestCase):
         })
         self.assertIn("Commit `414f7f42ad (uncommitted changes)`", markdown)
         self.assertIn("| vector | 0.500 | 0.500 | 0.500 | 100 | 100 | 1 |", markdown)
-        self.assertIn("| basic | 0.900 (n=1) | 0.900 (n=1) | 1/1 | 1/2 |", markdown)
+        self.assertIn("| basic | 0.900 (n=1) | 0.900 (n=1) | 1/1 | 1/2 | 1 q (1) |", markdown)
+        self.assertIn("| basic | 1,000 / 2,800 | 1,000 / 1,000 | 200 / 200 | 2 (1) | 2.0 | 1000 / 100 | 3.0 |", markdown)
 
 
 if __name__ == "__main__":
