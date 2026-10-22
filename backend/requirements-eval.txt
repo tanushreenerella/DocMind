@@ -1,0 +1,6 @@
+# Offline evaluation only (eval/); not needed to run the app.
+#   pip install -r requirements.txt -r requirements-eval.txt
+# Pinned: RAGAS's metric and dataset APIs change between minor versions.
+ragas==0.4.3
+datasets==5.0.1
+pandas==3.0.5

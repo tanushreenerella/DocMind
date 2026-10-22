@@ -50,7 +50,7 @@ export default function ChatWindow({ docCount }: ChatWindowProps) {
         ...prev,
         { role: "assistant", content: result.answer, citations: result.citations },
       ]);
-    } catch (err) {
+    } catch {
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: "Something went wrong. Please try again.", citations: [] },

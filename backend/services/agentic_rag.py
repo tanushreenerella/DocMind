@@ -955,6 +955,27 @@ agentic_graph = _build_graph()
 # PUBLIC ENTRY POINT
 # =============================================================================
 
+def initial_state(
+    question: str,
+    conversation_history: list[dict],
+    user_id: str,
+    doc_id: str | None = None,
+) -> AgenticState:
+    """The graph's input. Eval invokes the graph with it to inspect the final state."""
+    return {
+        "original_question": question,
+        "user_id": user_id,
+        "doc_id": doc_id,
+        "conversation_history": conversation_history,
+
+        "sub_questions": [],
+        "retrieved_chunks": {},
+        "critic_verdicts": {},
+        "retry_counts": {},
+        "retrieval_queries": {},
+    }
+
+
 async def answer_agentic_query(
     question: str,
     conversation_history: list[dict],
@@ -964,18 +985,7 @@ async def answer_agentic_query(
     """Invoke the graph and preserve the existing API response shape."""
 
     state = await agentic_graph.ainvoke(
-        {
-            "original_question": question,
-            "user_id": user_id,
-            "doc_id": doc_id,
-            "conversation_history": conversation_history,
-
-            "sub_questions": [],
-            "retrieved_chunks": {},
-            "critic_verdicts": {},
-            "retry_counts": {},
-            "retrieval_queries": {},
-        }
+        initial_state(question, conversation_history, user_id, doc_id)
     )
 
     return {

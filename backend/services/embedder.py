@@ -390,6 +390,99 @@ def delete_document_chunks(doc_id: str, user_id: str) -> None:
     _invalidate_bm25_index()
 
 
+def _vector_search(
+    query_embedding: list[float],
+    n_results: int,
+    user_id: str,
+    doc_id: str | None,
+) -> list[dict]:
+    """Nearest chunks by cosine similarity, owner-filtered server-side. Blocking."""
+    where_clauses = [{"user_id": {"$eq": user_id}}]
+    if doc_id:
+        where_clauses.append({"doc_id": {"$eq": doc_id}})
+
+    # Chroma applies every metadata predicate server-side. Existing chunks
+    # without user_id do not match and therefore cannot be returned.
+    where_filter = (
+        {"$and": where_clauses}
+        if len(where_clauses) > 1
+        else where_clauses[0]
+    )
+    query_kwargs: dict = {
+        "query_embeddings": [query_embedding],
+        "n_results": n_results,
+        "include": ["documents", "metadatas", "distances"],
+    }
+    query_kwargs["where"] = where_filter
+
+    results = collection.query(**query_kwargs)
+
+    hits: list[dict] = []
+    if results["documents"] and results["documents"][0]:
+        chunk_ids = results.get("ids", [[]])[0] or []
+        for index, (doc, meta, dist) in enumerate(zip(
+            results["documents"][0],
+            results["metadatas"][0],
+            results["distances"][0],
+        )):
+            chunk_id = (
+                chunk_ids[index]
+                if index < len(chunk_ids)
+                else "unknown"
+            )
+            hits.append(
+                _make_hit(
+                    doc,
+                    meta,
+                    chunk_id,
+                    relevance_score=1 - dist,
+                )
+            )
+    return hits
+
+
+async def search_or_raise(
+    query: str,
+    n_results: int = 5,
+    doc_id: str | None = None,
+    *,
+    user_id: str,
+) -> list[dict]:
+    """``search``, but failures raise instead of returning no hits (used by eval)."""
+    if not user_id:
+        return []
+
+    total = collection.count()
+    if total == 0:
+        return []
+    safe_n = min(
+        max(n_results, RERANK_CANDIDATES),
+        total,
+    ) if HYBRID_SEARCH_ENABLED and RERANK_ENABLED else min(n_results, total)
+
+    query_embedding = await get_embedding(query)
+    hits = _vector_search(query_embedding, safe_n, user_id, doc_id)
+
+    if not HYBRID_SEARCH_ENABLED:
+        return hits
+
+    bm25_hits = _search_bm25(
+        query,
+        n_results=safe_n,
+        user_id=user_id,
+        doc_id=doc_id,
+    )
+    fused_hits = _fuse_with_rrf(
+        hits,
+        bm25_hits,
+        n_results=safe_n,
+    )
+    if RERANK_ENABLED:
+        print("[rerank] cross-encoder reranking triggered")
+        return await _rerank_hits(query, fused_hits, n_results)
+    return fused_hits[:n_results]
+
+
 async def search(
     query: str,
     n_results: int = 5,
@@ -399,79 +492,7 @@ async def search(
 ) -> list[dict]:
     """Search only chunks owned by ``user_id`` (and optionally one document)."""
     try:
-        if not user_id:
-            return []
-
-        total = collection.count()
-        if total == 0:
-            return []
-        safe_n = min(
-            max(n_results, RERANK_CANDIDATES),
-            total,
-        ) if HYBRID_SEARCH_ENABLED and RERANK_ENABLED else min(n_results, total)
-
-        query_embedding = await get_embedding(query)
-
-        where_clauses = [{"user_id": {"$eq": user_id}}]
-        if doc_id:
-            where_clauses.append({"doc_id": {"$eq": doc_id}})
-
-        # Chroma applies every metadata predicate server-side. Existing chunks
-        # without user_id do not match and therefore cannot be returned.
-        where_filter = (
-            {"$and": where_clauses}
-            if len(where_clauses) > 1
-            else where_clauses[0]
-        )
-        query_kwargs: dict = {
-            "query_embeddings": [query_embedding],
-            "n_results": safe_n,
-            "include": ["documents", "metadatas", "distances"],
-        }
-        query_kwargs["where"] = where_filter
-
-        results = collection.query(**query_kwargs)
-
-        hits: list[dict] = []
-        if results["documents"] and results["documents"][0]:
-            chunk_ids = results.get("ids", [[]])[0] or []
-            for index, (doc, meta, dist) in enumerate(zip(
-                results["documents"][0],
-                results["metadatas"][0],
-                results["distances"][0],
-            )):
-                chunk_id = (
-                    chunk_ids[index]
-                    if index < len(chunk_ids)
-                    else "unknown"
-                )
-                hits.append(
-                    _make_hit(
-                        doc,
-                        meta,
-                        chunk_id,
-                        relevance_score=1 - dist,
-                    )
-                )
-
-        if not HYBRID_SEARCH_ENABLED:
-            return hits
-
-        bm25_hits = _search_bm25(
-            query,
-            n_results=safe_n,
-            user_id=user_id,
-            doc_id=doc_id,
-        )
-        fused_hits = _fuse_with_rrf(
-            hits,
-            bm25_hits,
-            n_results=safe_n,
-        )
-        if RERANK_ENABLED:
-            print("[rerank] cross-encoder reranking triggered")
-            return await _rerank_hits(query, fused_hits, n_results)
-        return fused_hits[:n_results]
+        return await search_or_raise(query, n_results, doc_id, user_id=user_id)
     except Exception as exc:
         print(f"[search error] {exc}")
         return []

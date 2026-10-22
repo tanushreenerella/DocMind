@@ -17,13 +17,15 @@ export default function PdfPage({
   className = "",
 }: PdfPageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [ready, setReady] = useState(false);
-  const [error, setError] = useState(false);
+  // Each outcome is tagged with the inputs it was rendered for, so a new page
+  // starts out not-ready without resetting state inside the effect.
+  const renderKey = `${pdfUrl}#${pageNumber}@${scale}`;
+  const [outcome, setOutcome] = useState<{ key: string; status: "ready" | "error" } | null>(null);
+  const ready = outcome?.key === renderKey && outcome.status === "ready";
+  const error = outcome?.key === renderKey && outcome.status === "error";
 
   useEffect(() => {
     let cancelled = false;
-    setReady(false);
-    setError(false);
 
     async function render() {
       try {
@@ -46,15 +48,15 @@ export default function PdfPage({
 
         await page.render({ canvasContext: canvas.getContext("2d")!, viewport,canvas }).promise;
 
-        if (!cancelled) setReady(true);
+        if (!cancelled) setOutcome({ key: renderKey, status: "ready" });
       } catch {
-        if (!cancelled) setError(true);
+        if (!cancelled) setOutcome({ key: renderKey, status: "error" });
       }
     }
 
     render();
     return () => { cancelled = true; };
-  }, [pdfUrl, pageNumber, scale]);
+  }, [pdfUrl, pageNumber, scale, renderKey]);
 
   if (error) {
     return (

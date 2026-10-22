@@ -2,6 +2,7 @@ import asyncio
 from google import genai
 from core.config import GEMINI_API_KEY
 
+EMBEDDING_MODEL = "models/gemini-embedding-001"
 _client: genai.Client | None = None
 
 
@@ -15,7 +16,7 @@ def _get_client() -> genai.Client:
 async def get_embedding(text: str) -> list[float]:
     result = await asyncio.to_thread(
         _get_client().models.embed_content,
-        model="models/gemini-embedding-001",
+        model=EMBEDDING_MODEL,
         contents=text,
     )
     return list(result.embeddings[0].values)
@@ -34,7 +35,7 @@ async def get_embeddings(texts: list[str]) -> list[list[float]]:
             try:
                 result = await asyncio.to_thread(
                     _get_client().models.embed_content,
-                    model="models/gemini-embedding-001",
+                    model=EMBEDDING_MODEL,
                     contents=batch,
                 )
                 all_embeddings.extend([list(e.values) for e in result.embeddings])

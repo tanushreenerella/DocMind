@@ -108,7 +108,10 @@ function HomeContent() {
   // Chat state is keyed by conversation (doc_id, or ALL_DOCUMENTS_HISTORY_ID) so
   // a reply that arrives after the user switched documents lands in the
   // conversation that asked it, never in the one currently on screen.
-  const [messagesByDoc, setMessagesByDoc] = useState<Record<string, StoredMessage[]>>({});
+  // Starts with the all-documents conversation, the default selection.
+  const [messagesByDoc, setMessagesByDoc] = useState<Record<string, StoredMessage[]>>(() => ({
+    [ALL_DOCUMENTS_HISTORY_ID]: loadHistory(userId, ALL_DOCUMENTS_HISTORY_ID),
+  }));
   const [loadingByDoc, setLoadingByDoc] = useState<Record<string, boolean>>({});
   const [input, setInput] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -148,17 +151,11 @@ function HomeContent() {
     warmupBackend().then((ok) => setServerReady(ok));
   }, []);
 
-  // Fetch document list after server is ready, and on tab focus
+  // Fetch the document list once the server is ready. Uploads happen on
+  // /upload, so coming back here remounts the page and fetches again; deletes
+  // refresh it themselves. No polling and no refetch on tab focus.
   useEffect(() => {
-    if (!serverReady) return;
-    refreshDocs();
-    const onVisible = () => { if (!document.hidden) refreshDocs(); };
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onVisible);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", onVisible);
-    };
+    if (serverReady) refreshDocs();
   }, [serverReady, refreshDocs]);
 
   // Auto-scroll on new messages
@@ -174,11 +171,6 @@ function HomeContent() {
     },
     [userId]
   );
-
-  // Load the all-documents conversation, which is the default selection.
-  useEffect(() => {
-    ensureHistoryLoaded(ALL_DOCUMENTS_HISTORY_ID);
-  }, [ensureHistoryLoaded]);
 
   // Persist every loaded conversation whenever any of them changes. Only
   // conversations already read from storage are in the map, so this can never

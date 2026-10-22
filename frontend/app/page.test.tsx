@@ -49,6 +49,51 @@ function openDeleteDialog(doc: IndexedDocument) {
   return screen.getByRole("alertdialog");
 }
 
+describe("document list fetching", () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+    saveUser({ user_id: "u1", email: "u1@example.com", full_name: "" });
+    api.warmupBackend.mockResolvedValue(true);
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+    localStorage.clear();
+  });
+
+  it("fetches once on load, not on focus, visibility changes or over time", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      await renderWithDocs([REPORT]);
+      expect(api.listDocuments).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        window.dispatchEvent(new Event("focus"));
+        document.dispatchEvent(new Event("visibilitychange"));
+        await vi.advanceTimersByTimeAsync(5 * 60_000);
+      });
+
+      expect(api.listDocuments).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("refetches after a delete", async () => {
+    api.deleteDocument.mockResolvedValue(undefined);
+    await renderWithDocs([REPORT, INVOICE]);
+    expect(api.listDocuments).toHaveBeenCalledTimes(1);
+
+    openDeleteDialog(REPORT);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    });
+
+    await waitFor(() => expect(api.listDocuments).toHaveBeenCalledTimes(2));
+  });
+});
+
 describe("document delete", () => {
   beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn();
