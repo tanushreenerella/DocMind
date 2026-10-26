@@ -268,6 +268,7 @@ class ParsePdfCleanupTests(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch.object(parser.pdfplumber, "open", return_value=pdf),
+            patch.object(parser, "_strip_hidden_text", return_value=0),
             contextlib.redirect_stdout(io.StringIO()),
             tempfile.TemporaryDirectory() as image_dir,
         ):

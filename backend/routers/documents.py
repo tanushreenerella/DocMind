@@ -15,7 +15,7 @@ async def list_documents(current_user: dict = Depends(get_current_user)):
     pool = get_pool()
     rows = await pool.fetch(
         """
-        SELECT doc_id, doc_name, document_type, sensitivity_level
+        SELECT doc_id, doc_name, document_type, sensitivity_level, suspicious
         FROM documents
         WHERE user_id = $1 AND status IN ('complete', 'partial')
         ORDER BY created_at DESC
@@ -29,6 +29,7 @@ async def list_documents(current_user: dict = Depends(get_current_user)):
                 "doc_name": r["doc_name"],
                 "document_type": r["document_type"] or "other",
                 "sensitivity_level": r["sensitivity_level"] or "internal",
+                "suspicious": bool(r.get("suspicious")),
             }
             for r in rows
         ]

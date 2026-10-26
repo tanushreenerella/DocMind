@@ -2,12 +2,16 @@
 import asyncio
 from collections import Counter, deque
 from io import BytesIO
+import math
 import os
 from pathlib import Path
 import re
 import time
 
 import pdfplumber
+from pdfminer.layout import LTChar, LTCurve, LTImage
+from pdfminer.pdfinterp import PDFPageInterpreter
+from pdfplumber.page import PDFPageAggregatorWithMarkedContent
 from google import genai
 from google.genai import errors as genai_errors
 from google.genai import types
@@ -186,6 +190,101 @@ def strip_repeated_lines(page_texts: list[str]) -> list[str]:
     return cleaned
 
 
+# ── hidden text ─────────────────────────────────────────────────────────────
+
+# Text rendering modes that paint nothing: 3 (invisible) and 7 (clip only).
+_INVISIBLE_RENDER_MODES = {3, 7}
+# Glyphs shorter than this (in points, after scaling) can't be read.
+_MIN_VISIBLE_FONT_SIZE = 2.0
+# Every colour component at least this light (gray/RGB) counts as white.
+_NEAR_WHITE = 0.95
+# Colour spaces whose components are not light levels (a Separation tint of 1 is full ink).
+_NON_LIGHTNESS_SPACES = {"Separation", "DeviceN", "Indexed", "Pattern"}
+
+
+def _is_near_white(color, colorspace_name: str | None = None) -> bool:
+    if colorspace_name in _NON_LIGHTNESS_SPACES:
+        return False
+    if isinstance(color, (int, float)):
+        color = (color,)
+    if not isinstance(color, (tuple, list)) or not all(isinstance(c, (int, float)) for c in color):
+        return False
+    if len(color) in (1, 3):  # gray, RGB
+        return min(color) >= _NEAR_WHITE
+    if len(color) == 4:  # CMYK: no ink
+        return max(color) <= 1 - _NEAR_WHITE
+    return False
+
+
+class _VisibleTextAggregator(PDFPageAggregatorWithMarkedContent):
+    """pdfplumber's layout device, minus characters a reader can't see.
+
+    Drops glyphs drawn in an invisible rendering mode, smaller than
+    _MIN_VISIBLE_FONT_SIZE, or filled near-white where nothing non-white was
+    painted under them first (so white text on a dark box or image stays).
+    Dropped glyphs still advance the pen, so the visible text keeps its layout.
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.hidden_chars = 0
+        self._render_mode = 0
+        # Bounding boxes of images and non-white fills painted so far, in draw order.
+        self._backgrounds: list[tuple[float, float, float, float]] = []
+
+    def render_string(self, textstate, seq, ncs, graphicstate) -> None:
+        self._render_mode = textstate.render
+        super().render_string(textstate, seq, ncs, graphicstate)
+
+    def paint_path(self, gstate, stroke, fill, evenodd, path) -> None:
+        start = len(self.cur_item._objs)
+        super().paint_path(gstate, stroke, fill, evenodd, path)
+        for obj in self.cur_item._objs[start:]:
+            if isinstance(obj, LTCurve) and obj.fill and not _is_near_white(obj.non_stroking_color):
+                self._backgrounds.append(obj.bbox)
+
+    def render_image(self, name, stream) -> None:
+        super().render_image(name, stream)
+        if self.cur_item._objs and isinstance(self.cur_item._objs[-1], LTImage):
+            self._backgrounds.append(self.cur_item._objs[-1].bbox)
+
+    def render_char(self, matrix, font, fontsize, scaling, rise, cid, ncs, graphicstate) -> float:
+        adv = super().render_char(matrix, font, fontsize, scaling, rise, cid, ncs, graphicstate)
+        char = self.cur_item._objs[-1]
+        if isinstance(char, LTChar) and self._is_hidden(char, matrix, fontsize, ncs, graphicstate):
+            self.cur_item._objs.pop()
+            if not char.get_text().isspace():
+                self.hidden_chars += 1
+        return adv
+
+    def _is_hidden(self, char: LTChar, matrix, fontsize, ncs, graphicstate) -> bool:
+        if self._render_mode in _INVISIBLE_RENDER_MODES:
+            return True
+        # Glyph height on the page: the font size scaled by the text's y axis.
+        if abs(fontsize) * math.hypot(matrix[2], matrix[3]) < _MIN_VISIBLE_FONT_SIZE:
+            return True
+        if _is_near_white(graphicstate.ncolor, getattr(ncs, "name", None)):
+            x = (char.x0 + char.x1) / 2
+            y = (char.y0 + char.y1) / 2
+            return not any(x0 <= x <= x1 and y0 <= y <= y1 for x0, y0, x1, y1 in self._backgrounds)
+        return False
+
+
+def _strip_hidden_text(plumber_page) -> int:
+    """Lay ``plumber_page`` out without hidden characters; return how many were dropped.
+
+    Must run before anything reads the page's chars, text or tables. pdfplumber
+    (pinned 0.11.0) builds all of those from ``Page._layout`` and reuses it once
+    set, so filling it here filters every later extraction. Page images are
+    rendered separately and still show the page as it is.
+    """
+    pdf = plumber_page.pdf
+    device = _VisibleTextAggregator(pdf.rsrcmgr, pageno=plumber_page.page_number, laparams=pdf.laparams)
+    PDFPageInterpreter(pdf.rsrcmgr, device).process_page(plumber_page.page_obj)
+    plumber_page._layout = device.get_result()
+    return device.hidden_chars
+
+
 def count_pdf_pages(file_path: str) -> int:
     """Page count from the PDF's page tree, without extracting any content.
 
@@ -209,6 +308,10 @@ async def _parse_pdf(file_path: str, doc_id: str, image_dir: str) -> list[dict]:
     pages = []
     with pdfplumber.open(file_path) as pdf:
         for page_num, plumber_page in enumerate(pdf.pages, start=1):
+            # Text a reader can't see is only there for the model: injection.
+            hidden_removed = _strip_hidden_text(plumber_page)
+            if hidden_removed:
+                print(f"[parser] page {page_num}: removed {hidden_removed} hidden characters")
             text = plumber_page.extract_text() or ""
 
             pil_image = None
@@ -264,6 +367,8 @@ async def _parse_pdf(file_path: str, doc_id: str, image_dir: str) -> list[dict]:
                 "tables": structured_tables,
                 # Needed OCR and every attempt failed: this page's text is missing.
                 "ocr_failed": ocr_failed,
+                # Non-space characters dropped as invisible to a reader.
+                "hidden_text_removed": hidden_removed,
                 "_table_texts": table_texts,
             })
 

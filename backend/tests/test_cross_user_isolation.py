@@ -292,6 +292,24 @@ class CrossUserIsolationTests(unittest.TestCase):
         self.assertEqual(status["failed_pages"], [2, 5])
         self.assertIsNotNone(status["classification"])
 
+    def test_suspicious_flag_is_in_status_and_listing(self) -> None:
+        listed = self.client_b.get("/api/documents").json()["documents"]
+        self.assertIs(listed[0]["suspicious"], False)
+        status = self.client_b.get(f"/api/status/{self.doc_id}").json()
+        self.assertEqual(
+            (status["suspicious"], status["hidden_text_pages"], status["hidden_text_removed"]), (False, [], 0)
+        )
+
+        self._set_doc(suspicious=True, hidden_text_pages=[1, 3], hidden_text_removed=146)
+
+        listed = self.client_b.get("/api/documents").json()["documents"]
+        self.assertIs(listed[0]["suspicious"], True)
+        status = self.client_b.get(f"/api/status/{self.doc_id}").json()
+        self.assertEqual(status["status"], "complete")
+        self.assertEqual(
+            (status["suspicious"], status["hidden_text_pages"], status["hidden_text_removed"]), (True, [1, 3], 146)
+        )
+
     def test_unfinished_and_failed_documents_are_not_listed(self) -> None:
         for state in ("queued", "processing", "error"):
             with self.subTest(status=state):

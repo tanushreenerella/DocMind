@@ -35,6 +35,10 @@ def get_pool() -> asyncpg.Pool:
 SCHEMA_UPDATES = (
     # Pages whose OCR failed for a "partial" document.
     "ALTER TABLE documents ADD COLUMN IF NOT EXISTS failed_pages INTEGER[] NOT NULL DEFAULT '{}'",
+    # Hidden-text injection: pages it was stripped from, characters removed, and the flag.
+    "ALTER TABLE documents ADD COLUMN IF NOT EXISTS hidden_text_pages INTEGER[] NOT NULL DEFAULT '{}'",
+    "ALTER TABLE documents ADD COLUMN IF NOT EXISTS hidden_text_removed INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE documents ADD COLUMN IF NOT EXISTS suspicious BOOLEAN NOT NULL DEFAULT FALSE",
 )
 
 

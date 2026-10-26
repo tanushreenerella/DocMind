@@ -214,6 +214,8 @@ class SchemaTests(unittest.IsolatedAsyncioTestCase):
         for statement in statements:
             self.assertIn("IF NOT EXISTS", statement)
         self.assertTrue(any("failed_pages" in st for st in statements))
+        for column in ("hidden_text_pages", "hidden_text_removed", "suspicious"):
+            self.assertTrue(any(column in st for st in statements), column)
 
 
 class DeleteChunksTests(unittest.TestCase):

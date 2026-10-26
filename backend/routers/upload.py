@@ -101,11 +101,17 @@ async def _process_document(
 
         if failed_pages:
             print(f"[{doc_id}] indexed without OCR text for pages {failed_pages}")
+        hidden_text_pages = [p["page_number"] for p in pages if p.get("hidden_text_removed")]
+        if hidden_text_pages:
+            print(f"[{doc_id}] suspicious: hidden text removed from pages {hidden_text_pages}")
         await _set_status(
             doc_id,
             stage="complete",
             status="partial" if failed_pages else "complete",
             failed_pages=failed_pages,
+            hidden_text_pages=hidden_text_pages,
+            hidden_text_removed=sum(p.get("hidden_text_removed", 0) for p in pages),
+            suspicious=bool(hidden_text_pages),
             progress=100,
         )
 
@@ -348,6 +354,10 @@ async def get_status(doc_id: str, current_user: dict = Depends(get_current_user)
         "classification": classification,
         "page_count": row["page_count"],
         "failed_pages": list(row.get("failed_pages") or []),
+        # Hidden (white, invisible or tiny) text was found and left out of the index.
+        "suspicious": bool(row.get("suspicious")),
+        "hidden_text_pages": list(row.get("hidden_text_pages") or []),
+        "hidden_text_removed": row.get("hidden_text_removed") or 0,
     }
 
 
