@@ -20,6 +20,7 @@ def _chunk(query: str) -> dict:
         "image_filename": "",
         "relevance_score": 0.9,
         "doc_id": "doc-a",
+        "user_id": "user-a",
     }
 
 
@@ -157,6 +158,175 @@ class GraphTests(unittest.IsolatedAsyncioTestCase):
                 result = await self._answer(answer)
                 self.assertFalse(result["has_answer"])
                 self.assertEqual(result["answer"], agentic_rag._NO_RELIABLE_ANSWER)
+
+    async def test_unresolvable_source_markers_are_stripped(self) -> None:
+        result = await self._answer("Covered [SOURCE 1]. Extra claim [SOURCE 7].")
+
+        self.assertEqual(result["answer"], "Covered [a.pdf, p.1]. Extra claim.")
+        self.assertEqual(len(result["citations"]), 1)
+
+    async def test_answer_citing_only_chunks_the_user_does_not_own_is_withheld(self) -> None:
+        foreign = lambda q, **_: [{**_chunk(q), "user_id": "user-b"}]
+        with (
+            patch.object(agentic_rag, "get_groq_client", return_value=FakeGroq()),
+            patch.object(agentic_rag, "search", AsyncMock(side_effect=foreign)),
+            contextlib.redirect_stdout(io.StringIO()) as output,
+        ):
+            result = await agentic_rag.answer_agentic_query("q1 and q2?", [], user_id="user-a")
+
+        self.assertEqual(
+            result,
+            {"answer": agentic_rag._NO_RELIABLE_ANSWER, "citations": [], "has_answer": False, "error": None},
+        )
+        self.assertIn("[agentic citations] dropped", output.getvalue())
+
+
+def _plan(**fields) -> str:
+    return json.dumps({"is_simple": False, "question_type": "factual", "sub_questions": ["q1", "q2"], **fields})
+
+
+class PlannerValidationTests(unittest.TestCase):
+    def parse(self, raw: str) -> tuple[tuple[list[str], str], str]:
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            result = agentic_rag._parse_planner_response(raw, "original?")
+        return result, output.getvalue()
+
+    def test_valid_plans(self) -> None:
+        cases = {
+            _plan(question_type="exploratory"): (["q1", "q2"], "exploratory"),
+            _plan(sub_questions=["only one"]): (["only one"], "factual"),
+            _plan(sub_questions=[" q1 ", "q1", "q2", "q3"]): (["q1", "q2", "q3"], "factual"),
+            _plan(sub_questions=["x" * 300]): (["x" * 300], "factual"),
+            _plan(is_simple=True, sub_questions=["rephrased"]): (["original?"], "factual"),
+            "```json\n" + _plan() + "\n```": (["q1", "q2"], "factual"),
+        }
+        for raw, expected in cases.items():
+            with self.subTest(raw=raw[:60]):
+                result, logs = self.parse(raw)
+                self.assertEqual(result, expected)
+                self.assertNotIn("invalid", logs)
+
+    def test_invalid_plans_fall_back_to_the_original_question_and_are_logged(self) -> None:
+        for raw in (
+            "",
+            "Sure! Here is the plan.",
+            "[\"q1\"]",
+            "{not json",
+            json.dumps({"is_simple": False}),
+            _plan(sub_questions=[]),
+            _plan(sub_questions=["q1", "q2", "q3", "q4", "q5"]),
+            _plan(sub_questions=["q1", ""]),
+            _plan(sub_questions=["   "]),
+            _plan(sub_questions=["q1", "x" * 301]),
+            _plan(sub_questions="q1"),
+            _plan(sub_questions=["q1", 2]),
+            _plan(question_type="summary"),
+            _plan(is_simple="yes"),
+        ):
+            with self.subTest(raw=raw[:60]):
+                result, logs = self.parse(raw)
+                self.assertEqual(result, (["original?"], "factual"))
+                self.assertIn("[agentic planner] invalid output", logs)
+
+    def test_logs_do_not_echo_the_reply(self) -> None:
+        _, logs = self.parse(_plan(sub_questions=["CONFIDENTIAL " * 30]))
+        self.assertIn("invalid output", logs)
+        self.assertNotIn("CONFIDENTIAL", logs)
+
+
+class CriticValidationTests(unittest.TestCase):
+    def parse(self, reply: object) -> tuple[tuple[str, str], str]:
+        raw = reply if isinstance(reply, str) else json.dumps(reply)
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            result = agentic_rag._parse_critic_response(raw, "the sub-question")
+        return result, output.getvalue()
+
+    def test_valid_verdicts(self) -> None:
+        cases = [
+            ({"verdict": "sufficient", "rewrite": ""}, ("sufficient", "the sub-question")),
+            ({"verdict": "sufficient"}, ("sufficient", "the sub-question")),
+            ({"verdict": "insufficient", "rewrite": " broader "}, ("insufficient", "broader")),
+            # An over-long rewrite keeps the verdict but reuses the sub-question.
+            ({"verdict": "insufficient", "rewrite": "x" * 301}, ("insufficient", "the sub-question")),
+        ]
+        for reply, expected in cases:
+            with self.subTest(reply=reply):
+                result, logs = self.parse(reply)
+                self.assertEqual(result, expected)
+                self.assertNotIn("invalid", logs)
+
+    def test_invalid_replies_are_insufficient_and_logged(self) -> None:
+        for reply in (
+            "",
+            "The evidence looks sufficient.",
+            {"verdict": "maybe", "rewrite": ""},
+            {"verdict": "Sufficient", "rewrite": ""},
+            {"rewrite": "broader"},
+            {"verdict": "sufficient", "rewrite": 5},
+            {"verdict": True},
+        ):
+            with self.subTest(reply=reply):
+                result, logs = self.parse(reply)
+                self.assertEqual(result, ("insufficient", "the sub-question"))
+                self.assertIn("[agentic critic] invalid output", logs)
+
+
+def _cite(doc: str, page: int, user: str = "user-a") -> tuple[dict, dict]:
+    chunk = {**_chunk(f"{doc}-{page}"), "doc_name": doc, "doc_id": f"id-{doc}", "page_number": page, "user_id": user}
+    return chunk, agentic_rag._citation(chunk)
+
+
+class CitationGroundingTests(unittest.TestCase):
+    def ground(self, answer: str, citations: list[dict], chunks: list[dict]) -> tuple[str, list[dict]]:
+        with contextlib.redirect_stdout(io.StringIO()):
+            return agentic_rag._keep_grounded_citations(answer, citations, {"q1": chunks}, "user-a")
+
+    def test_retrieved_owned_citations_are_kept(self) -> None:
+        a_chunk, a = _cite("a.pdf", 1)
+        b_chunk, b = _cite("b.pdf", 2)
+        answer = "One [a.pdf, p.1]. Two [b.pdf, p.2][a.pdf, p.1]."
+        self.assertEqual(self.ground(answer, [a, b], [a_chunk, b_chunk]), (answer, [a, b]))
+
+    def test_citations_not_retrieved_for_this_request_are_dropped_with_their_markers(self) -> None:
+        a_chunk, a = _cite("a.pdf", 1)
+        _, b = _cite("b.pdf", 2)
+        answer, kept = self.ground("One [a.pdf, p.1]. Two [b.pdf, p.2].", [a, b], [a_chunk])
+        self.assertEqual((answer, kept), ("One [a.pdf, p.1]. Two.", [a]))
+
+    def test_citations_from_other_users_chunks_are_dropped(self) -> None:
+        a_chunk, a = _cite("a.pdf", 1)
+        foreign_chunk, foreign = _cite("b.pdf", 2, user="user-b")
+        unowned_chunk = {k: v for k, v in _cite("c.pdf", 3)[0].items() if k != "user_id"}
+        unowned = agentic_rag._citation(unowned_chunk)
+        answer, kept = self.ground(
+            "One [a.pdf, p.1]. Two [b.pdf, p.2]. Three [c.pdf, p.3].",
+            [a, foreign, unowned],
+            [a_chunk, foreign_chunk, unowned_chunk],
+        )
+        self.assertEqual((answer, kept), ("One [a.pdf, p.1]. Two. Three.", [a]))
+
+    def test_altered_citations_are_dropped(self) -> None:
+        a_chunk, a = _cite("a.pdf", 1)
+        for altered in ({**a, "excerpt": "made up..."}, {**a, "doc_id": "id-other"}, {**a, "page_number": 9}):
+            with self.subTest(altered=altered):
+                self.assertEqual(self.ground("One [a.pdf, p.1].", [altered], [a_chunk]), ("One.", []))
+
+    def test_markers_without_a_citation_and_leftover_source_markers_are_stripped(self) -> None:
+        a_chunk, a = _cite("a.pdf", 1)
+        answer, _ = self.ground(
+            "One [a.pdf, p.1] and [a.pdf, p.4] [SOURCE 9][SOURCE 2, SOURCE 3].", [a], [a_chunk]
+        )
+        self.assertEqual(answer, "One [a.pdf, p.1] and.")
+
+    def test_references_list_keeps_only_grounded_entries(self) -> None:
+        a_chunk, a = _cite("a.pdf", 1)
+        _, b = _cite("b.pdf", 2)
+        listing = "Summary.\n\nReferences:\n- [a.pdf, p.1]\n- [b.pdf, p.2]"
+        self.assertEqual(
+            self.ground(listing, [a, b], [a_chunk]),
+            ("Summary.\n\nReferences:\n- [a.pdf, p.1]", [a]),
+        )
+        self.assertEqual(self.ground(listing, [a, b], []), ("Summary.", []))
 
 
 if __name__ == "__main__":

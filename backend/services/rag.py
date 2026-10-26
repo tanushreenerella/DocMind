@@ -1,9 +1,11 @@
 """
 Agentic RAG: retrieves relevant chunks, synthesizes grounded answers with citations.
 """
+import asyncio
 import re
+import time
 
-from groq import Groq
+from groq import Groq, RateLimitError
 
 from core.config import GROQ_API_KEY
 from services.embedder import search
@@ -12,7 +14,11 @@ from core.config import RERANK_ENABLED
 
 # Per Groq call. No SDK retries: a 429/5xx/timeout is reported to the user at
 # once ("try again shortly") instead of stretching one answer past a minute.
+# chat_completion's one exception is a short per-minute rate limit.
 GROQ_TIMEOUT_S = 20.0
+# Longest retry-after worth waiting for, and the least time the retry must have.
+RATE_LIMIT_MAX_WAIT_S = 3.0
+RETRY_MIN_CALL_S = 5.0
 _client: Groq | None = None
 
 
@@ -28,12 +34,70 @@ def get_groq_client() -> Groq:
     return _get_client()
 
 
-def chat_completion(client: Groq, **kwargs):
-    """One Groq chat call; any failure (429, 5xx, timeout, connection) raises AIUnavailable."""
+def _retry_after_s(exc: RateLimitError) -> float | None:
+    """The response's retry-after (or retry-after-ms) in seconds, if it has one."""
+    headers = exc.response.headers
     try:
-        return client.chat.completions.create(**kwargs)
+        if (ms := headers.get("retry-after-ms")) is not None:
+            return float(ms) / 1000
+        if (seconds := headers.get("retry-after")) is not None:
+            return float(seconds)
+    except ValueError:
+        pass
+    return None
+
+
+def _per_minute_wait(exc: Exception) -> float | None:
+    """How long to wait before retrying ``exc``, or None if it must not be retried.
+
+    Only a per-minute limit (RPM/TPM) clears within seconds; a daily limit, an
+    unrecognised 429 or a long retry-after is not worth waiting for.
+    """
+    if not isinstance(exc, RateLimitError):
+        return None
+    text = str(exc).casefold()
+    per_minute = "per minute" in text or "(rpm)" in text or "(tpm)" in text
+    per_day = "per day" in text or "(rpd)" in text or "(tpd)" in text
+    if not per_minute or per_day:
+        return None
+    wait = _retry_after_s(exc)
+    if wait is None or not 0 <= wait <= RATE_LIMIT_MAX_WAIT_S:
+        return None
+    return wait
+
+
+async def chat_completion(client: Groq, *, deadline: float | None = None, **kwargs):
+    """One Groq chat call; any failure (429, 5xx, timeout, connection) raises AIUnavailable.
+
+    The blocking SDK call runs in a worker thread so other requests keep being
+    served. (The sync client stays because eval instruments its ``create``.)
+
+    The exception: a per-minute 429 with a retry-after of at most
+    RATE_LIMIT_MAX_WAIT_S is retried once, if the wait leaves RETRY_MIN_CALL_S
+    before ``deadline`` (a time.monotonic() value; None means no deadline). The
+    retry's own timeout never runs past the deadline.
+    """
+    create = client.chat.completions.create
+    try:
+        return await asyncio.to_thread(create, **kwargs)
     except Exception as exc:
+        wait = _per_minute_wait(exc)
+        if wait is not None and deadline is not None:
+            if deadline - time.monotonic() - wait < RETRY_MIN_CALL_S:
+                wait = None
         print(f"[groq error] {type(exc).__name__}: {exc}")
+        if wait is None:
+            raise AIUnavailable() from exc
+        print(f"[groq] per-minute rate limit; retrying once in {wait:.1f} s")
+
+    await asyncio.sleep(wait)
+    timeout = GROQ_TIMEOUT_S
+    if deadline is not None:
+        timeout = min(timeout, deadline - time.monotonic())
+    try:
+        return await asyncio.to_thread(create, **kwargs, timeout=timeout)
+    except Exception as exc:
+        print(f"[groq error] retry failed: {type(exc).__name__}: {exc}")
         raise AIUnavailable() from exc
 
 
@@ -155,7 +219,7 @@ async def _answer_query(
         }
     )
 
-    response = chat_completion(
+    response = await chat_completion(
         _get_client(),
         model="qwen/qwen3.8-27b",
         messages=messages,

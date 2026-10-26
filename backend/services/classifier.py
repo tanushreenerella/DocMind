@@ -2,6 +2,7 @@
 Classifies a document using Groq LLaMA-3.
 Returns structured JSON with document type, sensitivity, entities, summary.
 """
+import asyncio
 import json
 
 from groq import Groq
@@ -66,12 +67,14 @@ Document text (first 3000 chars):
 Return ONLY the JSON object, no markdown, no explanation."""
 
     try:
-        response = _get_client().chat.completions.create(
-        model="qwen/qwen3.8-27b",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.1,
-        max_tokens=900,
-        reasoning_effort="none",
+        # Off the event loop: the sync SDK call would stall every other request.
+        response = await asyncio.to_thread(
+            _get_client().chat.completions.create,
+            model="qwen/qwen3.8-27b",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
+            max_tokens=900,
+            reasoning_effort="none",
         )
 
         raw = (response.choices[0].message.content or "").strip()

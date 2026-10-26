@@ -5,6 +5,7 @@ import asyncio
 import contextlib
 import io
 import json
+import time
 import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -40,6 +41,7 @@ def _chunk(query: str) -> dict:
     return {
         "chunk_id": f"{query}-0", "chunk_text": f"evidence for {query}", "doc_name": "a.pdf",
         "page_number": 1, "image_filename": "", "relevance_score": 0.9, "doc_id": "doc-a",
+        "user_id": USER,
     }
 
 
@@ -147,7 +149,112 @@ class BasicRagTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(client.max_retries, 0)
 
 
+def _rate_limit(message: str, **headers: str) -> groq.RateLimitError:
+    response = httpx.Response(429, request=_REQUEST, headers={k.replace("_", "-"): v for k, v in headers.items()})
+    return groq.RateLimitError(message, response=response, body=None)
+
+
+TPM = "Rate limit reached for model `m` on tokens per minute (TPM): Limit 6000. Please try again in 1.2s."
+
+
+class GroqRetryTests(unittest.IsolatedAsyncioTestCase):
+    async def call(self, *outcomes, deadline: float | None = None):
+        """chat_completion against a client that raises/returns ``outcomes`` in turn."""
+        client = MagicMock()
+        client.chat.completions.create.side_effect = list(outcomes)
+        with (
+            patch.object(rag.asyncio, "sleep", AsyncMock()) as sleep,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            try:
+                result = await rag.chat_completion(client, deadline=deadline, model="m", messages=[])
+            except AIUnavailable as exc:
+                result = exc
+        return result, client.chat.completions.create, sleep
+
+    async def test_short_per_minute_limit_is_retried_once(self) -> None:
+        for headers, wait in (({"retry_after": "1"}, 1.0), ({"retry_after_ms": "1500"}, 1.5),
+                              ({"retry_after": "3"}, 3.0), ({"retry_after": "0"}, 0.0)):
+            with self.subTest(headers):
+                reply = _reply("ok")
+                result, create, sleep = await self.call(_rate_limit(TPM, **headers), reply)
+
+                self.assertIs(result, reply)
+                sleep.assert_awaited_once_with(wait)
+                self.assertEqual(create.call_count, 2)
+                self.assertEqual(create.call_args.kwargs, {"model": "m", "messages": [], "timeout": 20.0})
+
+    async def test_requests_per_minute_counts_too(self) -> None:
+        rpm = "Rate limit reached on requests per minute (RPM): Limit 30."
+        result, create, _ = await self.call(_rate_limit(rpm, retry_after="2"), _reply("ok"))
+        self.assertEqual(create.call_count, 2)
+
+    async def test_a_second_429_is_not_retried_again(self) -> None:
+        result, create, sleep = await self.call(
+            _rate_limit(TPM, retry_after="1"), _rate_limit(TPM, retry_after="1"), _reply("never")
+        )
+        self.assertIsInstance(result, AIUnavailable)
+        self.assertEqual(create.call_count, 2)
+        sleep.assert_awaited_once()
+
+    async def test_everything_else_fails_fast(self) -> None:
+        cases = {
+            "daily tokens": _rate_limit("Rate limit reached on tokens per day (TPD): Limit 500000.", retry_after="1"),
+            "daily requests": _rate_limit("Rate limit reached on requests per day (RPD): Limit 1000.", retry_after="1"),
+            "minute and day": _rate_limit("tokens per minute (TPM) and tokens per day (TPD)", retry_after="1"),
+            "retry-after too long": _rate_limit(TPM, retry_after="4"),
+            "retry-after in the past": _rate_limit(TPM, retry_after="-1"),
+            "no retry-after": _rate_limit(TPM),
+            "unreadable retry-after": _rate_limit(TPM, retry_after="Wed, 21 Oct 2026 07:28:00 GMT"),
+            "unknown 429": _rate_limit("Rate limit exceeded", retry_after="1"),
+            "503": groq.InternalServerError(
+                "Service unavailable", response=httpx.Response(503, request=_REQUEST, headers={"retry-after": "1"}), body=None
+            ),
+            "timeout": groq.APITimeoutError(request=_REQUEST),
+            "connection": groq.APIConnectionError(request=_REQUEST),
+        }
+        for name, failure in cases.items():
+            with self.subTest(name):
+                result, create, sleep = await self.call(failure, _reply("never"))
+                self.assertIsInstance(result, AIUnavailable)
+                self.assertEqual(create.call_count, 1)
+                sleep.assert_not_awaited()
+
+    async def test_no_retry_without_time_left_before_the_deadline(self) -> None:
+        # A 1 s wait leaves less than RETRY_MIN_CALL_S for the retry.
+        deadline = time.monotonic() + 1 + rag.RETRY_MIN_CALL_S - 0.5
+        result, create, sleep = await self.call(_rate_limit(TPM, retry_after="1"), _reply("never"), deadline=deadline)
+        self.assertIsInstance(result, AIUnavailable)
+        self.assertEqual(create.call_count, 1)
+        sleep.assert_not_awaited()
+
+    async def test_the_retry_cannot_outlast_the_deadline(self) -> None:
+        deadline = time.monotonic() + 10
+        result, create, _ = await self.call(_rate_limit(TPM, retry_after="1"), _reply("ok"), deadline=deadline)
+        self.assertEqual(create.call_count, 2)
+        self.assertGreater(create.call_args.kwargs["timeout"], 9)
+        self.assertLessEqual(create.call_args.kwargs["timeout"], 10)
+
+
 class AgenticOutageTests(unittest.IsolatedAsyncioTestCase):
+    async def test_groq_calls_get_the_answer_deadline(self) -> None:
+        deadlines: list[float | None] = []
+
+        async def recording(client, *, deadline=None, **kwargs):
+            deadlines.append(deadline)
+            return await rag.chat_completion(client, deadline=deadline, **kwargs)
+
+        started = time.monotonic()
+        with patch.object(agentic_rag, "chat_completion", recording):
+            result = await self.answer(FakeGroq(), AsyncMock(side_effect=lambda q, **_: [_chunk(q)]))
+
+        self.assertTrue(result["has_answer"])
+        # planner, one critic per sub-question, synthesizer
+        self.assertEqual(len(deadlines), 4)
+        for deadline in deadlines:
+            self.assertAlmostEqual(deadline - started, agentic_rag.AGENTIC_DEADLINE_S, delta=1)
+        self.assertIsNone(agentic_rag._deadline.get())
+
     async def answer(self, client: FakeGroq, search) -> dict:
         with (
             patch.object(agentic_rag, "get_groq_client", return_value=client),

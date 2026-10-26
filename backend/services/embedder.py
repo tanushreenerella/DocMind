@@ -232,6 +232,8 @@ def _make_hit(
         "image_filename": metadata["image_filename"],
         "relevance_score": relevance_score,
         "doc_id": metadata["doc_id"],
+        # Lets callers check ownership again before trusting a hit (agentic citations).
+        "user_id": metadata.get("user_id"),
     }
 
 
