@@ -1,13 +1,16 @@
 import asyncio
+import functools
 import os
 import threading
 import chromadb
 import httpx
+import snowballstemmer
 from rank_bm25 import BM25Okapi
 from core.config import CHROMA_API_KEY, CHROMA_TENANT, CHROMA_DATABASE
 from core.config import HYBRID_SEARCH_ENABLED, RERANK_ENABLED
 from core.config import RERANK_CANDIDATES, RERANK_MODEL
 from services.embeddings import get_embedding, get_embeddings
+from services.errors import SearchUnavailable
 import re
 
 CHUNK_SIZE = 500
@@ -29,7 +32,22 @@ _PROMPT_INJECTION_PATTERNS = (
     "you are now",
 )
 
-_BM25_TOKEN_PATTERN = re.compile(r"\w+", re.UNICODE)
+# Words, plus terms joined by "-" or "/" kept whole: IL-6, COVID-19, tools/list.
+_BM25_TOKEN_PATTERN = re.compile(r"\w+(?:[-/]\w+)*", re.UNICODE)
+_BM25_JOINERS = re.compile(r"[-/]")
+# Standard English stop words (NLTK's list, minus contraction fragments).
+_BM25_STOP_WORDS = frozenset("""
+a about above after again against all am an and any are as at be because been before being below
+between both but by can could did do does doing down during each few for from further had has have
+having he her here hers herself him himself his how i if in into is it its itself just me more most
+my myself no nor not now of off on once only or other our ours ourselves out over own same she should
+so some such than that the their theirs them themselves then there these they this those through to
+too under until up very was we were what when where which while who whom why will with would you your
+yours yourself yourselves
+""".split())
+_porter = snowballstemmer.stemmer("porter")
+# Stemmer objects keep per-call state; the index can be rebuilt off the event loop.
+_porter_lock = threading.Lock()
 _RRF_K = 60
 _bm25_index: BM25Okapi | None = None
 _bm25_records: list[dict] = []
@@ -112,8 +130,35 @@ def _assert_cosine_space(chroma_collection) -> None:
 _assert_cosine_space(collection)
 
 
+@functools.lru_cache(maxsize=65536)
+def _stem(word: str) -> str:
+    """Porter stem, except words with digits (p53, 2020s, h2o), which stay exact."""
+    if any(char.isdigit() for char in word):
+        return word
+    with _porter_lock:
+        return _porter.stemWord(word)
+
+
 def _tokenize_for_bm25(text: str) -> list[str]:
-    return _BM25_TOKEN_PATTERN.findall(text.casefold())
+    """BM25 terms only (embeddings always see the raw text).
+
+    Lowercased; a joined term such as "IL-6" or "tools/list" yields the whole
+    term and each part ("il-6", "il", "6"), so either form of a query matches.
+    Stop words are dropped; everything else is Porter-stemmed unless it has
+    digits ("proteins" -> "protein", but "p53" stays "p53").
+    """
+    tokens: list[str] = []
+    for term in _BM25_TOKEN_PATTERN.findall(text.casefold()):
+        parts = [part for part in _BM25_JOINERS.split(term) if part]
+        if len(parts) > 1:
+            # Rebuild the whole term from stemmed parts, keeping its separators.
+            separators = _BM25_JOINERS.findall(term)
+            whole = _stem(parts[0]) + "".join(
+                sep + _stem(part) for sep, part in zip(separators, parts[1:])
+            )
+            tokens.append(whole)
+        tokens.extend(_stem(part) for part in parts if part not in _BM25_STOP_WORDS)
+    return tokens
 
 
 def _invalidate_bm25_index() -> None:
@@ -303,14 +348,101 @@ async def _rerank_hits(
     return reranked[:n_results]
 
 
+_PARAGRAPH_BREAK = re.compile(r"\n[ \t]*\n\s*")
+# After . ! ? (and any closing quotes/brackets, group 1), whitespace, then
+# something that can start a sentence. Abbreviations ("e.g. The") may split
+# too; that only makes the units finer.
+_SENTENCE_BREAK = re.compile(r"(?<=[.!?])([\"'”’)\]]*)\s+(?=[\"'“‘(\[]?[A-Z0-9])")
+Span = tuple[int, int]
+
+
+def _strip_span(text: str, start: int, end: int) -> Span | None:
+    while start < end and text[start].isspace():
+        start += 1
+    while end > start and text[end - 1].isspace():
+        end -= 1
+    return (start, end) if start < end else None
+
+
+def _split_long(text: str, start: int, end: int) -> list[Span]:
+    """Cut a span over CHUNK_SIZE at a line break, else a space, else anywhere."""
+    pieces: list[Span] = []
+    while end - start > CHUNK_SIZE:
+        window = text[start:start + CHUNK_SIZE]
+        cut = window.rfind("\n")
+        if cut < CHUNK_SIZE // 4:
+            cut = max(window.rfind(" "), window.rfind("\t"))
+        if cut < CHUNK_SIZE // 4:
+            cut = CHUNK_SIZE
+        if span := _strip_span(text, start, start + cut):
+            pieces.append(span)
+        start += cut
+    if span := _strip_span(text, start, end):
+        pieces.append(span)
+    return pieces
+
+
+def _sentence_units(text: str) -> list[tuple[int, int, bool]]:
+    """(start, end, ends_paragraph) for every sentence, each at most CHUNK_SIZE long."""
+    units: list[tuple[int, int, bool]] = []
+    paragraph_start = 0
+    breaks = [m.span() for m in _PARAGRAPH_BREAK.finditer(text)] + [(len(text), len(text))]
+    for paragraph_end, next_start in breaks:
+        spans: list[Span] = []
+        sentence_start = paragraph_start
+        for match in _SENTENCE_BREAK.finditer(text, paragraph_start, paragraph_end):
+            if span := _strip_span(text, sentence_start, match.end(1)):
+                spans.extend(_split_long(text, *span))
+            sentence_start = match.end()
+        if span := _strip_span(text, sentence_start, paragraph_end):
+            spans.extend(_split_long(text, *span))
+        units.extend((s, e, i == len(spans) - 1) for i, (s, e) in enumerate(spans))
+        paragraph_start = next_start
+    return units
+
+
+def _overlap_start(text: str, units: list[tuple[int, int, bool]], chunk: Span, next_unit: Span) -> int:
+    """Where the next chunk starts: up to CHUNK_OVERLAP chars back into ``chunk``,
+    at a sentence start if one is that close, else at a word start."""
+    chunk_start, chunk_end = chunk
+    floor = max(chunk_start + 1, chunk_end - CHUNK_OVERLAP)
+    candidates = [s for s, _, _ in units if floor <= s < chunk_end]
+    if not candidates:
+        candidates = [
+            p for p in range(floor, chunk_end) if text[p - 1].isspace() and not text[p].isspace()
+        ]
+    for start in candidates:  # earliest first: the longest overlap that still fits
+        if next_unit[1] - start <= CHUNK_SIZE:
+            return start
+    return next_unit[0]
+
+
 def chunk_text(text: str) -> list[str]:
+    """Split a page into chunks of whole sentences, about CHUNK_SIZE chars each.
+
+    Each chunk is an exact slice of ``text``. Chunks end at sentence ends, and
+    at a paragraph end once at least half full; a sentence longer than
+    CHUNK_SIZE is cut at a line break or space. Consecutive chunks overlap by
+    up to CHUNK_OVERLAP chars, starting at a sentence or word boundary.
+    """
+    units = _sentence_units(text)
     chunks: list[str] = []
-    start = 0
-    while start < len(text):
-        end = start + CHUNK_SIZE
+    i = 0
+    start = units[0][0] if units else 0
+    while i < len(units):
+        j = i
+        while j + 1 < len(units):
+            if units[j + 1][1] - start > CHUNK_SIZE:
+                break
+            if units[j][2] and units[j][1] - start >= CHUNK_SIZE // 2:
+                break  # a paragraph ends here and the chunk is substantial
+            j += 1
+        end = units[j][1]
         chunks.append(text[start:end])
-        start = end - CHUNK_OVERLAP
-    return [c for c in chunks if c.strip()]
+        i = j + 1
+        if i < len(units):
+            start = _overlap_start(text, units, (start, end), units[i][:2])
+    return chunks
 
 
 async def _write_chunks_with_retry(**batch) -> None:
@@ -448,7 +580,7 @@ async def search_or_raise(
     *,
     user_id: str,
 ) -> list[dict]:
-    """``search``, but failures raise instead of returning no hits (used by eval)."""
+    """``search``, but failures raise the underlying error (used by eval)."""
     if not user_id:
         return []
 
@@ -490,12 +622,16 @@ async def search(
     *,
     user_id: str,
 ) -> list[dict]:
-    """Search only chunks owned by ``user_id`` (and optionally one document)."""
+    """Search only chunks owned by ``user_id`` (and optionally one document).
+
+    Raises SearchUnavailable when Chroma (or the query embedding) fails, so an
+    outage isn't mistaken for having no documents.
+    """
     try:
         return await search_or_raise(query, n_results, doc_id, user_id=user_id)
     except Exception as exc:
-        print(f"[search error] {exc}")
-        return []
+        print(f"[search error] {type(exc).__name__}: {exc}")
+        raise SearchUnavailable() from exc
 
 
 async def get_document_count() -> int:

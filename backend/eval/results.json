@@ -1,21 +1,40 @@
 {
   "meta": {
-    "timestamp": "2026-10-22T13:09:34+00:00",
-    "duration_s": 123.4,
+    "timestamp": "2026-10-24T21:54:52+00:00",
+    "duration_s": 793.2,
     "git": {
-      "commit": "7a9cad2768f438c8ef296bef13f2f6cf98ba29ff",
+      "commit": "52f31e11692cf0f2d991762f16c09edc6c79bfa7",
       "dirty": true
+    },
+    "completed_questions": 19,
+    "stopped": {
+      "stage": "answers",
+      "reason": "groq_daily_limit",
+      "at_question": 20,
+      "completed": 19,
+      "resume_offset": 19,
+      "retry_in": "8m4.704s",
+      "detail": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kk3g5angfwzsezpdms7kn79k` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199562, Requested 1560. Please try again in 8m4.704s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}"
     }
   },
   "config": {
     "questions_file": "C:\\Users\\tanus\\OneDrive - Manipal University Jaipur\\BFAI Assignment\\bfai-assessment\\backend\\eval\\questions.json",
     "questions_sha256": "ae5c3551127d8b9db54cff61e2542ef78b9d9bdc1a1c440cdb13e28602d6aecc",
-    "questions": 5,
+    "questions": 20,
     "questions_by_type": {
-      "factual": 5
+      "factual": 13,
+      "multi_part": 4,
+      "unanswerable": 3
     },
-    "limit": 5,
+    "offset": 0,
+    "limit": 20,
+    "retrieval_only": false,
     "scope": "all",
+    "pacing": {
+      "sleep_between_questions_s": 20.0,
+      "delay_after_pipeline_s": 0.0,
+      "groq_max_retries": 2
+    },
     "user_id": "e36d9dd4-cf9f-4e43-a321-88702b23297d",
     "chroma_database": "docmind-dev",
     "retrieval": {
@@ -44,8 +63,12 @@
       "answer_models": [
         "qwen/qwen3.8-27b"
       ],
-      "judge_model": null,
-      "ragas_metrics": []
+      "judge_model": "openai/gpt-oss-120b",
+      "ragas_metrics": [
+        "faithfulness",
+        "answer_relevancy"
+      ],
+      "answer_relevancy_strictness": 1
     },
     "versions": {
       "python": "3.11.0",
@@ -58,86 +81,95 @@
   },
   "retrieval": {
     "vector": {
-      "n": 5,
-      "recall@5": 1.0,
-      "mrr@10": 0.6333333333333333,
-      "ndcg@10": 0.7101301085439291,
+      "n": 17,
+      "recall@5": 0.8235294117647058,
+      "mrr@10": 0.6143790849673202,
+      "ndcg@10": 0.6945531214538386,
       "latency": {
-        "p50_ms": 830.7,
-        "p95_ms": 1583.8799999999997
+        "p50_ms": 1704.6,
+        "p95_ms": 2756.8199999999993
       },
       "errors": 0
     },
     "bm25": {
-      "n": 5,
-      "recall@5": 1.0,
-      "mrr@10": 0.7,
-      "ndcg@10": 0.7423396043363082,
+      "n": 17,
+      "recall@5": 0.8235294117647058,
+      "mrr@10": 0.6329131652661063,
+      "ndcg@10": 0.6928440572992527,
       "latency": {
-        "p50_ms": 5.5,
-        "p95_ms": 6.74
+        "p50_ms": 3.1,
+        "p95_ms": 24.859999999999935
       },
       "errors": 0
     },
     "hybrid": {
-      "n": 5,
-      "recall@5": 1.0,
-      "mrr@10": 0.7166666666666666,
-      "ndcg@10": 0.7615783746822885,
+      "n": 17,
+      "recall@5": 0.7941176470588235,
+      "mrr@10": 0.6064425770308123,
+      "ndcg@10": 0.6702040703059015,
       "latency": {
-        "p50_ms": 836.4,
-        "p95_ms": 1590.3199999999997
+        "p50_ms": 1707.6,
+        "p95_ms": 2760.9399999999996
       },
       "errors": 0
     },
     "hybrid_rerank": {
-      "n": 5,
-      "recall@5": 1.0,
-      "mrr@10": 0.5666666666666667,
-      "ndcg@10": 0.6486268332498254,
+      "n": 17,
+      "recall@5": 0.8823529411764706,
+      "mrr@10": 0.6215686274509803,
+      "ndcg@10": 0.6885065196622985,
       "latency": {
-        "p50_ms": 907.3,
-        "p95_ms": 1679.4799999999998
+        "p50_ms": 1719.9,
+        "p95_ms": 2773.9599999999996
       },
       "errors": 0
     }
   },
   "answers": {
     "basic": {
-      "n": 5,
+      "n": 19,
       "faithfulness": null,
       "faithfulness_scored": 0,
       "answer_relevancy": null,
       "answer_relevancy_scored": 0,
       "unanswerable": {
-        "n": 0,
-        "declined": 0,
-        "decline_rate": null
+        "n": 2,
+        "declined": 2,
+        "decline_rate": 1.0
       },
       "answerable_declined": {
-        "n": 5,
-        "declined": 1,
-        "rate": 0.2
+        "n": 17,
+        "declined": 3,
+        "rate": 0.17647058823529413
       },
       "latency_end_to_end": {
-        "p50_ms": 7458.5,
-        "p95_ms": 9272.279999999999
+        "p50_ms": 1417.9,
+        "p95_ms": 5842.600000000041
+      },
+      "latency_end_to_end_excl_rate_limit": {
+        "p50_ms": 1417.9,
+        "p95_ms": 5842.600000000041
       },
       "latency_retrieval": {
-        "p50_ms": 1081.0,
-        "p95_ms": 1107.44
+        "p50_ms": 1042.6,
+        "p95_ms": 1399.8700000000017
+      },
+      "rate_limit": {
+        "retries": 0,
+        "questions_with_retries": 0,
+        "wait_total_ms": 0.0
       },
       "llm_calls": {
-        "total": 5,
+        "total": 19,
         "per_question": 1.0
       },
       "prompt_tokens": {
-        "total": 5430,
-        "per_question": 1086.0
+        "total": 24310,
+        "per_question": 1279.4736842105262
       },
       "completion_tokens": {
-        "total": 163,
-        "per_question": 32.6
+        "total": 855,
+        "per_question": 45.0
       },
       "errors": {
         "questions_with_errors": 0,
@@ -146,50 +178,60 @@
       }
     },
     "agentic": {
-      "n": 5,
+      "n": 19,
       "faithfulness": null,
       "faithfulness_scored": 0,
       "answer_relevancy": null,
       "answer_relevancy_scored": 0,
       "unanswerable": {
-        "n": 0,
-        "declined": 0,
-        "decline_rate": null
+        "n": 2,
+        "declined": 2,
+        "decline_rate": 1.0
       },
       "answerable_declined": {
-        "n": 5,
-        "declined": 0,
-        "rate": 0.0
+        "n": 17,
+        "declined": 1,
+        "rate": 0.058823529411764705
       },
       "latency_end_to_end": {
-        "p50_ms": 22345.4,
-        "p95_ms": 29795.559999999998
+        "p50_ms": 15192.8,
+        "p95_ms": 35940.52000000003
+      },
+      "latency_end_to_end_excl_rate_limit": {
+        "p50_ms": 2375.4,
+        "p95_ms": 5457.260000000001
       },
       "latency_retrieval": {
-        "p50_ms": 1141.9,
-        "p95_ms": 2112.2799999999997
+        "p50_ms": 1056.5,
+        "p95_ms": 4707.18
+      },
+      "rate_limit": {
+        "retries": 31,
+        "questions_with_retries": 14,
+        "wait_total_ms": 252430.3
       },
       "llm_calls": {
-        "total": 16,
-        "per_question": 3.2
+        "total": 66,
+        "per_question": 3.473684210526316
       },
       "prompt_tokens": {
-        "total": 14742,
-        "per_question": 2948.4
+        "total": 69120,
+        "per_question": 3637.8947368421054
       },
       "completion_tokens": {
-        "total": 732,
-        "per_question": 146.4
+        "total": 3231,
+        "per_question": 170.05263157894737
       },
       "errors": {
-        "questions_with_errors": 0,
-        "total": 0,
+        "questions_with_errors": 1,
+        "total": 1,
         "failed_runs": 0
       }
     }
   },
   "per_question": [
     {
+      "number": 1,
       "question": "Which specific Java version range is highlighted in the backend engineering learning area of the Java Full Stack Engineer Trainee job description?",
       "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
       "expected_pages": [
@@ -202,7 +244,7 @@
           "recall@5": 1.0,
           "mrr@10": 1.0,
           "ndcg@10": 1.0,
-          "latency_ms": 1760.1,
+          "latency_ms": 1809.1,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -251,7 +293,7 @@
           "recall@5": 1.0,
           "mrr@10": 1.0,
           "ndcg@10": 1.0,
-          "latency_ms": 7.0,
+          "latency_ms": 96.3,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -279,10 +321,6 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               1
             ],
             [
@@ -292,6 +330,10 @@
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
             ]
           ],
           "error": null
@@ -300,12 +342,8 @@
           "recall@5": 1.0,
           "mrr@10": 1.0,
           "ndcg@10": 1.0,
-          "latency_ms": 1767.1,
+          "latency_ms": 1905.5,
           "retrieved": [
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              1
-            ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               1
@@ -324,11 +362,15 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              3
+              1
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -349,7 +391,7 @@
           "recall@5": 1.0,
           "mrr@10": 0.5,
           "ndcg@10": 0.6309297535714575,
-          "latency_ms": 1871.0,
+          "latency_ms": 2198.6,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -401,8 +443,11 @@
           "has_answer": true,
           "declined": false,
           "decline_reason": null,
-          "latency_ms": 1850.6,
-          "retrieval_ms": 1112.5,
+          "latency_ms": 1438.4,
+          "latency_excl_rate_limit_ms": 1438.4,
+          "retrieval_ms": 1029.5,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
           "llm_calls": 1,
           "prompt_tokens": 1091,
           "completion_tokens": 20,
@@ -438,12 +483,15 @@
           "answer_relevancy": null
         },
         "agentic": {
-          "answer": "The backend engineering learning area in the Java Full Stack Engineer Trainee job description highlights the Java version range of 8 to 21 [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
+          "answer": "The backend engineering learning area in the Java Full Stack Engineer Trainee job description highlights the Java version range of Java 8–21 [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
           "has_answer": true,
           "declined": false,
           "decline_reason": null,
-          "latency_ms": 2847.5,
-          "retrieval_ms": 1309.0,
+          "latency_ms": 1821.3,
+          "latency_excl_rate_limit_ms": 1821.3,
+          "retrieval_ms": 1045.3,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
           "llm_calls": 3,
           "prompt_tokens": 2731,
           "completion_tokens": 112,
@@ -481,6 +529,7 @@
       }
     },
     {
+      "number": 2,
       "question": "What tool is specified for code coverage analysis in the Engineering Practices & Code Quality section of the Java Full Stack Engineer Trainee role?",
       "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
       "expected_pages": [
@@ -493,7 +542,7 @@
           "recall@5": 1.0,
           "mrr@10": 0.3333333333333333,
           "ndcg@10": 0.5,
-          "latency_ms": 731.3,
+          "latency_ms": 831.0,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -540,9 +589,9 @@
         },
         "bm25": {
           "recall@5": 1.0,
-          "mrr@10": 0.25,
-          "ndcg@10": 0.43067655807339306,
-          "latency_ms": 5.5,
+          "mrr@10": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "latency_ms": 6.0,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -558,10 +607,6 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               1
             ],
             [
@@ -575,6 +620,10 @@
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -589,9 +638,9 @@
         },
         "hybrid": {
           "recall@5": 1.0,
-          "mrr@10": 0.3333333333333333,
-          "ndcg@10": 0.5,
-          "latency_ms": 736.8,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 837.1,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -603,15 +652,19 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               1
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -627,11 +680,7 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              1
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
+              3
             ]
           ],
           "error": null
@@ -640,7 +689,7 @@
           "recall@5": 1.0,
           "mrr@10": 0.3333333333333333,
           "ndcg@10": 0.5,
-          "latency_ms": 802.3,
+          "latency_ms": 852.1,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -680,7 +729,7 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
+              3
             ]
           ],
           "error": null
@@ -692,8 +741,11 @@
           "has_answer": true,
           "declined": false,
           "decline_reason": null,
-          "latency_ms": 1300.6,
-          "retrieval_ms": 1075.7,
+          "latency_ms": 1327.3,
+          "latency_excl_rate_limit_ms": 1327.3,
+          "retrieval_ms": 1042.6,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
           "llm_calls": 1,
           "prompt_tokens": 1068,
           "completion_tokens": 25,
@@ -733,8 +785,11 @@
           "has_answer": true,
           "declined": false,
           "decline_reason": null,
-          "latency_ms": 1770.3,
-          "retrieval_ms": 1055.9,
+          "latency_ms": 1708.9,
+          "latency_excl_rate_limit_ms": 1708.9,
+          "retrieval_ms": 991.2,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
           "llm_calls": 3,
           "prompt_tokens": 2687,
           "completion_tokens": 106,
@@ -772,6 +827,7 @@
       }
     },
     {
+      "number": 3,
       "question": "According to the Secure Coding & Responsible AI Usage section, which specific AI tool is mentioned for usage in the Java Full Stack Engineer Trainee program?",
       "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
       "expected_pages": [
@@ -784,7 +840,7 @@
           "recall@5": 1.0,
           "mrr@10": 0.3333333333333333,
           "ndcg@10": 0.5,
-          "latency_ms": 758.9,
+          "latency_ms": 840.0,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -831,9 +887,9 @@
         },
         "bm25": {
           "recall@5": 1.0,
-          "mrr@10": 0.25,
-          "ndcg@10": 0.43067655807339306,
-          "latency_ms": 3.6,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 7.0,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -845,7 +901,7 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              1
+              2
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -854,22 +910,22 @@
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               3
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              1
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -880,9 +936,9 @@
         },
         "hybrid": {
           "recall@5": 1.0,
-          "mrr@10": 0.25,
-          "ndcg@10": 0.43067655807339306,
-          "latency_ms": 762.5,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 847.1,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -894,6 +950,10 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               1
             ],
             [
@@ -902,7 +962,7 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
+              1
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -911,10 +971,6 @@
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               3
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              1
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -931,7 +987,7 @@
           "recall@5": 1.0,
           "mrr@10": 0.5,
           "ndcg@10": 0.6309297535714575,
-          "latency_ms": 798.1,
+          "latency_ms": 862.1,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -979,15 +1035,18 @@
       },
       "answers": {
         "basic": {
-          "answer": "According to the Secure Coding & Responsible AI Usage section, the specific AI tool mentioned for usage in the program is GitHub Copilot [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.2].",
+          "answer": "The specific AI tool mentioned for usage in the Java Full Stack Engineer Trainee program is GitHub Copilot [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.2].",
           "has_answer": true,
           "declined": false,
           "decline_reason": null,
-          "latency_ms": 7458.5,
-          "retrieval_ms": 1087.2,
+          "latency_ms": 1329.4,
+          "latency_excl_rate_limit_ms": 1329.4,
+          "retrieval_ms": 1044.0,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
           "llm_calls": 1,
           "prompt_tokens": 1166,
-          "completion_tokens": 31,
+          "completion_tokens": 26,
           "search_calls": 1,
           "errors": [],
           "contexts": [
@@ -1024,8 +1083,11 @@
           "has_answer": true,
           "declined": false,
           "decline_reason": null,
-          "latency_ms": 24775.4,
-          "retrieval_ms": 1133.3,
+          "latency_ms": 1762.8,
+          "latency_excl_rate_limit_ms": 1762.8,
+          "retrieval_ms": 1040.8,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
           "llm_calls": 3,
           "prompt_tokens": 2886,
           "completion_tokens": 121,
@@ -1063,6 +1125,7 @@
       }
     },
     {
+      "number": 4,
       "question": "What specific authentication and authorization technology is required for implementation in the Java Full Stack Engineer Trainee role?",
       "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
       "expected_pages": [
@@ -1076,7 +1139,7 @@
           "recall@5": 1.0,
           "mrr@10": 1.0,
           "ndcg@10": 0.9197207891481876,
-          "latency_ms": 879.0,
+          "latency_ms": 2629.2,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -1125,7 +1188,7 @@
           "recall@5": 1.0,
           "mrr@10": 1.0,
           "ndcg@10": 0.8503449055347546,
-          "latency_ms": 4.1,
+          "latency_ms": 4.4,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -1137,15 +1200,7 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              1
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               3
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -1157,7 +1212,7 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
+              1
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -1166,6 +1221,14 @@
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
             ]
           ],
           "error": null
@@ -1173,8 +1236,8 @@
         "hybrid": {
           "recall@5": 1.0,
           "mrr@10": 1.0,
-          "ndcg@10": 0.8772153153380493,
-          "latency_ms": 883.2,
+          "ndcg@10": 0.8503449055347546,
+          "latency_ms": 2633.6,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -1186,14 +1249,6 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              1
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               3
             ],
             [
@@ -1206,6 +1261,10 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               2
             ],
             [
@@ -1215,16 +1274,24 @@
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
             ]
           ],
           "error": null
         },
         "hybrid_rerank": {
-          "recall@5": 1.0,
+          "recall@5": 0.5,
           "mrr@10": 1.0,
-          "ndcg@10": 0.8503449055347546,
-          "latency_ms": 907.3,
+          "ndcg@10": 0.8315546295836225,
+          "latency_ms": 2645.8,
           "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               1
@@ -1247,19 +1314,15 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               1
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -1271,15 +1334,18 @@
       },
       "answers": {
         "basic": {
-          "answer": "Based on the provided documents, there is no mention of a specific authentication or authorization technology (such as OAuth2, JWT, or Spring Security) required for the role. The job description only states that trainees are expected to \"manage authentication flows\" as part of full-stack integration [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
+          "answer": "The provided sources do not specify a particular authentication or authorization technology (such as OAuth2, JWT, or Spring Security) that is required for implementation. The documents only state that trainees are expected to manage authentication flows and handle validation errors across the stack [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
           "has_answer": true,
           "declined": true,
-          "decline_reason": "matched: 'no mention'",
-          "latency_ms": 8723.8,
-          "retrieval_ms": 1081.0,
+          "decline_reason": "matched: 'do not specify'",
+          "latency_ms": 1596.4,
+          "latency_excl_rate_limit_ms": 1596.4,
+          "retrieval_ms": 1262.0,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
           "llm_calls": 1,
           "prompt_tokens": 1024,
-          "completion_tokens": 62,
+          "completion_tokens": 56,
           "search_calls": 1,
           "errors": [],
           "contexts": [
@@ -1297,30 +1363,33 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               3
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               2
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              1
             ]
           ],
           "faithfulness": null,
           "answer_relevancy": null
         },
         "agentic": {
-          "answer": "For the Java Full Stack Engineer Trainee role, the specific authentication and authorization technology required is Spring Security combined with JWT (JSON Web Token)-based authentication and authorization [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1]. The job description explicitly lists the need to apply basic authentication and authorization using these two technologies as a key learning outcome [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.2]. Additionally, the training involves managing authentication flows as part of full-stack integration [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
+          "answer": "For the Java Full Stack Engineer Trainee role, the specific authentication and authorization technology required is Spring Security combined with JWT (JSON Web Token) based authentication and authorization [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1]. The job description explicitly lists the need to apply basic authentication and authorization using these tools as a key learning outcome [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.2]. Additionally, the training covers security practices within the development of RESTful backend services using Spring Boot [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.2], and the full-stack integration phase involves managing authentication flows across the application [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
           "has_answer": true,
           "declined": false,
           "decline_reason": null,
-          "latency_ms": 31050.6,
-          "retrieval_ms": 2313.1,
+          "latency_ms": 7194.6,
+          "latency_excl_rate_limit_ms": 3193.8,
+          "retrieval_ms": 2043.4,
+          "rate_limit_retries": 1,
+          "rate_limit_wait_ms": 4000.8,
           "llm_calls": 4,
           "prompt_tokens": 3730,
-          "completion_tokens": 194,
+          "completion_tokens": 214,
           "search_calls": 2,
           "errors": [],
           "contexts": [
@@ -1338,15 +1407,15 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              1
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              1
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
             ]
           ],
           "faithfulness": null,
@@ -1355,6 +1424,7 @@
       }
     },
     {
+      "number": 5,
       "question": "Which frontend framework is explicitly listed as a key learning area for the Java Full Stack Engineer Trainee position?",
       "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
       "expected_pages": [
@@ -1367,7 +1437,7 @@
           "recall@5": 1.0,
           "mrr@10": 0.5,
           "ndcg@10": 0.6309297535714575,
-          "latency_ms": 830.7,
+          "latency_ms": 2586.2,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -1416,7 +1486,7 @@
           "recall@5": 1.0,
           "mrr@10": 1.0,
           "ndcg@10": 1.0,
-          "latency_ms": 5.7,
+          "latency_ms": 4.1,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -1444,36 +1514,36 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
-            ],
-            [
-              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               1
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
             ]
           ],
           "error": null
         },
         "hybrid": {
           "recall@5": 1.0,
-          "mrr@10": 1.0,
-          "ndcg@10": 1.0,
-          "latency_ms": 836.4,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 2590.3,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              1
+              2
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
+              1
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -1493,7 +1563,7 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              2
+              1
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -1505,7 +1575,7 @@
             ],
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
-              1
+              2
             ]
           ],
           "error": null
@@ -1514,7 +1584,7 @@
           "recall@5": 1.0,
           "mrr@10": 0.5,
           "ndcg@10": 0.6309297535714575,
-          "latency_ms": 913.4,
+          "latency_ms": 2601.5,
           "retrieved": [
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
@@ -1566,8 +1636,11 @@
           "has_answer": true,
           "declined": false,
           "decline_reason": null,
-          "latency_ms": 9409.4,
-          "retrieval_ms": 1062.2,
+          "latency_ms": 1536.2,
+          "latency_excl_rate_limit_ms": 1536.2,
+          "retrieval_ms": 1269.3,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
           "llm_calls": 1,
           "prompt_tokens": 1081,
           "completion_tokens": 25,
@@ -1603,15 +1676,18 @@
           "answer_relevancy": null
         },
         "agentic": {
-          "answer": "Based on the provided documents, the frontend framework explicitly listed as a key learning area for the Java Full Stack Engineer Trainee position is React.js [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].\n\nThe job description outlines that trainees will be trained in frontend technologies, specifically mentioning React.js alongside other skills like routing, state management, and hooks [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1]. While other frontend technologies such as HTML, CSS, Bootstrap, and JavaScript are also mentioned in the context of creating responsive applications [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.2], React.js is the specific framework named in the detailed key learning areas for frontend development [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
+          "answer": "Based on the provided documents, the frontend framework explicitly listed as a key learning area for the Java Full Stack Engineer Trainee position is React.js [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1]. The job description outlines that trainees will learn various frontend technologies, including Bootstrap, JavaScript, and TypeScript, but specifically identifies React.js within the context of component lifecycle, hooks, and state management [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
           "has_answer": true,
           "declined": false,
           "decline_reason": null,
-          "latency_ms": 22345.4,
-          "retrieval_ms": 1141.9,
+          "latency_ms": 8100.5,
+          "latency_excl_rate_limit_ms": 2099.9,
+          "retrieval_ms": 1249.1,
+          "rate_limit_retries": 1,
+          "rate_limit_wait_ms": 6000.6,
           "llm_calls": 3,
           "prompt_tokens": 2708,
-          "completion_tokens": 199,
+          "completion_tokens": 153,
           "search_calls": 1,
           "errors": [],
           "contexts": [
@@ -1638,6 +1714,3741 @@
             [
               "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
               2
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "number": 6,
+      "question": "What is the primary deliverable that the trainee is expected to demonstrate by the end of the Java Full Stack Engineer Trainee program?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        1
+      ],
+      "reference_answer": "A working full-stack application through a capstone project",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1704.6,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 3.0,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1707.6,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1719.9,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "By the end of the program, the trainee is expected to demonstrate the ability to design, develop, test, secure, and present a working full-stack application through a capstone project [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 1288.3,
+          "latency_excl_rate_limit_ms": 1288.3,
+          "retrieval_ms": 995.8,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 1,
+          "prompt_tokens": 1031,
+          "completion_tokens": 43,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "By the end of the Java Full Stack Engineer Trainee program, the primary deliverable is a working full-stack application developed through a capstone project [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1]. The trainee is expected to demonstrate the ability to design, develop, test, secure, and present this application [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 10505.9,
+          "latency_excl_rate_limit_ms": 3505.3,
+          "retrieval_ms": 995.3,
+          "rate_limit_retries": 1,
+          "rate_limit_wait_ms": 7000.7,
+          "llm_calls": 3,
+          "prompt_tokens": 2614,
+          "completion_tokens": 144,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "number": 7,
+      "question": "In the context of the Java Full Stack Engineer Trainee role, which build management tool is paired with Git for version control in the engineering practices?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        2,
+        3
+      ],
+      "reference_answer": "Maven",
+      "type": "multi_part",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.8503449055347546,
+          "latency_ms": 795.6,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.5012658353418871,
+          "latency_ms": 4.3,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5437713091520254,
+          "latency_ms": 800.0,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 0.5,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5249810332008933,
+          "latency_ms": 810.5,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "Based on the provided document excerpts, there is no mention of a specific build management tool (such as Maven or Gradle) paired with Git for version control. The sources discuss technologies like Spring Boot, React.js, and general DevOps awareness, but they do not specify the build management tool used in the engineering practices.",
+          "has_answer": true,
+          "declined": true,
+          "decline_reason": "matched: 'do not specify'",
+          "latency_ms": 1374.5,
+          "latency_excl_rate_limit_ms": 1374.5,
+          "retrieval_ms": 1023.3,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 1,
+          "prompt_tokens": 1081,
+          "completion_tokens": 65,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "In the context of the Java Full Stack Engineer Trainee role, the build management tool paired with Git for version control is Maven [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.2]. The job description specifies that trainees are expected to apply software engineering practices that include Git-based version control and Maven build management [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.2].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 15192.8,
+          "latency_excl_rate_limit_ms": 3191.6,
+          "retrieval_ms": 2060.4,
+          "rate_limit_retries": 2,
+          "rate_limit_wait_ms": 12001.2,
+          "llm_calls": 4,
+          "prompt_tokens": 3548,
+          "completion_tokens": 179,
+          "search_calls": 2,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "number": 8,
+      "question": "What two specific security frameworks or standards are mentioned in the Java Full Stack Engineer Trainee job description for secure coding and vulnerability awareness?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        1,
+        2
+      ],
+      "reference_answer": "Spring Security and OWASP Top 10",
+      "type": "multi_part",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5437713091520254,
+          "latency_ms": 819.3,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.8503449055347546,
+          "latency_ms": 3.1,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 0.5,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.8175295903539445,
+          "latency_ms": 822.4,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.9197207891481876,
+          "latency_ms": 833.3,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "Based on the provided document excerpts, the job description mentions \"secure coding\" and \"secure handling of data\" as learning areas and responsibilities [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1] [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.2]. However, the specific text provided does not name any two specific security frameworks or standards (such as OWASP, NIST, or specific encryption standards) for secure coding and vulnerability awareness. Therefore, I cannot answer this question using only the provided sources.",
+          "has_answer": true,
+          "declined": true,
+          "decline_reason": "matched: 'cannot answer this question using only the provide'",
+          "latency_ms": 31931.8,
+          "latency_excl_rate_limit_ms": 31931.8,
+          "retrieval_ms": 1056.8,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 1,
+          "prompt_tokens": 1095,
+          "completion_tokens": 88,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "I couldn't find a reliable answer in the provided documents for: What two specific security frameworks or standards are mentioned in the Java Full Stack Engineer Trainee job description for secure coding and vulnerability awareness?",
+          "has_answer": false,
+          "declined": true,
+          "decline_reason": "has_answer=false",
+          "latency_ms": 4293.5,
+          "latency_excl_rate_limit_ms": 4293.5,
+          "retrieval_ms": 3157.0,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 4,
+          "prompt_tokens": 3274,
+          "completion_tokens": 166,
+          "search_calls": 3,
+          "errors": [],
+          "contexts": [],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "number": 9,
+      "question": "What is the monthly stipend amount provided to trainees in the Java Full Stack Engineer Trainee campus hire program?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [],
+      "reference_answer": "The document does not contain this information.",
+      "type": "unanswerable",
+      "retrieval": {},
+      "answers": {
+        "basic": {
+          "answer": "The provided sources do not contain information regarding the monthly stipend amount for the Java Full Stack Engineer Trainee campus hire program.",
+          "has_answer": true,
+          "declined": true,
+          "decline_reason": "matched: 'do not contain'",
+          "latency_ms": 1374.3,
+          "latency_excl_rate_limit_ms": 1374.3,
+          "retrieval_ms": 1084.0,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 1,
+          "prompt_tokens": 1022,
+          "completion_tokens": 26,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "I couldn't find a reliable answer in the provided documents for: What is the monthly stipend amount provided to trainees in the Java Full Stack Engineer Trainee campus hire program?",
+          "has_answer": false,
+          "declined": true,
+          "decline_reason": "has_answer=false",
+          "latency_ms": 5389.3,
+          "latency_excl_rate_limit_ms": 5389.3,
+          "retrieval_ms": 4488.9,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 4,
+          "prompt_tokens": 3162,
+          "completion_tokens": 157,
+          "search_calls": 3,
+          "errors": [],
+          "contexts": [],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "number": 10,
+      "question": "How many years of prior professional experience are required for candidates applying to the Java Full Stack Engineer Trainee role?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [],
+      "reference_answer": "The document does not contain this information.",
+      "type": "unanswerable",
+      "retrieval": {},
+      "answers": {
+        "basic": {
+          "answer": "The provided sources do not specify a required number of years of prior professional experience for the Java Full Stack Engineer Trainee role. The job description identifies the position as a \"Campus Hire\" for high-potential candidates from engineering institutions who will undergo a structured college-based training program [Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf, p.1].",
+          "has_answer": true,
+          "declined": true,
+          "decline_reason": "matched: 'do not specify'",
+          "latency_ms": 2943.8,
+          "latency_excl_rate_limit_ms": 2943.8,
+          "retrieval_ms": 2575.0,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 1,
+          "prompt_tokens": 1021,
+          "completion_tokens": 62,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "I couldn't find a reliable answer in the provided documents for: How many years of prior professional experience are required for candidates applying to the Java Full Stack Engineer Trainee role?",
+          "has_answer": false,
+          "declined": true,
+          "decline_reason": "has_answer=false",
+          "latency_ms": 12069.7,
+          "latency_excl_rate_limit_ms": 6068.9,
+          "retrieval_ms": 4982.4,
+          "rate_limit_retries": 1,
+          "rate_limit_wait_ms": 6000.9,
+          "llm_calls": 4,
+          "prompt_tokens": 3178,
+          "completion_tokens": 162,
+          "search_calls": 3,
+          "errors": [],
+          "contexts": [],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "number": 11,
+      "question": "According to the SVM notes, what is the core idea of Support Vector Machines regarding the selection of the hyperplane?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        1
+      ],
+      "reference_answer": "SVM tries to maximize the gap (margin) between points and the line so that the highest margin hyperplane performs best on unseen data.",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1036.6,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1.6,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1038.3,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1068.9,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "The core idea of Support Vector Machines is to select a hyperplane that classifies data points as widely as possible by maximizing the gap between the points and the line [SVM_Notes.pdf, p.1]. This approach aims to increase the margin so that the model performs better on unseen data compared to other lines [SVM_Notes.pdf, p.1].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 1609.6,
+          "latency_excl_rate_limit_ms": 1609.6,
+          "retrieval_ms": 1242.2,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 1,
+          "prompt_tokens": 1516,
+          "completion_tokens": 63,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "According to the notes, the core idea of Support Vector Machines is to select the hyperplane that maximizes the margin, or the gap, between the data points and the decision boundary [SVM_Notes.pdf, p.1]. By choosing the hyperplane that classifies points as widely as possible, the model aims to improve its performance on unseen data in the future [SVM_Notes.pdf, p.1]. This approach is summarized as trying to maximize the distance between the points and the line [SVM_Notes.pdf, p.1].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 22233.1,
+          "latency_excl_rate_limit_ms": 2231.6,
+          "retrieval_ms": 1229.3,
+          "rate_limit_retries": 2,
+          "rate_limit_wait_ms": 20001.5,
+          "llm_calls": 3,
+          "prompt_tokens": 3652,
+          "completion_tokens": 173,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "number": 12,
+      "question": "In the context of the SVM notes, what condition must be met for the hard margin SVM formulation to work?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        5
+      ],
+      "reference_answer": "The data must be perfectly linearly separable.",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 1788.8,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 1.7,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 1790.5,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 1807.4,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "For the hard margin SVM formulation to work, the data must be perfectly linearly separable [SVM_Notes.pdf, p.4]. If there is even a small amount of impurity or if the data is linearly inseparable, this formulation fails [SVM_Notes.pdf, p.4].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 1359.8,
+          "latency_excl_rate_limit_ms": 1359.8,
+          "retrieval_ms": 1005.5,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 1,
+          "prompt_tokens": 1524,
+          "completion_tokens": 52,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "For the hard margin SVM formulation to work, the data must be perfectly linearly separable [SVM_Notes.pdf, p.4]. If there is even a small amount of impurity or if the data is linearly inseparable, the hard margin formulation fails [SVM_Notes.pdf, p.4].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 20955.4,
+          "latency_excl_rate_limit_ms": 1954.0,
+          "retrieval_ms": 1024.9,
+          "rate_limit_retries": 2,
+          "rate_limit_wait_ms": 19001.5,
+          "llm_calls": 3,
+          "prompt_tokens": 3667,
+          "completion_tokens": 131,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "number": 13,
+      "question": "As stated in the SVM notes, what is the value of the slack variable xi_i for correctly classified points in the soft margin SVM formulation?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        5
+      ],
+      "reference_answer": "0",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 1768.5,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 5.0,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 1773.5,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 1790.3,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "For correctly classified points in the soft margin SVM formulation, the value of the slack variable xi_i is 0 [SVM_Notes.pdf, p.4].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 1348.8,
+          "latency_excl_rate_limit_ms": 1348.8,
+          "retrieval_ms": 1010.9,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 1,
+          "prompt_tokens": 1478,
+          "completion_tokens": 28,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "According to the SVM notes, the value of the slack variable $\\xi_i$ for correctly classified points in the soft margin SVM formulation is 0 [SVM_Notes.pdf, p.4].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 19928.0,
+          "latency_excl_rate_limit_ms": 1925.7,
+          "retrieval_ms": 1023.4,
+          "rate_limit_retries": 2,
+          "rate_limit_wait_ms": 18002.2,
+          "llm_calls": 3,
+          "prompt_tokens": 3581,
+          "completion_tokens": 118,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "number": 14,
+      "question": "According to the SVM notes, what happens to the model's focus when the hyperparameter C is set to a very small value?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        6
+      ],
+      "reference_answer": "The model ignores classification error and focuses more on maximizing the margin.",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 0.0,
+          "mrr@10": 0.1111111111111111,
+          "ndcg@10": 0.3010299956639812,
+          "latency_ms": 815.1,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 0.0,
+          "mrr@10": 0.0,
+          "ndcg@10": 0.0,
+          "latency_ms": 3.5,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 0.0,
+          "mrr@10": 0.0,
+          "ndcg@10": 0.0,
+          "latency_ms": 818.7,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 0.0,
+          "mrr@10": 0.0,
+          "ndcg@10": 0.0,
+          "latency_ms": 835.1,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "When the hyperparameter C is set to a very small value, the model ignores classification errors and focuses more on maximizing the margin [SVM_Notes.pdf, p.5].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 1358.3,
+          "latency_excl_rate_limit_ms": 1358.3,
+          "retrieval_ms": 1036.5,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 1,
+          "prompt_tokens": 1528,
+          "completion_tokens": 31,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "When the hyperparameter C is set to a very small value, the model shifts its focus to maximizing the margin while effectively ignoring classification errors [SVM_Notes.pdf, p.5]. This behavior contrasts with a very high C value, which prioritizes reducing misclassification even if it means reducing the margin [SVM_Notes.pdf, p.5]. In the SVM objective function, C acts as a weight for the hinge loss (classification error) relative to the regularization term (margin width) [SVM_Notes.pdf, p.5]. Therefore, a small C indicates that the model is willing to tolerate more misclassified points in order to achieve a wider separation between the classes [SVM_Notes.pdf, p.5].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 23211.1,
+          "latency_excl_rate_limit_ms": 2210.4,
+          "retrieval_ms": 1020.4,
+          "rate_limit_retries": 2,
+          "rate_limit_wait_ms": 21000.7,
+          "llm_calls": 3,
+          "prompt_tokens": 3679,
+          "completion_tokens": 211,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "number": 15,
+      "question": "What illustrative function is written beside the RBF curve in the SVM notes?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        6
+      ],
+      "reference_answer": "f(x) = e^(-x^2)",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 2249.0,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 2.2,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 2251.3,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 2265.0,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "The illustrative function written beside the RBF curve in the SVM notes is $f(x) = e^{-x^2}$ [SVM_Notes.pdf, p.6].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 1421.0,
+          "latency_excl_rate_limit_ms": 1421.0,
+          "retrieval_ms": 1100.0,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 1,
+          "prompt_tokens": 1499,
+          "completion_tokens": 32,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "Based on the provided notes, the function written beside the RBF curve is the Gaussian function, expressed as $f(x) = e^{-x^2}$ [SVM_Notes.pdf, p.6]. The notes describe this function as a mathematical tool used in the kernel trick to transform data from a lower-dimensional feature space into a higher-dimensional one, thereby making non-linearly separable data linearly separable [SVM_Notes.pdf, p.6]. Additionally, the notes identify this specific mathematical function as the RBF kernel [SVM_Notes.pdf, p.6].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 21455.2,
+          "latency_excl_rate_limit_ms": 3443.3,
+          "retrieval_ms": 1056.5,
+          "rate_limit_retries": 2,
+          "rate_limit_wait_ms": 18011.9,
+          "llm_calls": 3,
+          "prompt_tokens": 3611,
+          "completion_tokens": 174,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "number": 16,
+      "question": "In the code example provided in the SVM notes, what was the accuracy score achieved by the linear SVM classifier?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        6
+      ],
+      "reference_answer": "0.55",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1702.5,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1.9,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1704.4,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1717.5,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "The linear SVM classifier achieved an accuracy score of 0.55 [SVM_Notes.pdf, p.6].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 1319.0,
+          "latency_excl_rate_limit_ms": 1319.0,
+          "retrieval_ms": 1031.8,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 1,
+          "prompt_tokens": 1475,
+          "completion_tokens": 20,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "Based on the code example provided in the SVM notes, the linear SVM classifier achieved an accuracy score of 0.55 [SVM_Notes.pdf, p.6].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 18948.6,
+          "latency_excl_rate_limit_ms": 1947.4,
+          "retrieval_ms": 980.0,
+          "rate_limit_retries": 2,
+          "rate_limit_wait_ms": 17001.2,
+          "llm_calls": 3,
+          "prompt_tokens": 3569,
+          "completion_tokens": 108,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "number": 17,
+      "question": "How does the SVM notes describe the relationship between the hyperparameter C and the regularization parameter lambda?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        6
+      ],
+      "reference_answer": "C is proportional to 1/lambda (C ∝ 1/λ).",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 0.0,
+          "mrr@10": 0.125,
+          "ndcg@10": 0.31546487678572877,
+          "latency_ms": 882.1,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 0.0,
+          "mrr@10": 0.14285714285714285,
+          "ndcg@10": 0.3333333333333333,
+          "latency_ms": 2.0,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 0.0,
+          "mrr@10": 0.14285714285714285,
+          "ndcg@10": 0.3333333333333333,
+          "latency_ms": 884.1,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "latency_ms": 919.8,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "The notes describe the relationship between the hyperparameter C and the regularization parameter lambda as being inversely proportional, expressed as C ∝ 1/λ [SVM_Notes.pdf, p.5]. This connection is drawn by comparing the SVM loss function, which includes a regularization term and a hinge loss, to the logistic regression loss function that uses lambda for L2 regularization [SVM_Notes.pdf, p.5].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 1418.1,
+          "latency_excl_rate_limit_ms": 1418.1,
+          "retrieval_ms": 1019.8,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 1,
+          "prompt_tokens": 1564,
+          "completion_tokens": 75,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "The SVM notes describe the relationship between the hyperparameter C and the regularization parameter lambda as an inverse proportionality, specifically stating that C is proportional to 1/lambda [SVM_Notes.pdf, p.5].\n\nTo understand how this works in practice, the notes compare the SVM loss function to logistic regression, where lambda is the hyperparameter controlling L2 regularization [SVM_Notes.pdf, p.5]. In the SVM formulation, the loss is the sum of a regularization term (||w||/2) and a hinge loss term weighted by C [SVM_Notes.pdf, p.5].\n\nThe notes explain the practical implications of this relationship through the value of C:\n1. If C is very high, classification error gets more weightage than margin error, which means the model focuses on reducing misclassification even if it has to reduce the margin [SVM_Notes.pdf, p.5].\n2. If C is very small, the model ignores classification error and focuses more on maximizing the margin [SVM_Notes.pdf, p.5].\n\nThis trade-off is part of the soft margin SVM formulation, which allows for some classification errors to handle data that is not perfectly linearly separable [SVM_Notes.pdf, p.4].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 23391.6,
+          "latency_excl_rate_limit_ms": 2390.4,
+          "retrieval_ms": 988.9,
+          "rate_limit_retries": 2,
+          "rate_limit_wait_ms": 21001.2,
+          "llm_calls": 3,
+          "prompt_tokens": 3744,
+          "completion_tokens": 308,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "number": 18,
+      "question": "Based on the SVM notes, what is the total SVM loss composed of, and how is the hyperparameter C related to the regularization parameter lambda?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        6
+      ],
+      "reference_answer": "The SVM loss is composed of the regularization term and hinge loss, and C is proportional to 1/lambda.",
+      "type": "multi_part",
+      "retrieval": {
+        "vector": {
+          "recall@5": 0.0,
+          "mrr@10": 0.125,
+          "ndcg@10": 0.31546487678572877,
+          "latency_ms": 3267.3,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 0.0,
+          "mrr@10": 0.16666666666666666,
+          "ndcg@10": 0.3562071871080222,
+          "latency_ms": 2.9,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 0.0,
+          "mrr@10": 0.16666666666666666,
+          "ndcg@10": 0.3562071871080222,
+          "latency_ms": 3270.3,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "latency_ms": 3286.6,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "The total SVM loss is composed of a regularization term and a hinge loss [SVM_Notes.pdf, p.5]. This is mathematically represented as the sum of the regularization term and the hinge loss [SVM_Notes.pdf, p.5]. The hyperparameter C is inversely proportional to the regularization parameter lambda [SVM_Notes.pdf, p.5].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 1417.9,
+          "latency_excl_rate_limit_ms": 1417.9,
+          "retrieval_ms": 1040.5,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 1,
+          "prompt_tokens": 1535,
+          "completion_tokens": 60,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "Based on the provided notes, the total SVM loss is composed of two main parts: the regularization term and the hinge loss [SVM_Notes.pdf, p.5]. Specifically, the optimization problem minimizes the sum of the regularization term, represented as half the squared norm of the weight vector (||w||/2), and the hinge loss, which is the sum of the slack variables (ξi) multiplied by the hyperparameter C [SVM_Notes.pdf, p.5].\n\nRegarding the relationship between the hyperparameter C and the regularization parameter lambda, the notes state that C is inversely proportional to lambda [SVM_Notes.pdf, p.5]. This means that as lambda increases, C decreases, and vice versa [SVM_Notes.pdf, p.5]. The hyperparameter C controls the trade-off between maximizing the margin and minimizing classification error; a very high C places more weight on reducing classification errors, while a very small C focuses more on maximizing the margin even if it results in more classification errors [SVM_Notes.pdf, p.5].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 33737.6,
+          "latency_excl_rate_limit_ms": 2375.4,
+          "retrieval_ms": 2164.2,
+          "rate_limit_retries": 4,
+          "rate_limit_wait_ms": 31362.2,
+          "llm_calls": 4,
+          "prompt_tokens": 5338,
+          "completion_tokens": 303,
+          "search_calls": 2,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        }
+      }
+    },
+    {
+      "number": 19,
+      "question": "What accuracy scores are shown for the linear and RBF SVM examples, and what method is suggested for tuning model parameters?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        6
+      ],
+      "reference_answer": "Linear SVM: 55%, RBF SVM: 100%; Grid Search is suggested for tuning.",
+      "type": "multi_part",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1723.5,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 2.0,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              2
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1725.5,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1741.1,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {
+        "basic": {
+          "answer": "The linear SVM example achieved an accuracy score of 0.55, while the RBF kernel SVM example achieved a perfect accuracy score of 1.0 [SVM_Notes.pdf, p.6]. To tune the model parameters or transformations, the notes suggest using Grid Search CV [SVM_Notes.pdf, p.6].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 1421.5,
+          "latency_excl_rate_limit_ms": 1421.5,
+          "retrieval_ms": 1064.2,
+          "rate_limit_retries": 0,
+          "rate_limit_wait_ms": 0.0,
+          "llm_calls": 1,
+          "prompt_tokens": 1511,
+          "completion_tokens": 58,
+          "search_calls": 1,
+          "errors": [],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "faithfulness": null,
+          "answer_relevancy": null
+        },
+        "agentic": {
+          "answer": "The linear SVM example shows an accuracy score of 0.55, while the RBF SVM example achieves a perfect score of 1.0 (100%) [SVM_Notes.pdf, p.6]. For tuning model parameters, the suggested method is Grid Search CV [SVM_Notes.pdf, p.6].",
+          "has_answer": true,
+          "declined": false,
+          "decline_reason": null,
+          "latency_ms": 55766.8,
+          "latency_excl_rate_limit_ms": 3723.0,
+          "retrieval_ms": 4676.6,
+          "rate_limit_retries": 7,
+          "rate_limit_wait_ms": 52043.7,
+          "llm_calls": 6,
+          "prompt_tokens": 7761,
+          "completion_tokens": 191,
+          "search_calls": 4,
+          "errors": [
+            "llm: RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kk3g5angfwzsezpdms7kn79k` service tier `on_demand` on input tokens per minute (ITPM): Limit 7000, Used 6922, Requested 1472. Please try again in 11.948571428s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}"
+          ],
+          "contexts": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
             ]
           ],
           "faithfulness": null,

@@ -7,6 +7,7 @@ from groq import Groq
 
 from core.config import GROQ_API_KEY
 from services.embedder import search
+from services.errors import SearchUnavailable
 from services.rag import _document_excerpt
 
 _client: Groq | None = None
@@ -34,17 +35,21 @@ async def build_evidence_timeline(doc_id: str, *, user_id: str) -> dict:
     ]
     hits: list[dict] = []
     seen_chunks: set[str] = set()
-    for query in queries:
-        for hit in await search(
-            query,
-            n_results=6,
-            doc_id=doc_id,
-            user_id=user_id,
-        ):
-            key = hit["chunk_text"]
-            if key not in seen_chunks:
-                seen_chunks.add(key)
-                hits.append(hit)
+    try:
+        for query in queries:
+            for hit in await search(
+                query,
+                n_results=6,
+                doc_id=doc_id,
+                user_id=user_id,
+            ):
+                key = hit["chunk_text"]
+                if key not in seen_chunks:
+                    seen_chunks.add(key)
+                    hits.append(hit)
+    except SearchUnavailable as exc:
+        # Not "no evidence": the document was never searched.
+        return {"briefing": exc.message, "citations": [], "has_timeline": False, "error": exc.code}
 
     if not hits:
         return {

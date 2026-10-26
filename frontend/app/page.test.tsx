@@ -6,6 +6,7 @@ const api = vi.hoisted(() => ({
   listDocuments: vi.fn(),
   deleteDocument: vi.fn(),
   warmupBackend: vi.fn(),
+  sendMessage: vi.fn(),
 }));
 
 vi.mock("@/lib/api", async (importOriginal) => ({
@@ -208,5 +209,46 @@ describe("document delete", () => {
 
     await waitFor(() => expect(screen.queryByText("report.pdf")).toBeNull());
     expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+});
+
+describe("service errors in chat", () => {
+  const BUSY = "The AI service is busy or unavailable right now. Please try again shortly.";
+
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+    saveUser({ user_id: "u1", email: "u1@example.com", full_name: "" });
+    api.warmupBackend.mockResolvedValue(true);
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+    localStorage.clear();
+  });
+
+  async function ask(question: string) {
+    const box = screen.getByPlaceholderText(/Ask across all documents/);
+    fireEvent.change(box, { target: { value: question } });
+    fireEvent.keyDown(box, { key: "Enter" });
+  }
+
+  it("shows the notice as an alert and leaves the failed turn out of the next request", async () => {
+    await renderWithDocs([REPORT]);
+    api.sendMessage.mockResolvedValueOnce({ answer: BUSY, citations: [], has_answer: false, error: "ai_unavailable" });
+
+    await ask("What is the total?");
+
+    expect((await screen.findByRole("alert")).textContent).toBe(BUSY);
+
+    api.sendMessage.mockResolvedValueOnce({ answer: "It is $5.", citations: [], has_answer: true, error: null });
+    await waitFor(() =>
+      expect((screen.getByPlaceholderText(/Ask across all documents/) as HTMLTextAreaElement).disabled).toBe(false)
+    );
+    await ask("What is the total, again?");
+
+    await screen.findByText("It is $5.");
+    expect(api.sendMessage).toHaveBeenLastCalledWith("What is the total, again?", [], undefined);
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
   });
 });

@@ -7,7 +7,7 @@ import MessageBubble from "@/components/MessageBubble";
 import VoiceInput from "@/components/VoiceInput";
 import AuthGuard from "@/components/AuthGuard";
 import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
-import { ApiError, deleteDocument, generateEvidenceTimeline, listDocuments, sendAgenticMessage, sendMessage, userFacingError, warmupBackend } from "@/lib/api";
+import { ApiError, conversationHistory, deleteDocument, generateEvidenceTimeline, listDocuments, sendAgenticMessage, sendMessage, userFacingError, warmupBackend } from "@/lib/api";
 import { getUser, logout } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import type { IndexedDocument, Citation, EvidenceTimeline } from "@/lib/api";
@@ -20,6 +20,8 @@ interface StoredMessage {
   content: string;
   citations?: Citation[];
   timestamp: number;
+  /** An error notice (service unavailable, network failure), not an answer. */
+  isError?: boolean;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -264,7 +266,10 @@ function HomeContent() {
     try {
       const result = await generateEvidenceTimeline(docId);
       // Drop the result if the user switched documents while it was loading.
-      if (activeKeyRef.current === docId) setTimeline(result);
+      if (activeKeyRef.current === docId) {
+        if (result.error) setTimelineError(result.briefing);
+        else setTimeline(result);
+      }
     } catch (err) {
       if (activeKeyRef.current === docId) {
         setTimelineError(userFacingError(err, "Could not generate an evidence timeline. Please try again."));
@@ -308,7 +313,7 @@ function HomeContent() {
       setKeyLoading(true);
 
       try {
-        const history = messages.map((m) => ({ role: m.role, content: m.content }));
+        const history = conversationHistory(messages);
         const result = agenticMode
           ? await sendAgenticMessage(q, history, docId)
           : await sendMessage(q, history, docId);
@@ -318,6 +323,7 @@ function HomeContent() {
           content: result.answer,
           citations: result.citations,
           timestamp: Date.now(),
+          ...(result.error ? { isError: true } : {}),
         };
         appendMessage(aiMsg);
       } catch (err) {
@@ -326,6 +332,7 @@ function HomeContent() {
           role: "assistant",
           content: userFacingError(err, "Something went wrong. Please try again."),
           timestamp: Date.now(),
+          isError: true,
         });
       } finally {
         setKeyLoading(false);
@@ -664,7 +671,7 @@ function HomeContent() {
           {messages.map((msg) => (
             <MessageBubble
               key={msg.id}
-              message={{ role: msg.role, content: msg.content, citations: msg.citations }}
+              message={{ role: msg.role, content: msg.content, citations: msg.citations, isError: msg.isError }}
             />
           ))}
 

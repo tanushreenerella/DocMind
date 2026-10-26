@@ -17,16 +17,41 @@ export interface Citation {
   excerpt: string;
 }
 
+/**
+ * Set when the backend couldn't answer because a service failed (Groq busy or
+ * down, document search down, or the answer ran past its deadline). The answer
+ * text then explains this and asks the user to try again shortly.
+ */
+export type ServiceErrorCode = "ai_unavailable" | "search_unavailable" | "timeout" | "service_unavailable";
+
 export interface ChatResponse {
   answer: string;
   citations: Citation[];
   has_answer: boolean;
+  error?: ServiceErrorCode | null;
 }
 
 export interface EvidenceTimeline {
   briefing: string;
   citations: Citation[];
   has_timeline: boolean;
+  error?: ServiceErrorCode | null;
+}
+
+/**
+ * The conversation to send with the next question: without failed turns (an
+ * error notice and the question it answered), which the backend doesn't keep either.
+ */
+export function conversationHistory(messages: (Message & { isError?: boolean })[]): Message[] {
+  const history: Message[] = [];
+  for (const m of messages) {
+    if (m.isError) {
+      if (history.at(-1)?.role === "user") history.pop();
+      continue;
+    }
+    history.push({ role: m.role, content: m.content });
+  }
+  return history;
 }
 
 export interface UploadJob {

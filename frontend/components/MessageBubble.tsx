@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Bot, User } from "lucide-react";
+import { Bot, TriangleAlert, User } from "lucide-react";
 import ReactMarkdown, { defaultUrlTransform, type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import CitationCard from "@/components/CitationCard";
@@ -92,6 +92,8 @@ function MarkdownLink({ href, children, citations, onOpenCitation }: MarkdownLin
 
 interface AIMessage extends Message {
   citations?: Citation[];
+  /** A service-error notice ("AI service busy…"), shown as a warning rather than an answer. */
+  isError?: boolean;
 }
 
 interface MessageBubbleProps {
@@ -108,6 +110,7 @@ interface ViewerState {
 export default function MessageBubble({ message }: MessageBubbleProps) {
   const [viewer, setViewer] = useState<ViewerState | null>(null);
   const isUser = message.role === "user";
+  const isError = !isUser && message.isError === true;
 
   const handleExpand = (pdfUrl: string, docName: string, pageNumber: number) => {
     const idx = message.citations?.findIndex(
@@ -164,10 +167,10 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         <div
           className={`
             shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium
-            ${isUser ? "bg-indigo-500" : "bg-violet-500"}
+            ${isUser ? "bg-indigo-500" : isError ? "bg-amber-500" : "bg-violet-500"}
           `}
         >
-          {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+          {isUser ? <User className="w-4 h-4" /> : isError ? <TriangleAlert className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
         </div>
 
         {/* Bubble */}
@@ -177,11 +180,14 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
               px-4 py-3 rounded-2xl text-sm leading-relaxed
               ${isUser
                 ? "bg-indigo-500 text-white rounded-tr-sm whitespace-pre-wrap"
-                : "bg-white border border-gray-200 text-gray-800 rounded-tl-sm shadow-sm"
+                : isError
+                  ? "bg-amber-50 border border-amber-200 text-amber-900 rounded-tl-sm"
+                  : "bg-white border border-gray-200 text-gray-800 rounded-tl-sm shadow-sm"
               }
             `}
+            {...(isError ? { role: "alert" } : {})}
           >
-            {isUser ? (
+            {isUser || isError ? (
               message.content
             ) : (
               <ReactMarkdown

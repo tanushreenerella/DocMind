@@ -1,6 +1,6 @@
 """Document parser with pdfplumber extraction and Gemini Vision OCR fallback."""
 import asyncio
-from collections import deque
+from collections import Counter, deque
 from io import BytesIO
 import os
 from pathlib import Path
@@ -119,6 +119,73 @@ async def _ocr_page_with_gemini(pil_image) -> str:
     raise AssertionError("unreachable")
 
 
+# ── text cleanup ────────────────────────────────────────────────────────────
+
+# Invisible or layout-only characters PDFs often carry.
+_INVISIBLE = str.maketrans({"­": "", "​": "", "﻿": "", " ": " "})
+# "inter-\nnational" -> "international": a letter, hyphen, line break, lowercase letter.
+_WORD_BROKEN_AT_HYPHEN = re.compile(r"(?<=[^\W\d_])-[ \t]*\n[ \t]*(?=[a-z])")
+# "IL-\n6", "COVID-\n19": a real hyphen split across lines; keep it, drop the break.
+_TERM_BROKEN_AT_HYPHEN = re.compile(r"(?<=\w)-[ \t]*\n[ \t]*(?=\w)")
+_EXTRA_BLANK_LINES = re.compile(r"\n{3,}")
+# Header/footer candidates: at most this many non-blank lines at the top and bottom of a page.
+_EDGE_LINES = 3
+
+
+def clean_page_text(text: str) -> str:
+    """Rejoin words hyphenated across lines and normalise whitespace.
+
+    Spaces and tabs collapse to one space and lines are trimmed; single line
+    breaks stay (they separate table rows and list items) and runs of blank
+    lines become one blank line, which still marks a paragraph.
+    """
+    text = text.translate(_INVISIBLE).replace("\r\n", "\n").replace("\r", "\n")
+    text = _WORD_BROKEN_AT_HYPHEN.sub("", text)
+    text = _TERM_BROKEN_AT_HYPHEN.sub("-", text)
+    text = "\n".join(" ".join(line.split()) for line in text.split("\n"))
+    return _EXTRA_BLANK_LINES.sub("\n\n", text).strip()
+
+
+def _line_key(line: str) -> str:
+    # Digits masked, so "Page 3 of 10" and "Page 4 of 10" are the same footer.
+    return re.sub(r"\d+", "#", line.casefold()).strip()
+
+
+def _edge_line_indexes(lines: list[str]) -> set[int]:
+    """Header/footer candidates: up to _EDGE_LINES lines at each end, but at most a
+    quarter of the page, so a short page's body is never treated as its edges."""
+    non_blank = [i for i, line in enumerate(lines) if line.strip()]
+    edge = max(1, min(_EDGE_LINES, len(non_blank) // 4))
+    return set(non_blank[:edge] + non_blank[-edge:])
+
+
+def strip_repeated_lines(page_texts: list[str]) -> list[str]:
+    """Remove running headers and footers: lines at the top or bottom of a page
+    that (ignoring digits) recur at the top or bottom of most pages with text.
+
+    Needs at least three pages with text; with fewer, repetition says nothing.
+    """
+    with_text = [text for text in page_texts if text.strip()]
+    if len(with_text) < 3:
+        return page_texts
+
+    counts: Counter[str] = Counter()
+    for text in with_text:
+        lines = text.split("\n")
+        counts.update({_line_key(lines[i]) for i in _edge_line_indexes(lines)} - {""})
+    repeated = {key for key, pages in counts.items() if pages > len(with_text) / 2}
+    if not repeated:
+        return page_texts
+
+    cleaned = []
+    for text in page_texts:
+        lines = text.split("\n")
+        edges = _edge_line_indexes(lines)
+        kept = [line for i, line in enumerate(lines) if not (i in edges and _line_key(line) in repeated)]
+        cleaned.append(_EXTRA_BLANK_LINES.sub("\n\n", "\n".join(kept)).strip())
+    return cleaned
+
+
 def count_pdf_pages(file_path: str) -> int:
     """Page count from the PDF's page tree, without extracting any content.
 
@@ -164,12 +231,13 @@ async def _parse_pdf(file_path: str, doc_id: str, image_dir: str) -> list[dict]:
             # Table extraction
             raw_tables = plumber_page.extract_tables() or []
             structured_tables = []
+            table_texts = []
             for table in raw_tables:
                 if table and table[0]:
                     headers = table[0]
                     rows = table[1:]
                     structured_tables.append({"headers": headers, "rows": rows})
-                    text = (text or "") + "\n" + _table_to_text(headers, rows)
+                    table_texts.append(_table_to_text(headers, rows))
 
             # Save page thumbnail
             img_filename = ""
@@ -189,14 +257,21 @@ async def _parse_pdf(file_path: str, doc_id: str, image_dir: str) -> list[dict]:
 
             pages.append({
                 "page_number": page_num,
-                "text": text.strip(),
+                "text": clean_page_text(text),  # body only until headers/footers go, below
                 "image_path": os.path.join(image_dir, img_filename) if img_filename else "",
                 "image_filename": img_filename,
                 "has_tables": bool(raw_tables),
                 "tables": structured_tables,
                 # Needed OCR and every attempt failed: this page's text is missing.
                 "ocr_failed": ocr_failed,
+                "_table_texts": table_texts,
             })
+
+    # Running headers/footers only show up across pages. Tables are added after,
+    # so a table row repeated on every page is never mistaken for one.
+    bodies = strip_repeated_lines([p["text"] for p in pages])
+    for page, body in zip(pages, bodies):
+        page["text"] = "\n\n".join(part for part in (body, *page.pop("_table_texts")) if part).strip()
 
     extracted = sum(1 for p in pages if p["text"])
     print(f"[parser] done — {len(pages)} pages, {extracted} with text")

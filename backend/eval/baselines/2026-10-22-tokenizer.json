@@ -1,0 +1,7297 @@
+{
+  "meta": {
+    "timestamp": "2026-10-22T15:58:20+00:00",
+    "duration_s": 32.0,
+    "git": {
+      "commit": "52f31e11692cf0f2d991762f16c09edc6c79bfa7",
+      "dirty": true
+    },
+    "completed_questions": 41,
+    "stopped": null
+  },
+  "config": {
+    "questions_file": "C:\\Users\\tanus\\OneDrive - Manipal University Jaipur\\BFAI Assignment\\bfai-assessment\\backend\\eval\\questions.json",
+    "questions_sha256": "ae5c3551127d8b9db54cff61e2542ef78b9d9bdc1a1c440cdb13e28602d6aecc",
+    "questions": 41,
+    "questions_by_type": {
+      "factual": 26,
+      "multi_part": 8,
+      "unanswerable": 7
+    },
+    "offset": 0,
+    "limit": null,
+    "retrieval_only": true,
+    "scope": "all",
+    "pacing": {
+      "sleep_between_questions_s": 0.0,
+      "delay_after_pipeline_s": 0.0,
+      "groq_max_retries": 2
+    },
+    "user_id": "e36d9dd4-cf9f-4e43-a321-88702b23297d",
+    "chroma_database": "docmind-dev",
+    "retrieval": {
+      "modes": [
+        "vector",
+        "bm25",
+        "hybrid",
+        "hybrid_rerank"
+      ],
+      "recall_k": 5,
+      "rank_k": 10,
+      "relevance": "page-level: doc_name matches and page in expected_pages",
+      "embedding_model": "models/gemini-embedding-001",
+      "chunk_size": 500,
+      "chunk_overlap": 50,
+      "rrf_k": 60,
+      "rerank_model": "ms-marco-TinyBERT-L-2-v2",
+      "rerank_candidates": 10
+    },
+    "answers": {
+      "pipelines": [],
+      "retrieval_mode": "hybrid_rerank",
+      "answer_models": [],
+      "judge_model": null,
+      "ragas_metrics": [],
+      "answer_relevancy_strictness": null
+    },
+    "versions": {
+      "python": "3.11.0",
+      "ragas": "0.4.3",
+      "langchain-groq": "0.3.8",
+      "groq": "0.37.1",
+      "chromadb": "1.5.9",
+      "flashrank": "0.2.10"
+    }
+  },
+  "retrieval": {
+    "vector": {
+      "n": 34,
+      "recall@5": 0.9117647058823529,
+      "mrr@10": 0.6586601307189541,
+      "ndcg@10": 0.7321002932784938,
+      "latency": {
+        "p50_ms": 769.9000000000001,
+        "p95_ms": 824.84
+      },
+      "errors": 0
+    },
+    "bm25": {
+      "n": 34,
+      "recall@5": 0.9117647058823529,
+      "mrr@10": 0.7193977591036415,
+      "ndcg@10": 0.7731321777352,
+      "latency": {
+        "p50_ms": 5.15,
+        "p95_ms": 8.850000000000001
+      },
+      "errors": 0
+    },
+    "hybrid": {
+      "n": 34,
+      "recall@5": 0.8970588235294118,
+      "mrr@10": 0.7051820728291316,
+      "ndcg@10": 0.7634233465845262,
+      "latency": {
+        "p50_ms": 776.3,
+        "p95_ms": 829.7550000000001
+      },
+      "errors": 0
+    },
+    "hybrid_rerank": {
+      "n": 34,
+      "recall@5": 0.9264705882352942,
+      "mrr@10": 0.720098039215686,
+      "ndcg@10": 0.772535798408939,
+      "latency": {
+        "p50_ms": 840.95,
+        "p95_ms": 896.73
+      },
+      "errors": 0
+    }
+  },
+  "answers": {},
+  "per_question": [
+    {
+      "number": 1,
+      "question": "Which specific Java version range is highlighted in the backend engineering learning area of the Java Full Stack Engineer Trainee job description?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        1
+      ],
+      "reference_answer": "Java 8–21 features",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1565.2,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 11.9,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 1577.2,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 1674.7,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 2,
+      "question": "What tool is specified for code coverage analysis in the Engineering Practices & Code Quality section of the Java Full Stack Engineer Trainee role?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        2
+      ],
+      "reference_answer": "JaCoCo",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 862.8,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "latency_ms": 5.4,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 868.3,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 895.4,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 3,
+      "question": "According to the Secure Coding & Responsible AI Usage section, which specific AI tool is mentioned for usage in the Java Full Stack Engineer Trainee program?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        2
+      ],
+      "reference_answer": "GitHub Copilot",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 775.7,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 2.0,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 777.8,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 792.3,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 4,
+      "question": "What specific authentication and authorization technology is required for implementation in the Java Full Stack Engineer Trainee role?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        1,
+        2
+      ],
+      "reference_answer": "JWT-based authentication and authorization",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.9197207891481876,
+          "latency_ms": 783.2,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.8503449055347546,
+          "latency_ms": 2.5,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.8503449055347546,
+          "latency_ms": 785.7,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 0.5,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.8315546295836225,
+          "latency_ms": 796.2,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 5,
+      "question": "Which frontend framework is explicitly listed as a key learning area for the Java Full Stack Engineer Trainee position?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        1
+      ],
+      "reference_answer": "React.js",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 770.2,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 6.3,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 776.6,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 834.9,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 6,
+      "question": "What is the primary deliverable that the trainee is expected to demonstrate by the end of the Java Full Stack Engineer Trainee program?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        1
+      ],
+      "reference_answer": "A working full-stack application through a capstone project",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 780.2,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 3.8,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 784.1,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 838.7,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 7,
+      "question": "In the context of the Java Full Stack Engineer Trainee role, which build management tool is paired with Git for version control in the engineering practices?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        2,
+        3
+      ],
+      "reference_answer": "Maven",
+      "type": "multi_part",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.8503449055347546,
+          "latency_ms": 786.4,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.5012658353418871,
+          "latency_ms": 4.7,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5437713091520254,
+          "latency_ms": 791.1,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 0.5,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5249810332008933,
+          "latency_ms": 855.8,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 8,
+      "question": "What two specific security frameworks or standards are mentioned in the Java Full Stack Engineer Trainee job description for secure coding and vulnerability awareness?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [
+        1,
+        2
+      ],
+      "reference_answer": "Spring Security and OWASP Top 10",
+      "type": "multi_part",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5437713091520254,
+          "latency_ms": 762.8,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.8503449055347546,
+          "latency_ms": 6.5,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 0.5,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.8175295903539445,
+          "latency_ms": 769.4,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.9197207891481876,
+          "latency_ms": 801.2,
+          "retrieved": [
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 9,
+      "question": "What is the monthly stipend amount provided to trainees in the Java Full Stack Engineer Trainee campus hire program?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [],
+      "reference_answer": "The document does not contain this information.",
+      "type": "unanswerable",
+      "retrieval": {},
+      "answers": {}
+    },
+    {
+      "number": 10,
+      "question": "How many years of prior professional experience are required for candidates applying to the Java Full Stack Engineer Trainee role?",
+      "doc_name": "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+      "expected_pages": [],
+      "reference_answer": "The document does not contain this information.",
+      "type": "unanswerable",
+      "retrieval": {},
+      "answers": {}
+    },
+    {
+      "number": 11,
+      "question": "According to the SVM notes, what is the core idea of Support Vector Machines regarding the selection of the hyperplane?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        1
+      ],
+      "reference_answer": "SVM tries to maximize the gap (margin) between points and the line so that the highest margin hyperplane performs best on unseen data.",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 750.3,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 4.1,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 754.5,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 844.8,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 12,
+      "question": "In the context of the SVM notes, what condition must be met for the hard margin SVM formulation to work?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        5
+      ],
+      "reference_answer": "The data must be perfectly linearly separable.",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 782.2,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 5.3,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 787.6,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 849.6,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 13,
+      "question": "As stated in the SVM notes, what is the value of the slack variable xi_i for correctly classified points in the soft margin SVM formulation?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        5
+      ],
+      "reference_answer": "0",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 785.7,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 6.2,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 792.0,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 838.3,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 14,
+      "question": "According to the SVM notes, what happens to the model's focus when the hyperparameter C is set to a very small value?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        6
+      ],
+      "reference_answer": "The model ignores classification error and focuses more on maximizing the margin.",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 0.0,
+          "mrr@10": 0.1111111111111111,
+          "ndcg@10": 0.3010299956639812,
+          "latency_ms": 803.5,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 0.0,
+          "mrr@10": 0.0,
+          "ndcg@10": 0.0,
+          "latency_ms": 5.5,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 0.0,
+          "mrr@10": 0.0,
+          "ndcg@10": 0.0,
+          "latency_ms": 809.0,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 0.0,
+          "mrr@10": 0.0,
+          "ndcg@10": 0.0,
+          "latency_ms": 897.9,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 15,
+      "question": "What illustrative function is written beside the RBF curve in the SVM notes?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        6
+      ],
+      "reference_answer": "f(x) = e^(-x^2)",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 767.5,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 4.4,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 772.0,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 818.3,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 16,
+      "question": "In the code example provided in the SVM notes, what was the accuracy score achieved by the linear SVM classifier?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        6
+      ],
+      "reference_answer": "0.55",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 740.6,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 3.5,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 744.1,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 826.2,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 17,
+      "question": "How does the SVM notes describe the relationship between the hyperparameter C and the regularization parameter lambda?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        6
+      ],
+      "reference_answer": "C is proportional to 1/lambda (C ∝ 1/λ).",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 0.0,
+          "mrr@10": 0.125,
+          "ndcg@10": 0.31546487678572877,
+          "latency_ms": 777.1,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 0.0,
+          "mrr@10": 0.14285714285714285,
+          "ndcg@10": 0.3333333333333333,
+          "latency_ms": 5.0,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 0.0,
+          "mrr@10": 0.14285714285714285,
+          "ndcg@10": 0.3333333333333333,
+          "latency_ms": 782.1,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "latency_ms": 828.0,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              3
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 18,
+      "question": "Based on the SVM notes, what is the total SVM loss composed of, and how is the hyperparameter C related to the regularization parameter lambda?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        6
+      ],
+      "reference_answer": "The SVM loss is composed of the regularization term and hinge loss, and C is proportional to 1/lambda.",
+      "type": "multi_part",
+      "retrieval": {
+        "vector": {
+          "recall@5": 0.0,
+          "mrr@10": 0.125,
+          "ndcg@10": 0.31546487678572877,
+          "latency_ms": 769.6,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 0.0,
+          "mrr@10": 0.16666666666666666,
+          "ndcg@10": 0.3562071871080222,
+          "latency_ms": 4.2,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              2
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 0.0,
+          "mrr@10": 0.16666666666666666,
+          "ndcg@10": 0.3562071871080222,
+          "latency_ms": 773.9,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "latency_ms": 859.7,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 19,
+      "question": "What accuracy scores are shown for the linear and RBF SVM examples, and what method is suggested for tuning model parameters?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [
+        6
+      ],
+      "reference_answer": "Linear SVM: 55%, RBF SVM: 100%; Grid Search is suggested for tuning.",
+      "type": "multi_part",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 757.6,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 7.1,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              2
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 764.7,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 843.2,
+          "retrieved": [
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "SVM_Notes.pdf",
+              4
+            ],
+            [
+              "SVM_Notes.pdf",
+              6
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ],
+            [
+              "SVM_Notes.pdf",
+              1
+            ],
+            [
+              "SVM_Notes.pdf",
+              5
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 20,
+      "question": "What specific value for the hyperparameter C is recommended in the SVM notes as the optimal choice for balancing margin and classification error?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [],
+      "reference_answer": "The document does not contain this information.",
+      "type": "unanswerable",
+      "retrieval": {},
+      "answers": {}
+    },
+    {
+      "number": 21,
+      "question": "Which specific dataset was used to demonstrate the kernel trick in the code example provided in the SVM notes?",
+      "doc_name": "SVM_Notes.pdf",
+      "expected_pages": [],
+      "reference_answer": "The document does not contain this information.",
+      "type": "unanswerable",
+      "retrieval": {},
+      "answers": {}
+    },
+    {
+      "number": 22,
+      "question": "How many distinct terms are stored in the inverted index of the SciFact search system described in the project report?",
+      "doc_name": "information_retrival-1.pdf",
+      "expected_pages": [
+        2
+      ],
+      "reference_answer": "40,669",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 751.6,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              2
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              7
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 5.4,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              2
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              7
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 757.0,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              2
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              7
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 824.9,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              2
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              7
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 23,
+      "question": "What is the dimensionality of the embeddings produced by the all-MiniLM-L6-v2 sentence transformer model used in the SciFact project?",
+      "doc_name": "information_retrival-1.pdf",
+      "expected_pages": [
+        3
+      ],
+      "reference_answer": "384",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 758.8,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              7
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 6.7,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              2
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 765.6,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              2
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 807.4,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              2
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 24,
+      "question": "What value is used for the constant k in the Reciprocal Rank Fusion (RRF) formula for the SciFact hybrid model?",
+      "doc_name": "information_retrival-1.pdf",
+      "expected_pages": [
+        3
+      ],
+      "reference_answer": "60",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 768.1,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              7
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 4.1,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 772.2,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              7
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 820.9,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              7
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 25,
+      "question": "According to the results table in the SciFact project report, what is the Precision@10 (P@10) score for the BM25 retrieval model?",
+      "doc_name": "information_retrival-1.pdf",
+      "expected_pages": [
+        4
+      ],
+      "reference_answer": "0.0923",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 768.1,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              2
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 7.8,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 776.0,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 870.3,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 26,
+      "question": "What is the average search time per query for the Sentence Transformer model in the SciFact search system?",
+      "doc_name": "information_retrival-1.pdf",
+      "expected_pages": [
+        4
+      ],
+      "reference_answer": "4.9 ms",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 786.8,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              7
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 5.7,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              2
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 792.5,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 862.4,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 27,
+      "question": "In the statistical significance analysis of the SciFact project, how many queries showed a better nDCG@10 score for the Hybrid (BM25 + ST) model compared to the standalone BM25 model?",
+      "doc_name": "information_retrival-1.pdf",
+      "expected_pages": [
+        5
+      ],
+      "reference_answer": "80",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 776.0,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 9.5,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 785.5,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 861.1,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 28,
+      "question": "What is the difference in nDCG@10 performance between the Hybrid (BM25 + ST) model and the standalone Sentence Transformer model in the SciFact evaluation?",
+      "doc_name": "information_retrival-1.pdf",
+      "expected_pages": [
+        4,
+        5
+      ],
+      "reference_answer": "0.0702 (0.7186 - 0.6484)",
+      "type": "multi_part",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6240505200038379,
+          "latency_ms": 792.7,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5706417189553201,
+          "latency_ms": 8.5,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5706417189553201,
+          "latency_ms": 801.3,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 0.5,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.5802792108518124,
+          "latency_ms": 860.8,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 29,
+      "question": "How does the average search time per query for the Hybrid (BM25 + ST) model compare to that of the standalone BM25 model in the SciFact system?",
+      "doc_name": "information_retrival-1.pdf",
+      "expected_pages": [
+        4
+      ],
+      "reference_answer": "The Hybrid model takes 3.9 ms per query, which is 2.9 ms slower than the BM25 model's 1.0 ms.",
+      "type": "multi_part",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 768.7,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "latency_ms": 5.9,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 774.7,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 896.1,
+          "retrieved": [
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              3
+            ],
+            [
+              "information_retrival-1.pdf",
+              6
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              4
+            ],
+            [
+              "information_retrival-1.pdf",
+              5
+            ],
+            [
+              "information_retrival-1.pdf",
+              1
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 30,
+      "question": "What specific cross-encoder architecture was used to re-rank the top results in the final stage of the SciFact search pipeline?",
+      "doc_name": "information_retrival-1.pdf",
+      "expected_pages": [],
+      "reference_answer": "The document does not contain this information; it mentions using a cross-encoder as future work.",
+      "type": "unanswerable",
+      "retrieval": {},
+      "answers": {}
+    },
+    {
+      "number": 31,
+      "question": "What was the F1-score achieved by the Hybrid (BM25 + ST) model on the SciFact test set?",
+      "doc_name": "information_retrival-1.pdf",
+      "expected_pages": [],
+      "reference_answer": "The document does not contain this information; F1-score is not reported in the results.",
+      "type": "unanswerable",
+      "retrieval": {},
+      "answers": {}
+    },
+    {
+      "number": 32,
+      "question": "According to the MCP explained notes, how many custom integrations are required to connect 3 models and 5 tools without using MCP?",
+      "doc_name": "mcp-explained-notes-compressed.pdf",
+      "expected_pages": [
+        1
+      ],
+      "reference_answer": "15 integrations",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 766.4,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 3.9,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 770.3,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "latency_ms": 844.5,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 33,
+      "question": "In the MCP architecture, which component is responsible for holding the API keys and secrets for the tools?",
+      "doc_name": "mcp-explained-notes-compressed.pdf",
+      "expected_pages": [
+        3
+      ],
+      "reference_answer": "The MCP Server",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "latency_ms": 798.1,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 5.0,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 803.1,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 872.5,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 34,
+      "question": "What specific method does the MCP Client use to discover the available tools and their input schemas from an MCP Server at startup?",
+      "doc_name": "mcp-explained-notes-compressed.pdf",
+      "expected_pages": [
+        3
+      ],
+      "reference_answer": "tools/list",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 758.9,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 4.4,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 763.3,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 857.3,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 35,
+      "question": "According to the quick reference section, what is the definition of 'Intent' in the context of MCP?",
+      "doc_name": "mcp-explained-notes-compressed.pdf",
+      "expected_pages": [
+        6
+      ],
+      "reference_answer": "The LLM's decision about which tool to call with which arguments; the host executes it",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 783.6,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 3.7,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 787.3,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 825.2,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 36,
+      "question": "Which three third-party aggregators are mentioned in the MCP notes as examples of services that expose thousands of tools through a single MCP server?",
+      "doc_name": "mcp-explained-notes-compressed.pdf",
+      "expected_pages": [
+        5
+      ],
+      "reference_answer": "Zapier, Pipedream, and Make",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 719.1,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 4.8,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "latency_ms": 723.9,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 773.8,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 37,
+      "question": "What are the two common transports for MCP messages mentioned in the quick reference section?",
+      "doc_name": "mcp-explained-notes-compressed.pdf",
+      "expected_pages": [
+        6
+      ],
+      "reference_answer": "stdio (local) and Streamable HTTP (remote)",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 727.9,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 4.5,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 732.4,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 810.3,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 38,
+      "question": "According to the MCP notes, which version of JSON-RPC is used for MCP messages?",
+      "doc_name": "mcp-explained-notes-compressed.pdf",
+      "expected_pages": [
+        6
+      ],
+      "reference_answer": "JSON-RPC 2.0",
+      "type": "factual",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "latency_ms": 804.4,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 4.5,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 809.0,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 851.7,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 39,
+      "question": "How does the total number of connections change when moving from a non-MCP setup to an MCP setup for 3 models and 5 tools, and what is the resulting count with MCP?",
+      "doc_name": "mcp-explained-notes-compressed.pdf",
+      "expected_pages": [
+        1,
+        4
+      ],
+      "reference_answer": "It changes from N*M (15) to N+M (8), resulting in 8 connections.",
+      "type": "multi_part",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 763.2,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.9197207891481876,
+          "latency_ms": 6.7,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 770.0,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.9197207891481876,
+          "latency_ms": 832.4,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              6
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 40,
+      "question": "In the end-to-end support conversation example, why does the LLM not need to query the database again when the user asks for a refund after asking about their order status?",
+      "doc_name": "mcp-explained-notes-compressed.pdf",
+      "expected_pages": [
+        3,
+        4
+      ],
+      "reference_answer": "Because the order and product details from the previous query are already in the context, allowing the LLM to call the refund tool directly.",
+      "type": "multi_part",
+      "retrieval": {
+        "vector": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 0.9197207891481876,
+          "latency_ms": 766.2,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              5
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "bm25": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 7.3,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              2
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 773.6,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ]
+          ],
+          "error": null
+        },
+        "hybrid_rerank": {
+          "recall@5": 1.0,
+          "mrr@10": 1.0,
+          "ndcg@10": 1.0,
+          "latency_ms": 837.9,
+          "retrieved": [
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              1
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              3
+            ],
+            [
+              "mcp-explained-notes-compressed.pdf",
+              4
+            ],
+            [
+              "Java_Full_Stack_Engineer_Trainee_Detailed_JD.pdf",
+              1
+            ]
+          ],
+          "error": null
+        }
+      },
+      "answers": {}
+    },
+    {
+      "number": 41,
+      "question": "What is the maximum number of concurrent connections an MCP Server can handle according to the performance benchmarks in the notes?",
+      "doc_name": "mcp-explained-notes-compressed.pdf",
+      "expected_pages": [],
+      "reference_answer": "The document does not contain this information.",
+      "type": "unanswerable",
+      "retrieval": {},
+      "answers": {}
+    }
+  ]
+}

@@ -101,6 +101,9 @@ async def chat(
         doc_id=body.doc_id,
         user_id=current_user["id"],
     )
+    if result.get("error"):
+        # An outage notice isn't part of the conversation; the user will ask again.
+        return result
 
     # Persist both turns to chat_history
     await pool.execute(
@@ -139,6 +142,8 @@ async def chat_agentic(
         user_id=current_user["id"],
         doc_id=body.doc_id,
     )
+    if result.get("error"):
+        return result
 
     await pool.execute(
         "INSERT INTO chat_history (user_id, doc_id, role, content) VALUES ($1, $2, 'user', $3)",

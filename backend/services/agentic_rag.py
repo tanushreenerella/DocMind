@@ -4,17 +4,34 @@ planner -> research -> synthesizer. The research node runs retrieval and the
 critic for every sub-question concurrently; each sub-question retries with the
 critic's rewritten query (at most _MAX_RETRIEVAL_RETRIES times) on its own,
 without waiting for the others.
+
+Outages stop the graph at once: a failed Groq call (429, 5xx, timeout) raises
+AIUnavailable and a failed search raises SearchUnavailable, cancelling the
+other sub-questions, and the user is told to try again shortly. Only a
+critic's actual verdict can lead to "no reliable answer". The whole graph has
+AGENTIC_DEADLINE_S to answer; each Groq call has rag.GROQ_TIMEOUT_S.
 """
 
 import asyncio
 import json
+import re
 import time
 from typing import Awaitable, Callable, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
 from services.embedder import search
-from services.rag import get_groq_client
+from services.errors import AnswerTimeout, ServiceUnavailable, error_response
+from services.rag import chat_completion, get_groq_client
+
+AGENTIC_DEADLINE_S = 45.0
+# planner -> research -> synthesizer is 3 steps; anything more is a bug, not a loop to allow.
+RUN_CONFIG = {"recursion_limit": 6}
+
+
+async def _chat(**kwargs):
+    """A Groq chat call off the event loop; raises AIUnavailable on any failure."""
+    return await asyncio.to_thread(chat_completion, get_groq_client(), **kwargs)
 
 
 def _document_excerpt(text: str) -> str:
@@ -179,42 +196,32 @@ async def _plan_question(state: AgenticState) -> dict:
 
     original_question = state["original_question"]
 
-    try:
-        response = await asyncio.to_thread(
-            get_groq_client().chat.completions.create,
-            model="qwen/qwen3.8-27b",
-            messages=[
-                {
-                    "role": "system",
-                    "content": _PLANNER_PROMPT,
-                },
-                {
-                    "role": "user",
-                    "content": (
-                        "Create the query plan for this question.\n\n"
-                        f"Question: {original_question}\n\n"
-                        "Return exactly one JSON object and nothing else."
-                    ),
-                },
-            ],
-            temperature=0,
-            max_tokens=300,
-            reasoning_effort="none",
-        )
-        raw = response.choices[0].message.content or ""
+    response = await _chat(
+        model="qwen/qwen3.8-27b",
+        messages=[
+            {
+                "role": "system",
+                "content": _PLANNER_PROMPT,
+            },
+            {
+                "role": "user",
+                "content": (
+                    "Create the query plan for this question.\n\n"
+                    f"Question: {original_question}\n\n"
+                    "Return exactly one JSON object and nothing else."
+                ),
+            },
+        ],
+        temperature=0,
+        max_tokens=300,
+        reasoning_effort="none",
+    )
+    raw = response.choices[0].message.content or ""
 
-        sub_questions, question_type = _parse_planner_response(
-            raw,
-            original_question,
-        )
-
-    except Exception as exc:
-        print(
-            f"[agentic planner] Groq call failed; "
-            f"using original question: {exc}"
-        )
-        sub_questions = [original_question]
-        question_type = "factual"
+    sub_questions, question_type = _parse_planner_response(
+        raw,
+        original_question,
+    )
 
     return {
         "sub_questions": sub_questions,
@@ -365,55 +372,42 @@ async def _grade_sub_question(
         for index, chunk in enumerate(chunks)
     )
 
-    try:
-        response = await asyncio.to_thread(
-            get_groq_client().chat.completions.create,
-            model="qwen/qwen3.8-27b",
-            messages=[
-                {
-                    "role": "system",
-                    "content": _CRITIC_PROMPT,
-                },
-                                {
-                    "role": "user",
-                    "content": (
-                        f"Question type: {question_type}\n\n"
-                        f"Sub-question:\n{sub_question}\n\n"
-                        f"Retrieved excerpts:\n{excerpts}\n\n"
-                        "Return exactly one JSON object and nothing else.\n"
-                        'Example: {"verdict":"sufficient","rewrite":""}'
-                    ),
-                },
-            ],
-            temperature=0,
-            max_tokens=200,
-            reasoning_effort="none",
-        )
+    # A failed call raises AIUnavailable: it is an outage, not an "insufficient" verdict.
+    response = await _chat(
+        model="qwen/qwen3.8-27b",
+        messages=[
+            {
+                "role": "system",
+                "content": _CRITIC_PROMPT,
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Question type: {question_type}\n\n"
+                    f"Sub-question:\n{sub_question}\n\n"
+                    f"Retrieved excerpts:\n{excerpts}\n\n"
+                    "Return exactly one JSON object and nothing else.\n"
+                    'Example: {"verdict":"sufficient","rewrite":""}'
+                ),
+            },
+        ],
+        temperature=0,
+        max_tokens=200,
+        reasoning_effort="none",
+    )
 
-        raw = response.choices[0].message.content or ""
+    raw = response.choices[0].message.content or ""
 
-        verdict, rewrite = _parse_critic_response(
-            raw,
-            sub_question,
-        )
+    verdict, rewrite = _parse_critic_response(
+        raw,
+        sub_question,
+    )
 
-        return (
-            sub_question,
-            verdict,
-            rewrite,
-        )
-
-    except Exception as exc:
-        print(
-            f"[agentic critic] Groq call failed; "
-            f"marking insufficient: {exc}"
-        )
-
-        return (
-            sub_question,
-            "insufficient",
-            sub_question,
-        )
+    return (
+        sub_question,
+        verdict,
+        rewrite,
+    )
 
 
 # =============================================================================
@@ -462,7 +456,10 @@ async def _research_sub_question(
 async def _research(
     state: AgenticState,
 ) -> dict:
-    """Run retrieval + critic for all sub-questions concurrently."""
+    """Run retrieval + critic for all sub-questions concurrently.
+
+    The first outage cancels the other sub-questions and is raised as is.
+    """
 
     sub_questions = (
         state.get("sub_questions")
@@ -470,19 +467,24 @@ async def _research(
     )
     question_type = state.get("question_type", "factual")
 
-    results = await asyncio.gather(
-        *(
-            _research_sub_question(
-                sub_question,
-                question_type,
-                state["user_id"],
-                state.get("doc_id"),
-            )
-            for sub_question in sub_questions
-        )
-    )
+    try:
+        async with asyncio.TaskGroup() as group:
+            tasks = [
+                group.create_task(
+                    _research_sub_question(
+                        sub_question,
+                        question_type,
+                        state["user_id"],
+                        state.get("doc_id"),
+                    )
+                )
+                for sub_question in sub_questions
+            ]
+    except ExceptionGroup as failures:
+        outages = [e for e in failures.exceptions if isinstance(e, ServiceUnavailable)]
+        raise (outages or failures.exceptions)[0] from None
 
-    by_question = dict(zip(sub_questions, results))
+    by_question = dict(zip(sub_questions, (task.result() for task in tasks)))
     return {
         "retrieved_chunks": {q: r[0] for q, r in by_question.items()},
         "critic_verdicts": {q: r[1] for q, r in by_question.items()},
@@ -702,87 +704,69 @@ async def _synthesize_answer(
         }
     )
 
-    try:
+    # A failed call raises AIUnavailable, which ends the graph run.
+    response = await _chat(
+        model="qwen/qwen3.8-27b",
+        messages=messages,
+        temperature=0.2,
+        max_tokens=700,
+        reasoning_effort="none",
+    )
 
-        response = await asyncio.to_thread(
-            get_groq_client().chat.completions.create,
-            model="qwen/qwen3.8-27b",
-            messages=messages,
-            temperature=0.2,
-            max_tokens=700,
-            reasoning_effort="none",
-        )
+    answer = (
+        response.choices[0]
+        .message
+        .content
+        or ""
+    ).strip()
 
-        answer = (
-            response.choices[0]
-            .message
-            .content
-            or ""
-        ).strip()
+    # Safety: remove accidental thinking blocks.
+    if "<think>" in answer:
+        start = answer.find("<think>")
+        end = answer.find("</think>")
 
-        # Safety: remove accidental thinking blocks.
-        if "<think>" in answer:
-            start = answer.find("<think>")
-            end = answer.find("</think>")
+        if end >= 0:
+            answer = (
+                answer[:start]
+                + answer[end + len("</think>"):]
+            ).strip()
 
-            if end >= 0:
-                answer = (
-                    answer[:start]
-                    + answer[end + len("</think>"):]
-                ).strip()
-
-        if _contains_unsafe_answer_content(answer):
-            print(
-                "[agentic synthesizer] blocked potentially unsafe "
-                "model output"
-            )
-            return {
-                "final_answer": _NO_RELIABLE_ANSWER,
-                "citations": [],
-                "has_answer": False,
-            }
-                # Strip any self-written references section the model added
-        # despite being told not to.
-        for marker in ("\nReferences:", "\nSources:"):
-            idx = answer.find(marker)
-            if idx != -1:
-                answer = answer[:idx].strip()
-
-        # Split grouped citation brackets like [SOURCE 1, SOURCE 2] into
-        # separate markers [SOURCE 1][SOURCE 2] so the replacement loop
-        # below can match them individually.
-        import re
-        def _split_grouped(match):
-            nums = re.findall(r"\d+", match.group(0))
-            return "".join(f"[SOURCE {n}]" for n in nums)
-        answer = re.sub(r"\[SOURCE[^\]]*\]", _split_grouped, answer)
-                # Collapse consecutive duplicate citation markers, e.g.
-        # [SOURCE 1][SOURCE 2][SOURCE 1][SOURCE 2] -> [SOURCE 1][SOURCE 2]
-        answer = re.sub(r"(\[SOURCE \d+\])(?:\1)+", r"\1", answer)
-        # Also cap runs of many distinct adjacent markers to at most 2.
-        def _cap_run(match):
-            markers = re.findall(r"\[SOURCE \d+\]", match.group(0))
-            seen = []
-            for m in markers:
-                if m not in seen:
-                    seen.append(m)
-            return "".join(seen[:2])
-        answer = re.sub(r"(?:\[SOURCE \d+\]){3,}", _cap_run, answer)
-    except Exception as exc:
+    if _contains_unsafe_answer_content(answer):
         print(
-            f"[agentic synthesizer] "
-            f"Groq call failed: {exc}"
+            "[agentic synthesizer] blocked potentially unsafe "
+            "model output"
         )
-
         return {
-            "final_answer": (
-                "The AI service is temporarily "
-                "unavailable. Please try again "
-                "in a moment."
-            ),
+            "final_answer": _NO_RELIABLE_ANSWER,
             "citations": [],
             "has_answer": False,
         }
+    # Strip any self-written references section the model added
+    # despite being told not to.
+    for marker in ("\nReferences:", "\nSources:"):
+        idx = answer.find(marker)
+        if idx != -1:
+            answer = answer[:idx].strip()
+
+    # Split grouped citation brackets like [SOURCE 1, SOURCE 2] into
+    # separate markers [SOURCE 1][SOURCE 2] so the replacement loop
+    # below can match them individually.
+    def _split_grouped(match):
+        nums = re.findall(r"\d+", match.group(0))
+        return "".join(f"[SOURCE {n}]" for n in nums)
+    answer = re.sub(r"\[SOURCE[^\]]*\]", _split_grouped, answer)
+    # Collapse consecutive duplicate citation markers, e.g.
+    # [SOURCE 1][SOURCE 2][SOURCE 1][SOURCE 2] -> [SOURCE 1][SOURCE 2]
+    answer = re.sub(r"(\[SOURCE \d+\])(?:\1)+", r"\1", answer)
+    # Also cap runs of many distinct adjacent markers to at most 2.
+    def _cap_run(match):
+        markers = re.findall(r"\[SOURCE \d+\]", match.group(0))
+        seen = []
+        for m in markers:
+            if m not in seen:
+                seen.append(m)
+        return "".join(seen[:2])
+    answer = re.sub(r"(?:\[SOURCE \d+\]){3,}", _cap_run, answer)
 
     citations: list[dict] = []
 
@@ -982,14 +966,28 @@ async def answer_agentic_query(
     user_id: str,
     doc_id: str | None = None,
 ) -> dict:
-    """Invoke the graph and preserve the existing API response shape."""
+    """Invoke the graph and preserve the existing API response shape.
 
-    state = await agentic_graph.ainvoke(
-        initial_state(question, conversation_history, user_id, doc_id)
-    )
+    An outage or the AGENTIC_DEADLINE_S deadline gives an error_response
+    (has_answer false, ``error`` set) instead of an answer.
+    """
+
+    try:
+        async with asyncio.timeout(AGENTIC_DEADLINE_S):
+            state = await agentic_graph.ainvoke(
+                initial_state(question, conversation_history, user_id, doc_id),
+                config=RUN_CONFIG,
+            )
+    except ServiceUnavailable as exc:
+        print(f"[agentic] stopped: {exc.code}")
+        return error_response(exc)
+    except TimeoutError:
+        print(f"[agentic] stopped: no answer within {AGENTIC_DEADLINE_S:.0f} s")
+        return error_response(AnswerTimeout())
 
     return {
         "answer": state["final_answer"],
         "citations": state["citations"],
         "has_answer": state["has_answer"],
+        "error": None,
     }

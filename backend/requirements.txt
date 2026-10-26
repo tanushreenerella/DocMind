@@ -16,6 +16,7 @@ bcrypt==4.0.1
 langgraph>=0.2,<1.0
 langchain-core>=0.3,<1.0
 rank-bm25==0.2.2
+snowballstemmer==3.1.1
 flashrank==0.2.10
 langchain-groq
 boto3==1.43.115

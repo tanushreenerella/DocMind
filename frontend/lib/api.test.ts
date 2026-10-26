@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
   RATE_LIMIT_MESSAGE,
+  conversationHistory,
   deleteDocument,
   listDocuments,
   login,
@@ -85,5 +86,36 @@ describe("deleteDocument", () => {
     respondWith(404, { detail: "Document not found" });
 
     await expect(deleteDocument("doc-1")).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+describe("conversationHistory", () => {
+  it("drops error notices and the questions they answered", () => {
+    expect(
+      conversationHistory([
+        { role: "user", content: "q1" },
+        { role: "assistant", content: "a1" },
+        { role: "user", content: "q2" },
+        { role: "assistant", content: "AI service busy", isError: true },
+        { role: "user", content: "q3" },
+        { role: "assistant", content: "a3" },
+      ])
+    ).toEqual([
+      { role: "user", content: "q1" },
+      { role: "assistant", content: "a1" },
+      { role: "user", content: "q3" },
+      { role: "assistant", content: "a3" },
+    ]);
+  });
+
+  it("keeps everything when nothing failed, without extra fields", () => {
+    const messages = [
+      { role: "user" as const, content: "q1", isError: false },
+      { role: "assistant" as const, content: "a1" },
+    ];
+    expect(conversationHistory(messages)).toEqual([
+      { role: "user", content: "q1" },
+      { role: "assistant", content: "a1" },
+    ]);
   });
 });

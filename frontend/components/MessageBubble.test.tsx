@@ -55,3 +55,27 @@ describe("MessageBubble", () => {
     expect(screen.getByTestId("page-viewer").textContent).toBe("report.pdf page 3");
   });
 });
+
+describe("MessageBubble error notices", () => {
+  it("shows a service error as a plain-text alert, not an answer", () => {
+    render(
+      <MessageBubble
+        message={{
+          role: "assistant",
+          content: "Document search is unavailable right now. Please try again shortly. [report.pdf, p.3]",
+          isError: true,
+        }}
+      />
+    );
+
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toContain("Document search is unavailable right now.");
+    // Rendered as text: no citation pills or markdown.
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("renders ordinary answers without an alert", () => {
+    render(<MessageBubble message={{ role: "assistant", content: "It is $5." }} />);
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+});

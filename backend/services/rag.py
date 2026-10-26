@@ -7,20 +7,34 @@ from groq import Groq
 
 from core.config import GROQ_API_KEY
 from services.embedder import search
+from services.errors import AIUnavailable, ServiceUnavailable, error_response
 from core.config import RERANK_ENABLED
+
+# Per Groq call. No SDK retries: a 429/5xx/timeout is reported to the user at
+# once ("try again shortly") instead of stretching one answer past a minute.
+GROQ_TIMEOUT_S = 20.0
 _client: Groq | None = None
 
 
 def _get_client() -> Groq:
     global _client
     if _client is None:
-        _client = Groq(api_key=GROQ_API_KEY)
+        _client = Groq(api_key=GROQ_API_KEY, timeout=GROQ_TIMEOUT_S, max_retries=0)
     return _client
 
 
 def get_groq_client() -> Groq:
     """Return the shared Groq client for RAG-related graph nodes."""
     return _get_client()
+
+
+def chat_completion(client: Groq, **kwargs):
+    """One Groq chat call; any failure (429, 5xx, timeout, connection) raises AIUnavailable."""
+    try:
+        return client.chat.completions.create(**kwargs)
+    except Exception as exc:
+        print(f"[groq error] {type(exc).__name__}: {exc}")
+        raise AIUnavailable() from exc
 
 
 def _document_excerpt(text: str) -> str:
@@ -74,9 +88,23 @@ async def answer_query(
     {
       "answer": str,
       "citations": [{"doc_name": str, "page_number": int, "image_filename": str, "excerpt": str}],
-      "has_answer": bool
+      "has_answer": bool,
+      "error": None, or a services.errors code when search or the AI service failed
     }
     """
+    try:
+        return await _answer_query(question, conversation_history, doc_id, user_id=user_id)
+    except ServiceUnavailable as exc:
+        return error_response(exc)
+
+
+async def _answer_query(
+    question: str,
+    conversation_history: list[dict],
+    doc_id: str | None,
+    *,
+    user_id: str,
+) -> dict:
     hits = await search(
         question,
         n_results=6,
@@ -89,6 +117,7 @@ async def answer_query(
             "answer": "I don't have any documents in my knowledge base yet. Please upload relevant documents first.",
             "citations": [],
             "has_answer": False,
+            "error": None,
         }
 
     if RERANK_ENABLED:
@@ -103,6 +132,7 @@ async def answer_query(
             "answer": "I couldn't find information relevant enough to answer this question confidently. The documents I have may not cover this topic.",
             "citations": [],
             "has_answer": False,
+            "error": None,
         }
 
     context_parts = []
@@ -125,25 +155,18 @@ async def answer_query(
         }
     )
 
-    try:
-        response = _get_client().chat.completions.create(
-            model="qwen/qwen3.8-27b",
-            messages=messages,
-            temperature=0.2,
-            max_tokens=700,
-            reasoning_effort="none",
-        )
-        answer: str = (response.choices[0].message.content or "").strip()
-        if not answer:
-            print("[rag error] Empty response from model")
-            raise ValueError("empty response")
-    except Exception as exc:
-        print(f"[rag error] Groq call failed: {exc}")
-        return {
-            "answer": "The AI service is temporarily unavailable. Please try again in a moment.",
-            "citations": [],
-            "has_answer": False,
-        }
+    response = chat_completion(
+        _get_client(),
+        model="qwen/qwen3.8-27b",
+        messages=messages,
+        temperature=0.2,
+        max_tokens=700,
+        reasoning_effort="none",
+    )
+    answer: str = (response.choices[0].message.content or "").strip()
+    if not answer:
+        print("[rag error] Empty response from model")
+        raise AIUnavailable()
 
     # Strip any self-written references section despite instructions.
     for marker in ("\nReferences:", "\nSources:"):
@@ -190,4 +213,5 @@ async def answer_query(
         "answer": answer,
         "citations": citations,
         "has_answer": True,
+        "error": None,
     }
