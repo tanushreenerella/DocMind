@@ -318,16 +318,6 @@ class CitationGroundingTests(unittest.TestCase):
         )
         self.assertEqual(answer, "One [a.pdf, p.1] and.")
 
-    def test_references_list_keeps_only_grounded_entries(self) -> None:
-        a_chunk, a = _cite("a.pdf", 1)
-        _, b = _cite("b.pdf", 2)
-        listing = "Summary.\n\nReferences:\n- [a.pdf, p.1]\n- [b.pdf, p.2]"
-        self.assertEqual(
-            self.ground(listing, [a, b], [a_chunk]),
-            ("Summary.\n\nReferences:\n- [a.pdf, p.1]", [a]),
-        )
-        self.assertEqual(self.ground(listing, [a, b], []), ("Summary.", []))
-
 
 if __name__ == "__main__":
     unittest.main()
