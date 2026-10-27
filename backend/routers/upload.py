@@ -29,8 +29,9 @@ from core.config import (
 )
 from core.database import get_pool
 from core.rate_limit import limiter
+from core.token_budget import charged_to, over_budget
 from core.security import sanitize_filename, validate_magic_bytes
-from services.classifier import classify_document
+from services.classifier import budget_skipped_classification, classify_document
 from services.embedder import index_document
 from services import storage
 from services.parser import count_pdf_pages, parse_document
@@ -79,8 +80,14 @@ async def _process_document(
 
         await _set_status(doc_id, page_count=len(pages), progress=50, stage="classifying")
 
-        combined_text = " ".join(p["text"][:1000] for p in pages[:5])
-        classification = await classify_document(combined_text, filename)
+        if await over_budget(user_id):
+            # Out of AI budget: still index the document, just without a Groq classification.
+            print(f"[{doc_id}] daily token budget used up; skipping classification")
+            classification = budget_skipped_classification()
+        else:
+            combined_text = " ".join(p["text"][:1000] for p in pages[:5])
+            with charged_to(user_id):
+                classification = await classify_document(combined_text, filename)
 
         await _set_status(
             doc_id,

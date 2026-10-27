@@ -36,6 +36,9 @@ function status(s: JobStatus["status"], extra: Partial<JobStatus> = {}): JobStat
       : null,
     page_count: 3,
     failed_pages: [],
+    suspicious: false,
+    hidden_text_pages: [],
+    hidden_text_removed: 0,
     ...extra,
   };
 }
@@ -127,6 +130,20 @@ describe("upload page", () => {
 
     expect(await screen.findByText("Indexed, but couldn't read pages 2, 5")).toBeTruthy();
     expect(screen.getByText(/missing text from some pages/)).toBeTruthy();
+    expect(document.body.textContent).not.toContain("✅");
+  });
+
+  it("warns about documents whose hidden text was removed", async () => {
+    statusesById({
+      "doc-1": status("complete", { suspicious: true, hidden_text_pages: [1], hidden_text_removed: 146 }),
+      "doc-2": status("complete"),
+    });
+    await uploadDocs(["invoice.pdf", "clean.pdf"]);
+
+    const badge = await screen.findByText("Hidden text removed");
+    expect(screen.getAllByText("Hidden text removed")).toHaveLength(1);
+    expect(badge.closest("span")?.getAttribute("title")).toContain("146 characters removed from page 1.");
+    expect(screen.getByText("1 document contained hidden text, which was not indexed.")).toBeTruthy();
     expect(document.body.textContent).not.toContain("✅");
   });
 

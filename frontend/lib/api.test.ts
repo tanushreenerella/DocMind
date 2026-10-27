@@ -35,6 +35,27 @@ describe("api error handling", () => {
     expect(getUser()).not.toBeNull();
   });
 
+  it("keeps the server's message for a daily-budget 429", async () => {
+    const budget = "Daily AI usage limit reached, resets at midnight UTC";
+    respondWith(429, { detail: budget });
+
+    const err = await listDocuments().catch((e: unknown) => e);
+
+    expect((err as ApiError).status).toBe(429);
+    expect(userFacingError(err, "fallback")).toBe(budget);
+  });
+
+  it("uses the rate-limit message for a 429 without a usable detail", async () => {
+    for (const body of [{}, { detail: "" }, { detail: [{ msg: "x" }] }]) {
+      respondWith(429, body);
+      const err = await listDocuments().catch((e: unknown) => e);
+      expect(userFacingError(err, "fallback")).toBe(RATE_LIMIT_MESSAGE);
+    }
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("not json", { status: 429 })));
+    const err = await listDocuments().catch((e: unknown) => e);
+    expect(userFacingError(err, "fallback")).toBe(RATE_LIMIT_MESSAGE);
+  });
+
   it("logs out locally on a 401 from a protected endpoint", async () => {
     respondWith(401, { detail: "Invalid or expired token" });
 

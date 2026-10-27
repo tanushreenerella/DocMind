@@ -34,6 +34,14 @@ RATE_LIMIT_UPLOAD = os.environ.get("RATE_LIMIT_UPLOAD", "10/hour")
 RATE_LIMIT_VOICE = os.environ.get("RATE_LIMIT_VOICE", "10/minute")
 # e.g. redis://host:6379/0; counters are per-process with memory://.
 RATE_LIMIT_STORAGE_URI = os.environ.get("RATE_LIMIT_STORAGE_URI", "memory://")
+# Groq tokens (prompt + completion) each user may spend per UTC day; see core/token_budget.py.
+DAILY_TOKEN_BUDGET = int(os.environ.get("DAILY_TOKEN_BUDGET", "50000"))
+# Where the daily counts live. Defaults to the rate limiter's Redis, if it uses one;
+# without Redis they go to Postgres (token_usage table).
+TOKEN_BUDGET_REDIS_URL = os.environ.get(
+    "TOKEN_BUDGET_REDIS_URL",
+    RATE_LIMIT_STORAGE_URI if RATE_LIMIT_STORAGE_URI.startswith(("redis://", "rediss://")) else "",
+)
 HYBRID_SEARCH_ENABLED = (
     os.environ.get("HYBRID_SEARCH_ENABLED", "false").strip().lower()
     == "true"

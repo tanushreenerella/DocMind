@@ -1,4 +1,6 @@
+import hashlib
 import hmac
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Awaitable, Callable, Optional
 
@@ -18,6 +20,10 @@ from core.config import (
 from core.database import get_pool
 
 ACCESS_TOKEN_COOKIE = "access_token"
+# Personal access tokens: "dm_" + 32 random bytes, sent as "Authorization: Bearer dm_...".
+PAT_PREFIX = "dm_"
+# What listings show of a token so users can tell them apart: "dm_" + 8 of its 43 random characters.
+PAT_DISPLAY_LENGTH = len(PAT_PREFIX) + 8
 PROXY_SECRET_HEADER = "x-proxy-secret"
 _STATE_CHANGING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
@@ -61,13 +67,75 @@ def clear_auth_cookie(response: Response) -> None:
     )
 
 
-async def get_current_user(
-    access_token: Optional[str] = Cookie(default=None),
-) -> dict:
-    credentials_exc = HTTPException(
+def generate_personal_access_token() -> str:
+    return PAT_PREFIX + secrets.token_urlsafe(32)
+
+
+def hash_personal_access_token(token: str) -> str:
+    """SHA-256 hex digest: the only form a token is stored in.
+
+    Unsalted is enough here: the token carries 256 random bits, so there is
+    nothing to brute-force or look up in a table.
+    """
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def _bearer_token(request: Request) -> Optional[str]:
+    scheme, _, credentials = request.headers.get("authorization", "").partition(" ")
+    return credentials.strip() if scheme.lower() == "bearer" else None
+
+
+def _credentials_error() -> HTTPException:
+    return HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or expired token",
     )
+
+
+async def get_current_user(
+    request: Request,
+    access_token: Optional[str] = Cookie(default=None),
+) -> dict:
+    """The caller, from an "Authorization: Bearer dm_..." token if one is sent, else the session cookie.
+
+    A Bearer header is never ignored: if it isn't a valid, unrevoked personal
+    access token the request is 401 even when a valid cookie is present.
+    """
+    bearer = _bearer_token(request)
+    if bearer is not None:
+        return await _user_from_personal_access_token(bearer)
+    return await _user_from_session(access_token)
+
+
+async def get_session_user(access_token: Optional[str] = Cookie(default=None)) -> dict:
+    """The caller from the session cookie only: for managing tokens, which a token itself may not do."""
+    return await _user_from_session(access_token)
+
+
+async def _user_from_personal_access_token(token: str) -> dict:
+    if not token.startswith(PAT_PREFIX):
+        raise _credentials_error()
+    pool = get_pool()
+    # users.id is compared as text so this works whatever its column type.
+    row = await pool.fetchrow(
+        """
+        SELECT t.id AS token_id, u.id, u.email, u.full_name
+        FROM personal_access_tokens t
+        JOIN users u ON u.id::text = t.user_id
+        WHERE t.token_hash = $1 AND t.revoked_at IS NULL
+        """,
+        hash_personal_access_token(token),
+    )
+    if row is None:
+        raise _credentials_error()
+    await pool.execute(
+        "UPDATE personal_access_tokens SET last_used_at = now() WHERE id = $1", row["token_id"]
+    )
+    return {"id": str(row["id"]), "email": row["email"], "full_name": row["full_name"]}
+
+
+async def _user_from_session(access_token: Optional[str]) -> dict:
+    credentials_exc = _credentials_error()
     if not access_token:
         raise credentials_exc
     try:
@@ -95,7 +163,15 @@ async def require_allowed_origin(
 
     Requests without an Origin header are rejected too, since the auth cookie
     is sent automatically and the header is the only proof of where they came from.
+
+    Requests carrying a personal access token are exempt: they authenticate
+    with that token, never the cookie (see get_current_user), and a cross-site
+    page can't attach an Authorization header without passing CORS preflight.
+    That is what lets scripts without an Origin use POST/DELETE endpoints.
     """
+    bearer = _bearer_token(request)
+    if bearer is not None and bearer.startswith(PAT_PREFIX):
+        return await call_next(request)
     if (
         request.method in _STATE_CHANGING_METHODS
         and request.headers.get("origin") not in ALLOWED_ORIGINS

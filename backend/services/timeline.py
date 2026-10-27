@@ -6,6 +6,7 @@ import re
 from groq import Groq
 
 from core.config import GROQ_API_KEY
+from core.token_budget import record_usage
 from services.embedder import search
 from services.errors import SearchUnavailable
 from services.rag import _document_excerpt
@@ -93,6 +94,7 @@ Sources:
             max_tokens=700,
             reasoning_format="none",
         )
+        await record_usage(response)
         data = _parse_json(response.choices[0].message.content or "{}")
     except (Exception, json.JSONDecodeError) as exc:
         print(f"[timeline error] {exc}")

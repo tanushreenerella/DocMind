@@ -3,6 +3,7 @@ import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from core.auth import get_current_user
 from core.database import get_pool
+from core.token_budget import charged_to, ensure_within_budget
 from services import storage
 from services.embedder import delete_document_chunks
 from services.timeline import build_evidence_timeline
@@ -49,6 +50,7 @@ async def document_count(current_user: dict = Depends(get_current_user)):
 @router.post("/documents/{doc_id}/evidence-timeline")
 async def evidence_timeline(doc_id: str, current_user: dict = Depends(get_current_user)):
     """Produce an evidence-backed timeline only after verifying document ownership."""
+    await ensure_within_budget(current_user["id"])
     pool = get_pool()
     document = await pool.fetchrow(
         "SELECT doc_id FROM documents WHERE doc_id = $1 AND user_id = $2 AND status IN ('complete', 'partial')",
@@ -57,10 +59,11 @@ async def evidence_timeline(doc_id: str, current_user: dict = Depends(get_curren
     )
     if not document:
         raise HTTPException(404, "Document not found")
-    return await build_evidence_timeline(
-        doc_id,
-        user_id=current_user["id"],
-    )
+    with charged_to(current_user["id"]):
+        return await build_evidence_timeline(
+            doc_id,
+            user_id=current_user["id"],
+        )
 
 
 @router.delete("/documents/{doc_id}", status_code=status.HTTP_204_NO_CONTENT)

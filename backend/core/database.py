@@ -39,6 +39,17 @@ SCHEMA_UPDATES = (
     "ALTER TABLE documents ADD COLUMN IF NOT EXISTS hidden_text_pages INTEGER[] NOT NULL DEFAULT '{}'",
     "ALTER TABLE documents ADD COLUMN IF NOT EXISTS hidden_text_removed INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE documents ADD COLUMN IF NOT EXISTS suspicious BOOLEAN NOT NULL DEFAULT FALSE",
+    # Daily Groq token counts when Redis isn't configured or is down (core/token_budget.py).
+    "CREATE TABLE IF NOT EXISTS token_usage ("
+    "user_id TEXT NOT NULL, day DATE NOT NULL, tokens BIGINT NOT NULL DEFAULT 0, "
+    "PRIMARY KEY (user_id, day))",
+    # Personal access tokens (routers/tokens.py). Only the SHA-256 of a token is
+    # kept; prefix is its first few characters, for telling tokens apart.
+    "CREATE TABLE IF NOT EXISTS personal_access_tokens ("
+    "id TEXT PRIMARY KEY, user_id TEXT NOT NULL, name TEXT NOT NULL, "
+    "token_hash TEXT NOT NULL UNIQUE, prefix TEXT NOT NULL, "
+    "created_at TIMESTAMPTZ NOT NULL DEFAULT now(), last_used_at TIMESTAMPTZ, revoked_at TIMESTAMPTZ)",
+    "CREATE INDEX IF NOT EXISTS personal_access_tokens_user_id ON personal_access_tokens (user_id)",
 )
 
 

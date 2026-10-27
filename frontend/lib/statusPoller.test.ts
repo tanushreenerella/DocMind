@@ -11,6 +11,9 @@ function status(s: JobStatus["status"]): JobStatus {
     classification: null,
     page_count: 0,
     failed_pages: [],
+    suspicious: false,
+    hidden_text_pages: [],
+    hidden_text_removed: 0,
   };
 }
 

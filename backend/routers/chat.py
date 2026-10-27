@@ -14,6 +14,7 @@ from core.config import (
 )
 from core.database import get_pool
 from core.rate_limit import limiter
+from core.token_budget import charged_to, ensure_within_budget
 from services.agentic_rag import answer_agentic_query
 from services.rag import answer_query
 
@@ -90,17 +91,19 @@ async def chat(
     current_user: dict = Depends(get_current_user),
 ):
     pool = get_pool()
+    await ensure_within_budget(current_user["id"])
     await _require_owned_document(
         body.doc_id,
         current_user["id"],
     )
     history = [{"role": m.role, "content": m.content} for m in body.conversation_history]
-    result = await answer_query(
-        body.question,
-        history,
-        doc_id=body.doc_id,
-        user_id=current_user["id"],
-    )
+    with charged_to(current_user["id"]):
+        result = await answer_query(
+            body.question,
+            history,
+            doc_id=body.doc_id,
+            user_id=current_user["id"],
+        )
     if result.get("error"):
         # An outage notice isn't part of the conversation; the user will ask again.
         return result
@@ -131,17 +134,19 @@ async def chat_agentic(
 ):
     """Phase-1 LangGraph endpoint; preserves the existing chat response contract."""
     pool = get_pool()
+    await ensure_within_budget(current_user["id"])
     await _require_owned_document(
         body.doc_id,
         current_user["id"],
     )
     history = [{"role": m.role, "content": m.content} for m in body.conversation_history]
-    result = await answer_agentic_query(
-        body.question,
-        history,
-        user_id=current_user["id"],
-        doc_id=body.doc_id,
-    )
+    with charged_to(current_user["id"]):
+        result = await answer_agentic_query(
+            body.question,
+            history,
+            user_id=current_user["id"],
+            doc_id=body.doc_id,
+        )
     if result.get("error"):
         return result
 

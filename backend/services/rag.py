@@ -8,6 +8,7 @@ import time
 from groq import Groq, RateLimitError
 
 from core.config import GROQ_API_KEY
+from core.token_budget import record_usage
 from services.embedder import search
 from services.errors import AIUnavailable, ServiceUnavailable, error_response
 from core.config import RERANK_ENABLED
@@ -79,7 +80,7 @@ async def chat_completion(client: Groq, *, deadline: float | None = None, **kwar
     """
     create = client.chat.completions.create
     try:
-        return await asyncio.to_thread(create, **kwargs)
+        response = await asyncio.to_thread(create, **kwargs)
     except Exception as exc:
         wait = _per_minute_wait(exc)
         if wait is not None and deadline is not None:
@@ -89,16 +90,21 @@ async def chat_completion(client: Groq, *, deadline: float | None = None, **kwar
         if wait is None:
             raise AIUnavailable() from exc
         print(f"[groq] per-minute rate limit; retrying once in {wait:.1f} s")
+    else:
+        await record_usage(response)
+        return response
 
     await asyncio.sleep(wait)
     timeout = GROQ_TIMEOUT_S
     if deadline is not None:
         timeout = min(timeout, deadline - time.monotonic())
     try:
-        return await asyncio.to_thread(create, **kwargs, timeout=timeout)
+        response = await asyncio.to_thread(create, **kwargs, timeout=timeout)
     except Exception as exc:
         print(f"[groq error] retry failed: {type(exc).__name__}: {exc}")
         raise AIUnavailable() from exc
+    await record_usage(response)
+    return response
 
 
 def _document_excerpt(text: str) -> str:

@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Upload, Brain, Menu, X, Loader2, Send, FileText, LogOut, Sparkles, CalendarDays, Layers, Trash2 } from "lucide-react";
+import { Upload, Brain, Menu, X, Loader2, Send, FileText, LogOut, Sparkles, CalendarDays, Layers, Settings, Trash2 } from "lucide-react";
 import MessageBubble from "@/components/MessageBubble";
 import VoiceInput from "@/components/VoiceInput";
 import AuthGuard from "@/components/AuthGuard";
 import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
+import SuspiciousBadge from "@/components/SuspiciousBadge";
 import { ApiError, conversationHistory, deleteDocument, generateEvidenceTimeline, listDocuments, sendAgenticMessage, sendMessage, userFacingError, warmupBackend } from "@/lib/api";
 import { getUser, logout } from "@/lib/auth";
 import { useRouter } from "next/navigation";
@@ -468,6 +469,7 @@ function HomeContent() {
                         >
                           {doc.sensitivity_level}
                         </span>
+                        {doc.suspicious && <SuspiciousBadge />}
                       </div>
                     </div>
                   </div>
@@ -538,6 +540,7 @@ function HomeContent() {
                     >
                       {selectedDoc.sensitivity_level}
                     </span>
+                    {selectedDoc.suspicious && <SuspiciousBadge />}
                   </div>
                   <p className="text-xs text-gray-400 mt-0.5">
                     {messages.length > 0
@@ -595,6 +598,14 @@ function HomeContent() {
             >
               <Upload className="w-4 h-4" />
               <span className="hidden sm:inline">Upload</span>
+            </Link>
+            <Link
+              href="/settings"
+              title="Settings"
+              aria-label="Settings"
+              className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              <Settings className="w-4 h-4" />
             </Link>
             <button
               onClick={handleLogout}

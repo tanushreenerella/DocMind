@@ -8,6 +8,7 @@ import json
 from groq import Groq
 
 from core.config import GROQ_API_KEY
+from core.token_budget import record_usage
 
 _client: Groq | None = None
 
@@ -55,6 +56,18 @@ _FALLBACK: dict = {
 }
 
 
+BUDGET_SKIPPED_SUMMARY = "Not classified: daily AI usage limit reached."
+
+
+def budget_skipped_classification() -> dict:
+    """The fallback classification, for an upload made after the day's AI budget ran out."""
+    return {
+        **_FALLBACK,
+        "sensitivity_reason": "Classification skipped: daily AI usage limit reached",
+        "summary": BUDGET_SKIPPED_SUMMARY,
+    }
+
+
 async def classify_document(text: str, filename: str) -> dict:
     prompt = f"""You are a document classification expert. Analyze this document and return ONLY a JSON object matching this schema exactly:
 
@@ -76,6 +89,7 @@ Return ONLY the JSON object, no markdown, no explanation."""
             max_tokens=900,
             reasoning_effort="none",
         )
+        await record_usage(response)
 
         raw = (response.choices[0].message.content or "").strip()
         if not raw:

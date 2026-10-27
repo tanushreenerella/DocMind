@@ -7,6 +7,7 @@ const api = vi.hoisted(() => ({
   deleteDocument: vi.fn(),
   warmupBackend: vi.fn(),
   sendMessage: vi.fn(),
+  generateEvidenceTimeline: vi.fn(),
 }));
 
 vi.mock("@/lib/api", async (importOriginal) => ({
@@ -30,12 +31,14 @@ const REPORT: IndexedDocument = {
   doc_name: "report.pdf",
   document_type: "report",
   sensitivity_level: "internal",
+  suspicious: false,
 };
 const INVOICE: IndexedDocument = {
   doc_id: "doc-invoice",
   doc_name: "invoice.pdf",
   document_type: "invoice",
   sensitivity_level: "public",
+  suspicious: false,
 };
 const STILL_PROCESSING = "Document is still processing; try again when it finishes";
 
@@ -92,6 +95,14 @@ describe("document list fetching", () => {
     });
 
     await waitFor(() => expect(api.listDocuments).toHaveBeenCalledTimes(2));
+  });
+
+  it("badges only documents whose hidden text was removed", async () => {
+    await renderWithDocs([{ ...REPORT, suspicious: true }, INVOICE]);
+
+    const badges = screen.getAllByText("Hidden text removed");
+    expect(badges).toHaveLength(1);
+    expect(badges[0].closest("button")?.textContent).toContain(REPORT.doc_name);
   });
 });
 
@@ -250,5 +261,27 @@ describe("service errors in chat", () => {
     await screen.findByText("It is $5.");
     expect(api.sendMessage).toHaveBeenLastCalledWith("What is the total, again?", [], undefined);
     expect(screen.getAllByRole("alert")).toHaveLength(1);
+  });
+
+  it("shows the daily-budget message when chat is refused with 429", async () => {
+    const budget = "Daily AI usage limit reached, resets at midnight UTC";
+    await renderWithDocs([REPORT]);
+    api.sendMessage.mockRejectedValueOnce(new ApiError(budget, 429));
+
+    await ask("What is the total?");
+
+    expect((await screen.findByRole("alert")).textContent).toBe(budget);
+  });
+
+  it("shows the daily-budget message when the evidence timeline is refused with 429", async () => {
+    const budget = "Daily AI usage limit reached, resets at midnight UTC";
+    await renderWithDocs([REPORT]);
+    fireEvent.click(screen.getByText("report.pdf"));
+    api.generateEvidenceTimeline.mockRejectedValueOnce(new ApiError(budget, 429));
+
+    fireEvent.click(screen.getByRole("button", { name: "Evidence timeline" }));
+
+    expect(await screen.findByText(budget)).toBeTruthy();
+    expect(api.generateEvidenceTimeline).toHaveBeenCalledWith("doc-report");
   });
 });

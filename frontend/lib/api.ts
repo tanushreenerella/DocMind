@@ -96,6 +96,11 @@ export interface JobStatus {
   classification: Classification | null;
   page_count: number;
   failed_pages: number[];
+  /** Hidden text (white, invisible or tiny) was found and left out of the index. */
+  suspicious: boolean;
+  hidden_text_pages: number[];
+  /** Characters removed, across all pages. */
+  hidden_text_removed: number;
 }
 
 export interface IndexedDocument {
@@ -103,6 +108,7 @@ export interface IndexedDocument {
   doc_name: string;
   document_type: string;
   sensitivity_level: string;
+  suspicious: boolean;
 }
 
 export interface DocumentsResponse {
@@ -163,7 +169,12 @@ async function handleResponse<T>(
   { redirectOnUnauthorized = true }: HandleResponseOptions = {}
 ): Promise<T> {
   if (!res.ok) {
-    if (res.status === 429) throw new ApiError(RATE_LIMIT_MESSAGE, 429);
+    if (res.status === 429) {
+      // Which limit was hit (per-minute rate, daily AI budget) is in the detail.
+      const body = await res.json().catch(() => ({}));
+      const detail = (body as { detail?: unknown }).detail;
+      throw new ApiError(typeof detail === "string" && detail ? detail : RATE_LIMIT_MESSAGE, 429);
+    }
     if (res.status === 401 && redirectOnUnauthorized) redirectToLogin();
     const body = await res.json().catch(() => ({ detail: res.statusText }));
     throw new ApiError((body as { detail?: string }).detail ?? res.statusText, res.status);
@@ -391,6 +402,44 @@ export async function generateEvidenceTimeline(docId: string): Promise<EvidenceT
     method: "POST",
   });
   return handleResponse<EvidenceTimeline>(res);
+}
+
+// ─── Personal access tokens ───────────────────────────────────────────────────
+
+/** A personal access token as listed: never the secret itself. */
+export interface AccessToken {
+  id: string;
+  name: string;
+  /** "dm_" plus the first few characters, to tell tokens apart. */
+  prefix: string;
+  created_at: string;
+  last_used_at: string | null;
+  revoked_at: string | null;
+}
+
+/** POST /api/tokens: the only response that ever contains the full token. */
+export interface CreatedAccessToken extends AccessToken {
+  token: string;
+}
+
+export async function listAccessTokens(): Promise<AccessToken[]> {
+  const res = await fetchWithRetry("/api/tokens");
+  return (await handleResponse<{ tokens: AccessToken[] }>(res)).tokens;
+}
+
+export async function createAccessToken(name: string): Promise<CreatedAccessToken> {
+  // No retry: resending after a dropped response would mint a second token the user never sees.
+  const res = await fetch("/api/tokens", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  return handleResponse<CreatedAccessToken>(res);
+}
+
+export async function revokeAccessToken(tokenId: string): Promise<void> {
+  const res = await fetchWithRetry(`/api/tokens/${encodeURIComponent(tokenId)}`, { method: "DELETE" });
+  if (!res.ok) await handleResponse<never>(res);
 }
 
 export function getPageImageUrl(imageFilename: string): string {

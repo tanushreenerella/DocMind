@@ -133,6 +133,8 @@ python scripts/create_sample_docs.py
 | `CHROMA_DATABASE` | ✅ | — | Chroma Cloud database. Use a separate one for local dev vs production |
 | `IMAGES_PATH` | | `./storage/page_images` | Rendered page images path |
 | `RATE_LIMIT_PER_MINUTE` | | `30` | API rate limit per IP |
+| `DAILY_TOKEN_BUDGET` | | `50000` | Groq tokens per user per UTC day; chat returns 429 once used up |
+| `TOKEN_BUDGET_REDIS_URL` | | `RATE_LIMIT_STORAGE_URI` if Redis | Where daily token counts live; without Redis they go to Postgres |
 
 ### Frontend (`frontend/.env.local`)
 
@@ -162,6 +164,7 @@ python scripts/create_sample_docs.py
 | API | No stack traces | Global exception handler returns generic `"Internal server error"` to clients |
 | Config | Secrets via env | All secrets in `.env`; `.env.example` committed with placeholders |
 | Auth | JWT authentication | bcrypt password hashing, JWT tokens, per-user document isolation, chat history stored per user in Postgres (Neon) |
+| Auth | Personal access tokens | `dm_` + 32 random bytes, created in Settings and sent as `Authorization: Bearer dm_…`. Only the SHA-256 is stored; the token is shown once. Revoked tokens stop working immediately. Tokens can't create or revoke tokens (session only), and token requests skip the cookie CSRF Origin check, since they never use the cookie |
 
 ### What was considered but excluded from scope
 - **Virus scanning (ClamAV)** — Would integrate `python-clamd` before any file processing; excluded due to ClamAV daemon dependency on the deployment environment.

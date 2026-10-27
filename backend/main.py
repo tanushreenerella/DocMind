@@ -35,7 +35,7 @@ from core.config import (
 from core.auth import require_allowed_origin, require_proxy_secret
 from core.database import connect, disconnect, ensure_schema
 from core.rate_limit import CLIENT_IP_HEADER, limiter, rate_limit_exceeded_handler
-from routers import chat, documents, upload
+from routers import chat, documents, tokens, upload
 from routers import auth
 from services import storage
 
@@ -84,6 +84,7 @@ app.include_router(auth.router)
 app.include_router(upload.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(documents.router, prefix="/api")
+app.include_router(tokens.router, prefix="/api")
 
 
 @app.get("/health")

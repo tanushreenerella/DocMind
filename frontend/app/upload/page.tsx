@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Brain, CheckCircle2, AlertCircle, AlertTriangle, Loader2, MessageSquare } from "lucide-react";
 import UploadZone from "@/components/UploadZone";
+import SuspiciousBadge from "@/components/SuspiciousBadge";
 import AuthGuard from "@/components/AuthGuard";
 import { uploadFile, uploadErrorMessage, getStatus, deleteDocument, warmupBackend } from "@/lib/api";
 import type { UploadJob, JobStatus, Classification } from "@/lib/api";
@@ -60,6 +61,9 @@ function failedStatus(job: TrackedJob): JobStatus {
     classification: null,
     page_count: 0,
     failed_pages: [],
+    suspicious: false,
+    hidden_text_pages: [],
+    hidden_text_removed: 0,
   };
 }
 
@@ -140,6 +144,13 @@ function JobRow({ job, onRetry }: { job: TrackedJob; onRetry: (job: TrackedJob) 
             )
           )}
           {(isDone || isPartial) && s?.classification && <ClassificationBadge c={s.classification} />}
+          {(isDone || isPartial) && s?.suspicious && (
+            <div className="mt-2">
+              <SuspiciousBadge
+                detail={`${s.hidden_text_removed} characters removed from ${pageList(s.hidden_text_pages)}.`}
+              />
+            </div>
+          )}
         </div>
 
         <div className="shrink-0">
@@ -193,6 +204,7 @@ function Summary({ jobs }: { jobs: TrackedJob[] }) {
   const indexed = jobs.filter((j) => j.status?.status === "complete" || j.status?.status === "partial");
   const failedCount = jobs.filter((j) => j.status?.status === "error").length;
   const partialCount = indexed.filter((j) => j.status?.status === "partial").length;
+  const suspiciousCount = indexed.filter((j) => j.status?.suspicious).length;
   const totalPages = indexed.reduce((sum, j) => sum + (j.status?.page_count ?? 0), 0);
 
   if (indexed.length === 0) {
@@ -205,7 +217,7 @@ function Summary({ jobs }: { jobs: TrackedJob[] }) {
     );
   }
 
-  const allClean = failedCount === 0 && partialCount === 0;
+  const allClean = failedCount === 0 && partialCount === 0 && suspiciousCount === 0;
   return (
     <div
       className={`bg-white rounded-2xl border p-5 shadow-sm text-center space-y-3 ${
@@ -221,6 +233,11 @@ function Summary({ jobs }: { jobs: TrackedJob[] }) {
       {partialCount > 0 && (
         <p className="text-xs text-amber-700">
           {partialCount} document{partialCount !== 1 ? "s are" : " is"} missing text from some pages.
+        </p>
+      )}
+      {suspiciousCount > 0 && (
+        <p className="text-xs text-red-700">
+          {suspiciousCount} document{suspiciousCount !== 1 ? "s" : ""} contained hidden text, which was not indexed.
         </p>
       )}
       <Link
