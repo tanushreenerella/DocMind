@@ -144,6 +144,68 @@ python scripts/create_sample_docs.py
 
 ---
 
+## MCP server (Claude Desktop and other MCP clients)
+
+DocMind exposes your documents as MCP tools at **`https://<your-frontend>/api/mcp`**: Streamable HTTP, stateless, plain JSON responses. Use the frontend URL (e.g. `https://your-app.vercel.app/api/mcp`, or `http://localhost:3000/api/mcp` locally), not the backend's. The Next.js proxy adds the secret the backend requires, so calling the backend directly gets `403`.
+
+Every request needs a personal access token, which you create under **Settings → Personal access tokens**. Tools only ever see that token's user's documents.
+
+| Tool | Arguments | Returns |
+|------|-----------|---------|
+| `list_documents` | none | your indexed documents: `doc_id`, name, type, sensitivity, `suspicious` |
+| `search_documents` | `query`, `doc_id?`, `k` (1–10, default 5) | matching passages: `doc_name`, `page`, trimmed `excerpt` |
+| `ask_documents` | `question`, `doc_id?`, `mode` (`basic` \| `agentic`) | `answer` and `citations` (`doc_name`, `page`, `excerpt`) |
+
+The tools go through the same checks as the chat UI: document ownership, the daily token budget, and outage handling. A refusal comes back as an MCP tool error with a code in brackets, for example `Error executing tool ask_documents: [daily_budget_exceeded] Daily AI usage limit reached, resets at midnight UTC`. The codes are `forbidden`, `daily_budget_exceeded`, `rate_limited`, `invalid_arguments`, `ai_unavailable`, `search_unavailable` and `timeout`.
+
+Limits are per user, whichever token or IP a request comes from: `RATE_LIMIT_PER_MINUTE` requests to `/api/mcp`, plus `ask_documents` capped at `RATE_LIMIT_CHAT` (basic) or `RATE_LIMIT_AGENTIC_CHAT` (agentic). A revoked token is refused on its next request.
+
+### Claude Desktop (via `mcp-remote`)
+
+Claude Desktop launches local MCP servers, so [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) bridges it to the HTTP endpoint. It needs Node.js. In `claude_desktop_config.json` (Settings → Developer → Edit Config):
+
+```json
+{
+  "mcpServers": {
+    "docmind": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://your-app.vercel.app/api/mcp",
+        "--header",
+        "Authorization:${DOCMIND_AUTH}"
+      ],
+      "env": {
+        "DOCMIND_AUTH": "Bearer dm_your_token_here"
+      }
+    }
+  }
+}
+```
+
+The header value comes from `env` and there's no space after `Authorization:`. Some clients split arguments on spaces, which would break `"Authorization: Bearer …"`. Restart Claude Desktop, and the three tools appear under the tools menu. For a plain-`http` URL other than `localhost`, add `"--allow-http"` to `args`.
+
+### Testing with MCP Inspector
+
+```bash
+npx @modelcontextprotocol/inspector
+```
+
+Open the URL it prints. Set **Transport Type** to *Streamable HTTP* and **URL** to `https://your-app.vercel.app/api/mcp`. Under **Authentication**, set the `Authorization` header to `Bearer dm_…`. Leave **Connection Type** as *Via Proxy*: the backend doesn't allow CORS from the Inspector's page, so *Direct* fails. Click **Connect**, then **Tools → List Tools**.
+
+Or without any client:
+
+```bash
+curl -s https://your-app.vercel.app/api/mcp \
+  -H "Authorization: Bearer dm_your_token_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_documents","arguments":{}}}'
+```
+
+---
+
 ## Security Decisions
 
 ### What's implemented

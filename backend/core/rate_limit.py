@@ -30,11 +30,17 @@ _LOGIN_EMAIL_LIMIT = parse(RATE_LIMIT_LOGIN_EMAIL)
 
 
 def rate_limit_key(request: Request) -> str:
-    """User id from a valid auth cookie, else the proxy-supplied x-client-ip.
+    """User id from a validated personal access token or a valid auth cookie, else the proxy-supplied x-client-ip.
 
-    The cookie's signature is verified (no DB lookup) so a forged token can't
-    pick someone else's bucket; an invalid one falls back to the IP key.
+    A token's user is set by core.auth.identify_token_user, which looks the
+    token up first, so a made-up token can't buy a fresh bucket. The cookie's
+    signature is verified (no DB lookup) so a forged one can't pick someone
+    else's bucket; an invalid one falls back to the IP key.
     """
+    token_user_id = getattr(request.state, "token_user_id", None)
+    if token_user_id:
+        return f"user:{token_user_id}"
+
     token = request.cookies.get(ACCESS_TOKEN_COOKIE)
     if token:
         try:
@@ -82,6 +88,22 @@ def too_many_requests(retry_after: int) -> JSONResponse:
 
 def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
     return too_many_requests(_retry_after_seconds(request))
+
+
+def hit_user_limit(limit: str, scope: str, user_id: str) -> int | None:
+    """Count one ``scope`` call (e.g. "mcp-ask") for ``user_id`` against ``limit`` ("20/minute").
+
+    Returns Retry-After seconds when over the limit. For work started outside a
+    decorated route, like an MCP tool. Fails open if storage is down.
+    """
+    limit_item = parse(limit)
+    key = (scope, f"user:{user_id}")
+    try:
+        allowed = limiter.limiter.hit(limit_item, *key)
+    except Exception as exc:
+        print(f"[rate-limit] {scope} limit unavailable: {exc}")
+        return None
+    return None if allowed else _seconds_until_reset(limit_item, *key)
 
 
 def hit_login_email_limit(email: str) -> int | None:

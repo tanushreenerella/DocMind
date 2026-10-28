@@ -83,6 +83,28 @@ async def _require_owned_document(
         )
 
 
+async def answer_for_user(
+    user_id: str,
+    question: str,
+    history: list[dict],
+    doc_id: str | None,
+    *,
+    agentic: bool,
+) -> dict:
+    """The answer pipeline with every check the chat endpoints apply, charged to ``user_id``.
+
+    Raises HTTPException 429 (daily token budget) or 403 (doc_id not the
+    caller's) before any AI work. An outage comes back as the usual result with
+    ``error`` set. Shared by /chat, /chat/agentic and the MCP ask_documents tool.
+    """
+    await ensure_within_budget(user_id)
+    await _require_owned_document(doc_id, user_id)
+    with charged_to(user_id):
+        if agentic:
+            return await answer_agentic_query(question, history, user_id=user_id, doc_id=doc_id)
+        return await answer_query(question, history, doc_id=doc_id, user_id=user_id)
+
+
 @router.post("/chat")
 @limiter.limit(RATE_LIMIT_CHAT)
 async def chat(
@@ -91,19 +113,8 @@ async def chat(
     current_user: dict = Depends(get_current_user),
 ):
     pool = get_pool()
-    await ensure_within_budget(current_user["id"])
-    await _require_owned_document(
-        body.doc_id,
-        current_user["id"],
-    )
     history = [{"role": m.role, "content": m.content} for m in body.conversation_history]
-    with charged_to(current_user["id"]):
-        result = await answer_query(
-            body.question,
-            history,
-            doc_id=body.doc_id,
-            user_id=current_user["id"],
-        )
+    result = await answer_for_user(current_user["id"], body.question, history, body.doc_id, agentic=False)
     if result.get("error"):
         # An outage notice isn't part of the conversation; the user will ask again.
         return result
@@ -134,19 +145,8 @@ async def chat_agentic(
 ):
     """Phase-1 LangGraph endpoint; preserves the existing chat response contract."""
     pool = get_pool()
-    await ensure_within_budget(current_user["id"])
-    await _require_owned_document(
-        body.doc_id,
-        current_user["id"],
-    )
     history = [{"role": m.role, "content": m.content} for m in body.conversation_history]
-    with charged_to(current_user["id"]):
-        result = await answer_agentic_query(
-            body.question,
-            history,
-            user_id=current_user["id"],
-            doc_id=body.doc_id,
-        )
+    result = await answer_for_user(current_user["id"], body.question, history, body.doc_id, agentic=True)
     if result.get("error"):
         return result
 

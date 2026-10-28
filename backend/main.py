@@ -32,11 +32,12 @@ from core.config import (
     CHROMA_PATH,
     STORAGE_PATH,
 )
-from core.auth import require_allowed_origin, require_proxy_secret
+from core.auth import identify_token_user, require_allowed_origin, require_proxy_secret
 from core.database import connect, disconnect, ensure_schema
 from core.rate_limit import CLIENT_IP_HEADER, limiter, rate_limit_exceeded_handler
 from routers import chat, documents, tokens, upload
 from routers import auth
+from routers import mcp as mcp_router
 from services import storage
 
 
@@ -75,6 +76,8 @@ app.add_middleware(
 )
 # Applies the default limit to routes without their own @limiter.limit.
 app.add_middleware(SlowAPIMiddleware)
+# Before the rate limiter: a valid personal access token is keyed by its user, not the IP.
+app.middleware("http")(identify_token_user)
 # Runs before the rate limiter: rejected origins never spend rate-limit budget.
 app.middleware("http")(require_allowed_origin)
 # Outermost: anything not sent by the Next.js proxy is rejected before any other work.
@@ -85,6 +88,9 @@ app.include_router(upload.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(documents.router, prefix="/api")
 app.include_router(tokens.router, prefix="/api")
+# A raw ASGI route (the MCP SDK writes its own responses), on the exact path so
+# POSTs to /api/mcp aren't redirected to /api/mcp/.
+app.add_route(mcp_router.MCP_PATH, mcp_router.mcp_endpoint, methods=["GET", "POST", "DELETE"])
 
 
 @app.get("/health")
