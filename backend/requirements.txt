@@ -22,3 +22,4 @@ snowballstemmer==3.1.1
 flashrank==0.2.10
 langchain-groq
 boto3==1.43.115
+pydantic==2.13.4
