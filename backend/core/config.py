@@ -54,6 +54,12 @@ RERANK_ENABLED = (
 RERANK_MODEL = os.environ.get("RERANK_MODEL", "ms-marco-TinyBERT-L-2-v2")
 # How many fused candidates the cross-encoder scores per query.
 RERANK_CANDIDATES = int(os.environ.get("RERANK_CANDIDATES", "10"))
+# Inside the project dir, which (unlike /tmp) carries over from the Render
+# build, so the model build.sh downloads is reused on every restart.
+FLASHRANK_CACHE_DIR = os.environ.get(
+    "FLASHRANK_CACHE_DIR",
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".cache", "flashrank"),
+)
 
 # Chroma Cloud
 _missing_chroma_vars = [

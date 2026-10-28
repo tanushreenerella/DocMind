@@ -1,3 +1,4 @@
+import asyncio
 import os
 from contextlib import asynccontextmanager
 
@@ -38,7 +39,7 @@ from core.rate_limit import CLIENT_IP_HEADER, limiter, rate_limit_exceeded_handl
 from routers import chat, documents, tokens, upload
 from routers import auth
 from routers import mcp as mcp_router
-from services import storage
+from services import embedder, storage
 
 
 @asynccontextmanager
@@ -51,7 +52,11 @@ async def lifespan(app: FastAPI):
     # Open DB pool
     await connect()
     await ensure_schema()
+    # Not awaited: building the BM25 index and loading the reranker would delay
+    # startup, but done now they keep the first query under the proxy timeout.
+    warm_up = asyncio.create_task(asyncio.to_thread(embedder.warm_up))
     yield
+    warm_up.cancel()
     # Close DB pool on shutdown
     await disconnect()
 

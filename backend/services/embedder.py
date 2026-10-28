@@ -1,14 +1,14 @@
 import asyncio
 import functools
-import os
 import threading
+import time
 import chromadb
 import httpx
 import snowballstemmer
 from rank_bm25 import BM25Okapi
 from core.config import CHROMA_API_KEY, CHROMA_TENANT, CHROMA_DATABASE
 from core.config import HYBRID_SEARCH_ENABLED, RERANK_ENABLED
-from core.config import RERANK_CANDIDATES, RERANK_MODEL
+from core.config import FLASHRANK_CACHE_DIR, RERANK_CANDIDATES, RERANK_MODEL
 from services.embeddings import get_embedding, get_embeddings
 from services.errors import SearchUnavailable
 import re
@@ -52,6 +52,13 @@ _RRF_K = 60
 _bm25_index: BM25Okapi | None = None
 _bm25_records: list[dict] = []
 _bm25_ready = False
+# Held for a whole rebuild, so a query arriving mid warm-up waits for that
+# build instead of starting a second one.
+_bm25_build_lock = threading.Lock()
+# Held only briefly, to publish or reset the index. Bumped on every reset, so a
+# rebuild that read Chroma before an upload doesn't publish a stale index.
+_bm25_state_lock = threading.Lock()
+_bm25_generation = 0
 _reranker = None
 _reranker_lock = threading.Lock()
 
@@ -87,9 +94,33 @@ def _get_reranker():
                 print(f"[rerank] loading {RERANK_MODEL}")
                 _reranker = Ranker(
                     model_name=RERANK_MODEL,
-                    cache_dir=os.environ.get("FLASHRANK_CACHE_DIR", "/tmp/flashrank"),
+                    cache_dir=FLASHRANK_CACHE_DIR,
                 )
     return _reranker
+
+
+def warm_up() -> None:
+    """Build the BM25 index and load the reranker before the first query needs them.
+
+    Blocking; startup runs it in a background thread. Failures are only logged:
+    the first query then retries the same work on demand.
+    """
+    if not HYBRID_SEARCH_ENABLED:
+        return  # neither is used without hybrid search
+    started = time.perf_counter()
+    try:
+        _rebuild_bm25_index()
+        print(f"[warmup] bm25 index ready in {time.perf_counter() - started:.2f}s")
+    except Exception as exc:
+        print(f"[warmup] bm25 index failed: {type(exc).__name__}: {exc}")
+    if RERANK_ENABLED:
+        step = time.perf_counter()
+        try:
+            _get_reranker()
+            print(f"[warmup] reranker loaded in {time.perf_counter() - step:.2f}s")
+        except Exception as exc:
+            print(f"[warmup] reranker failed: {type(exc).__name__}: {exc}")
+    print(f"[warmup] done in {time.perf_counter() - started:.2f}s")
 
 # Collection has no embedding_function — we supply embeddings explicitly
 # so no local model is loaded and no ONNX runtime is needed.
@@ -163,36 +194,48 @@ def _tokenize_for_bm25(text: str) -> list[str]:
 
 def _invalidate_bm25_index() -> None:
     """Ensure the next hybrid query includes chunks indexed since the cache."""
-    global _bm25_index, _bm25_records, _bm25_ready
-    _bm25_index = None
-    _bm25_records = []
-    _bm25_ready = False
+    global _bm25_index, _bm25_records, _bm25_ready, _bm25_generation
+    with _bm25_state_lock:
+        _bm25_generation += 1
+        _bm25_index = None
+        _bm25_records = []
+        _bm25_ready = False
 
 
 def _rebuild_bm25_index() -> None:
-    """Recreate the in-memory keyword index from persisted Chroma chunks."""
+    """Recreate the in-memory keyword index from persisted Chroma chunks. Blocking."""
     global _bm25_index, _bm25_records, _bm25_ready
 
-    stored = collection.get(include=["documents", "metadatas"])
-    documents = stored.get("documents", []) or []
-    metadatas = stored.get("metadatas", []) or []
-    chunk_ids = stored.get("ids", []) or []
+    with _bm25_build_lock:
+        if _bm25_ready:
+            return  # built by whoever held the lock before us
+        generation = _bm25_generation
+        stored = collection.get(include=["documents", "metadatas"])
+        documents = stored.get("documents", []) or []
+        metadatas = stored.get("metadatas", []) or []
+        chunk_ids = stored.get("ids", []) or []
 
-    _bm25_records = [
-        {
-            "chunk_id": chunk_ids[index] if index < len(chunk_ids) else "unknown",
-            "chunk_text": document,
-            "metadata": metadata or {},
-            "tokens": _tokenize_for_bm25(document),
-        }
-        for index, (document, metadata) in enumerate(
-            zip(documents, metadatas)
-        )
-    ]
-    corpus = [record["tokens"] for record in _bm25_records]
-    _bm25_index = BM25Okapi(corpus) if corpus else None
-    _bm25_ready = True
-    print(f"[bm25] rebuilt keyword index from {len(_bm25_records)} Chroma chunks")
+        records = [
+            {
+                "chunk_id": chunk_ids[index] if index < len(chunk_ids) else "unknown",
+                "chunk_text": document,
+                "metadata": metadata or {},
+                "tokens": _tokenize_for_bm25(document),
+            }
+            for index, (document, metadata) in enumerate(
+                zip(documents, metadatas)
+            )
+        ]
+        corpus = [record["tokens"] for record in records]
+        index = BM25Okapi(corpus) if corpus else None
+
+        with _bm25_state_lock:
+            if generation != _bm25_generation:
+                # Chunks changed while we read them; the next query rebuilds.
+                print("[bm25] chunks changed during rebuild; discarding it")
+                return
+            _bm25_index, _bm25_records, _bm25_ready = index, records, True
+    print(f"[bm25] rebuilt keyword index from {len(records)} Chroma chunks")
 
 
 def _warn_on_prompt_injection(
@@ -243,20 +286,23 @@ def _search_bm25(
     user_id: str,
     doc_id: str | None,
 ) -> list[dict]:
-    """Return keyword matches after applying the same ownership filters."""
+    """Return keyword matches after applying the same ownership filters. Blocking."""
     if not _bm25_ready:
         _rebuild_bm25_index()
-    if _bm25_index is None:
+    # One consistent pair, even if an upload resets the index meanwhile.
+    with _bm25_state_lock:
+        bm25_index, bm25_records = _bm25_index, _bm25_records
+    if bm25_index is None:
         return []
 
     query_tokens = _tokenize_for_bm25(query)
     if not query_tokens:
         return []
 
-    scores = _bm25_index.get_scores(query_tokens)
+    scores = bm25_index.get_scores(query_tokens)
     candidates = [
         (score, record)
-        for score, record in zip(scores, _bm25_records)
+        for score, record in zip(scores, bm25_records)
         # BM25's IDF can be negative for very common terms, so use token
         # membership to distinguish genuine keyword matches from zero-score
         # non-matches before applying the BM25 ordering.
@@ -600,7 +646,9 @@ async def search_or_raise(
     if not HYBRID_SEARCH_ENABLED:
         return hits
 
-    bm25_hits = _search_bm25(
+    # Off the loop: it may wait for (or do) a full index rebuild.
+    bm25_hits = await asyncio.to_thread(
+        _search_bm25,
         query,
         n_results=safe_n,
         user_id=user_id,
